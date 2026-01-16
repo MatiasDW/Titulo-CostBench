@@ -211,12 +211,23 @@ const ModelComparison = () => {
                                         {isCurrent && (
                                             <>
                                                 <div className="mb-3">
-                                                    <span className="badge" style={{ background: 'rgba(56,161,105,0.2)', color: '#4ade80' }}>
+                                                    <span className="badge" style={{ background: 'rgba(56,161,105,0.2)', color: '#4ade80', fontSize: '0.85rem' }}>
                                                         {modelInfo.icon} {data.bestModel}
                                                     </span>
-                                                    <p className="text-white-50 small mt-2 mb-0" style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>
-                                                        {data.reason || modelInfo.explanation}
-                                                    </p>
+                                                    <div
+                                                        className="mt-2 p-2 rounded"
+                                                        style={{
+                                                            background: 'rgba(255,255,255,0.03)',
+                                                            borderLeft: '3px solid #6366f1'
+                                                        }}
+                                                    >
+                                                        <small className="text-info fw-bold d-block mb-1" style={{ fontSize: '0.7rem' }}>
+                                                            📊 ¿Por qué este modelo?
+                                                        </small>
+                                                        <span style={{ color: '#e5e7eb', fontSize: '0.85rem', lineHeight: '1.5' }}>
+                                                            {data.reason || modelInfo.explanation}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
                                                 <div className="row g-2 mb-3">
