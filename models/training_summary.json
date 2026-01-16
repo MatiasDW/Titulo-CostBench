@@ -1,0 +1,25 @@
+{
+  "trained_at": "2026-01-16T00:52:23.756173",
+  "assets": {
+    "BTC": {
+      "status": "skipped",
+      "error": "Insufficient data: 13 rows"
+    },
+    "ETH": {
+      "status": "skipped",
+      "error": "Insufficient data: 13 rows"
+    },
+    "OIL": {
+      "status": "error",
+      "error": "[Errno 32] Broken pipe"
+    },
+    "GOLD": {
+      "status": "error",
+      "error": "[Errno 32] Broken pipe"
+    },
+    "COPPER": {
+      "status": "error",
+      "error": "[Errno 32] Broken pipe"
+    }
+  }
+}

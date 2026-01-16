@@ -1,0 +1,95 @@
+{
+  "models": {
+    "GOLD": {
+      "asset": "GOLD",
+      "model_type": "auto_arima",
+      "order": [
+        0,
+        1,
+        0
+      ],
+      "metrics": {
+        "mae": 1.2505438462540042e-05,
+        "rmse": 1.3699021474851808e-05,
+        "mape": 5.125525784276877e-07
+      },
+      "model_path": "models/gold/arima_20260116_025123.pkl",
+      "trained_at": "2026-01-16T02:51:23.951885",
+      "is_champion": true
+    },
+    "COPPER": {
+      "asset": "COPPER",
+      "model_type": "auto_arima",
+      "order": [
+        1,
+        1,
+        0
+      ],
+      "metrics": {
+        "mae": 588.6285838286452,
+        "rmse": 664.5156991467022,
+        "mape": 6.142832667336641
+      },
+      "model_path": "models/copper/arima_20260116_025126.pkl",
+      "trained_at": "2026-01-16T02:51:26.604504",
+      "is_champion": true
+    },
+    "OIL": {
+      "asset": "OIL",
+      "model_type": "auto_arima",
+      "order": [
+        1,
+        1,
+        1
+      ],
+      "metrics": {
+        "mae": 1.1191568467104471,
+        "rmse": 1.296694460560459,
+        "mape": 1.921521259616851
+      },
+      "model_path": "models/oil/arima_20260116_025437.pkl",
+      "trained_at": "2026-01-16T02:54:37.708141",
+      "is_champion": true
+    },
+    "USDCLP": {
+      "asset": "USDCLP",
+      "model_type": "auto_arima",
+      "order": [
+        1,
+        1,
+        0
+      ],
+      "metrics": {
+        "mae": 38.379147482509914,
+        "rmse": 47.96331177958326,
+        "mape": 4.215773502043008
+      },
+      "model_path": "models/usdclp/arima_20260116_031647.pkl",
+      "trained_at": "2026-01-16T03:16:47.202605",
+      "is_champion": true
+    },
+    "UF": {
+      "asset": "UF",
+      "model_type": "auto_arima",
+      "order": [
+        0,
+        2,
+        2
+      ],
+      "metrics": {
+        "mae": 250.11364955954681,
+        "rmse": 252.86940142529298,
+        "mape": 0.6313968897129711
+      },
+      "model_path": "models/uf/arima_20260116_042322.pkl",
+      "trained_at": "2026-01-16T04:23:22.658019",
+      "is_champion": true,
+      "confidence": "excellent",
+      "confidence_label": "Excellent",
+      "is_rule_based": true,
+      "rule_note": "UF is indexed to inflation. Forecasts are short-term statistical approximations, not inflation predictions.",
+      "description": "Unidad de Fomento (inflation-indexed)"
+    }
+  },
+  "updated_at": "2026-01-16T04:23:22.659017"
+}

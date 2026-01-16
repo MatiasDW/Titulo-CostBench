@@ -1,0 +1,54 @@
+# ML Pipeline Requirements
+# Lightweight stack for production (no PyCaret)
+# Install with: pip install -r requirements-ml.txt
+
+# ============================================
+# Core ML Framework (Lightweight)
+# ============================================
+pmdarima>=2.0.4           # Auto ARIMA - fast, production-ready
+statsmodels>=0.14.0       # ARIMA base, statistical tests
+
+# ============================================
+# Scheduling (Quincenal Retraining)
+# ============================================
+APScheduler>=3.10.0       # Background job scheduler
+
+# ============================================
+# Data Processing
+# ============================================
+pandas>=2.0.0
+numpy>=1.24.0
+pyarrow>=14.0.0
+
+# ============================================
+# HTTP Clients with Retry Logic
+# ============================================
+httpx>=0.26.0             # Modern async HTTP client
+tenacity>=8.2.0           # Retry with exponential backoff
+
+# ============================================
+# Structured Logging
+# ============================================
+structlog>=24.1.0         # JSON structured logging
+
+# ============================================
+# Validation & Schemas
+# ============================================
+pydantic>=2.0.0
+
+# ============================================
+# Model Persistence
+# ============================================
+joblib>=1.3.0             # Model serialization
+scikit-learn>=1.4.0       # K-Means clustering, metrics
+
+# ============================================
+# BDE (Banco Central Chile) Client
+# ============================================
+bcchapi>=0.6.0            # Official Banco Central API
+
+# ============================================
+# Optional: PyCaret (Monthly Benchmark Only)
+# ============================================
+# Uncomment for monthly benchmark job (heavy, not for production)
+# pycaret[time_series]>=3.3.2

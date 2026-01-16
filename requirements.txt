@@ -1,0 +1,13 @@
+Flask
+Flask-CORS
+psycopg2-binary
+sqlalchemy
+python-dotenv
+requests
+pandas
+pyarrow
+beautifulsoup4
+lxml
+gunicorn
+pydantic
+bcchapi

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="160" viewBox="0 0 640 160" role="img" aria-labelledby="title desc">
+  <title id="title">CostBench</title>
+  <desc id="desc">Minimal mark with bars and peso sign</desc>
+  <rect width="640" height="160" rx="16" fill="none"/>
+  <g fill="#16A34A">
+    <rect x="24" y="88" width="20" height="48" rx="4"/>
+    <rect x="54" y="72" width="20" height="64" rx="4"/>
+    <rect x="84" y="56" width="20" height="80" rx="4"/>
+  </g>
+  <g transform="translate(124,36)" fill="#16A34A">
+    <path d="M0 0h14v14h22a14 14 0 1 1 0 28H14v28H0V0zm14 18v10h22a5 5 0 1 0 0-10H14z"/>
+  </g>
+  <g transform="translate(220,46)" fill="#E5E7EB">
+    <text x="0" y="0" font-family="Inter, system-ui, Segoe UI, Roboto, Arial, sans-serif" font-size="56" font-weight="700">CostBench</text>
+  </g>
+</svg>

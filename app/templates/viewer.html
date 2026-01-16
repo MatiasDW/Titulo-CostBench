@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bank Cost Benchmark - Viewer</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/costbench_icon.png') }}" sizes="32x32" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            padding-top: 30px;
+            padding-bottom: 80px;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .card-custom {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card-header-custom {
+            border-bottom: 1px solid #30363d;
+            padding: 15px;
+            font-weight: 600;
+            color: #58a6ff;
+        }
+
+        h1,
+        h2,
+        h3,
+        h5 {
+            color: #f0f6fc;
+        }
+
+        .table {
+            --bs-table-bg: transparent;
+            color: #c9d1d9;
+        }
+
+        .table tbody tr:hover {
+            color: #58a6ff;
+            background-color: #21262d;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: auto;
+            min-height: 60px;
+            background-color: #161b22;
+            border-top: 1px solid #30363d;
+            font-size: 0.85em;
+            text-align: center;
+            padding: 15px;
+            color: #8b949e;
+            z-index: 1000;
+        }
+
+        .btn-primary {
+            background-color: #238636;
+            border-color: #238636;
+        }
+
+        .btn-primary:hover {
+            background-color: #2ea043;
+            border-color: #2ea043;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b949e;
+        }
+
+        /* Animations */
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        @keyframes pulse-glow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(255, 193, 7, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .floating-logo {
+            animation: float 6s ease-in-out infinite;
+            filter: drop-shadow(0 0 15px rgba(46, 160, 67, 0.2));
+        }
+
+        .pulsing-btn {
+            animation: pulse-glow 2s infinite;
+            transition: transform 0.2s;
+        }
+
+        .pulsing-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .animate-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        .form-select {
+            background-color: #0d1117;
+            border-color: #30363d;
+            color: #c9d1d9;
+        }
+
+        /* Modal customizations */
+        .modal-content {
+            background-color: #161b22;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+        }
+
+        .modal-header,
+        .modal-footer {
+            border-color: #30363d;
+        }
+
+        .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <!-- Header Section -->
+        <div class="row align-items-center mb-5 border-bottom border-secondary pb-4">
+            <div class="col-lg-5">
+                <img src="{{ url_for('static', filename='img/costbench_logo.svg') }}" alt="CostBench" width="280"
+                    class="mb-3 mb-lg-0 floating-logo">
+            </div>
+            <div class="col-lg-7 text-lg-end">
+                <div class="d-flex flex-column align-items-end justify-content-center h-100">
+                    <h5 class="text-light mb-1 fw-light fst-italic" style="letter-spacing: 0.5px;">"To allow anyone to
+                        understand the true cost of banking products through transparent, data-driven benchmarking."
+                    </h5>
+                    <p class="text-secondary mb-0 fw-light">A financial market where efficiency is transparent and
+                        aligned with global macro reality.</p>
+
+                    <button class="btn btn-outline-warning mt-3 pulsing-btn" data-bs-toggle="modal"
+                        data-bs-target="#chartsModal">
+                        📊 Open Market Analytics Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Modal (Big Dashboard) -->
+        <div class="modal fade" id="chartsModal" tabindex="-1">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Market Analytics Dashboard</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body bg-dark">
+                        <div class="container-fluid">
+
+                            <!-- Row 1: Ranking Analysis (Chile Primary) -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <div class="card card-custom h-100 p-3 animate-in" style="animation-delay: 0.1s;">
+                                        <h6 class="text-success">🇨🇱 Top 5 Cheapest (Annual)</h6>
+                                        <div style="height: 200px;"><canvas id="chartCheap"></canvas></div>
+                                        <div class="mt-2 pt-2 border-top border-secondary">
+                                            <small class="text-secondary d-block fst-italic"
+                                                style="font-size: 0.75rem;">
+                                                <span class="text-success">🧠 Scloda:</span> Identifies the market
+                                                efficiency frontier. These institutions offer the most competitive
+                                                rates, setting the benchmark for low-cost banking in Chile.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card card-custom h-100 p-3 animate-in" style="animation-delay: 0.2s;">
+                                        <h6 class="text-danger">🇨🇱 Top 5 Most Expensive</h6>
+                                        <div style="height: 200px;"><canvas id="chartExpensive"></canvas></div>
+                                        <div class="mt-2 pt-2 border-top border-secondary">
+                                            <small class="text-secondary d-block fst-italic"
+                                                style="font-size: 0.75rem;">
+                                                <span class="text-warning">🧠 Scloda:</span> Highlights premium
+                                                segment pricing or potential inefficiencies. Users in this quantile pay
+                                                significantly above the market median.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card card-custom h-100 p-3 animate-in" style="animation-delay: 0.3s;">
+                                        <h6 class="text-info">🇨🇱 Cost Distribution</h6>
+                                        <div style="height: 200px;"><canvas id="chartDist"></canvas></div>
+                                        <div class="mt-2 pt-2 border-top border-secondary">
+                                            <small class="text-secondary d-block fst-italic"
+                                                style="font-size: 0.75rem;">
+                                                <span class="text-info">🧠 Scloda:</span> Visualizes market
+                                                dispersion. The gap between Min and Max represents the <strong>arbitrage
+                                                    opportunity</strong> available to the consumer.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Row 2: Commodities (Gold, Copper, Oil) -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="card card-custom h-100 p-3 animate-in" style="animation-delay: 0.35s;">
+                                    <h6 class="text-warning">🥇 Gold Price (London Fix)</h6>
+                                    <div style="height: 200px;"><canvas id="chartGold"></canvas></div>
+                                    <div class="mt-2 pt-2 border-top border-secondary">
+                                        <small class="text-secondary d-block fst-italic" style="font-size: 0.75rem;">
+                                            <span class="text-warning">🧠 Scloda:</span> Traditional safe-haven
+                                            asset. Rising gold prices often signal investor hedging against currency
+                                            devaluation or geopolitical instability.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card card-custom h-100 p-3 animate-in" style="animation-delay: 0.4s;">
+                                    <h6 class="text-danger">⛏️ Copper (Global Price)</h6>
+                                    <div style="height: 200px;"><canvas id="chartCopper"></canvas></div>
+                                    <div class="mt-2 pt-2 border-top border-secondary">
+                                        <small class="text-secondary d-block fst-italic" style="font-size: 0.75rem;">
+                                            <span class="text-danger">🧠 Scloda:</span> "Doctor Copper" predicts
+                                            economic health. As Chile's main export, high copper prices strengthen the
+                                            CLP against the USD.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card card-custom h-100 p-3 animate-in" style="animation-delay: 0.45s;">
+                                    <h6 class="text-white">🛢️ WTI Crude Oil</h6>
+                                    <div style="height: 200px;"><canvas id="chartOil"></canvas></div>
+                                    <div class="mt-2 pt-2 border-top border-secondary">
+                                        <small class="text-secondary d-block fst-italic" style="font-size: 0.75rem;">
+                                            <span class="text-light">🧠 Scloda:</span> Key inflation driver. Rising
+                                            oil costs increase transport and operational expenses for banks and
+                                            consumers alike.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Macro Trends (US Secondary) -->
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card card-custom h-100 p-3 animate-in" style="animation-delay: 0.4s;">
+                                    <h6>🇺🇸 US CPI Trend (Inflation)</h6>
+                                    <div style="height: 250px;"><canvas id="chartCPI"></canvas></div>
+                                    <div class="mt-2 pt-2 border-top border-secondary">
+                                        <small class="text-secondary d-block fst-italic" style="font-size: 0.75rem;">
+                                            <span class="text-danger">🧠 Scloda:</span> Tracks purchasing power
+                                            erosion. A rising CPI indicates inflationary pressure, often correlated
+                                            with higher operational costs and local UF adjustments.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card card-custom h-100 p-3 animate-in" style="animation-delay: 0.5s;">
+                                    <h6>🇺🇸 US 10Y Treasury Yields</h6>
+                                    <div style="height: 250px;"><canvas id="chartYields"></canvas></div>
+                                    <div class="mt-2 pt-2 border-top border-secondary">
+                                        <small class="text-secondary d-block fst-italic" style="font-size: 0.75rem;">
+                                            <span class="text-primary">🧠 Scloda:</span> Global risk-free
+                                            benchmark. Shifts in the US 10Y Treasury Yield directly influence
+                                            external funding costs for Chilean banks.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted me-auto">*Data Sources: CMF Chile (Simuladores), BLS, US
+                        Treasury.</small>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Controls Card -->
+        <div class="col-12">
+            <div class="card card-custom p-3">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label text-muted">Items to Show</label>
+                        <select id="topSelect" class="form-select">
+                            <option value="10">Top 10 Cheapest</option>
+                            <option value="20">Top 20 Cheapest</option>
+                            <option value="50">Top 50 Cheapest</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted">Currency Denomination</label>
+                        <select id="denomSelect" class="form-select">
+                            <option value="clp">CLP (Chilean Peso)</option>
+                            <option value="uf">UF (Indexed Unit)</option>
+                            <option value="usd">USD (US Dollar)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button onclick="loadRanking()" class="btn btn-primary w-100">Update Ranking</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ranking Table -->
+        <div class="col-lg-8">
+            <div class="card card-custom h-100">
+                <div class="card-header-custom">Banking Cost Ranking (Annual)</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-hover mb-0 align-middle" id="rankingTable">
+                            <thead style="border-bottom: 2px solid #30363d;">
+                                <tr>
+                                    <th class="ps-4">Rank</th>
+                                    <th>Institution</th>
+                                    <th>Product</th>
+                                    <th class="text-end pe-4">Annual Total Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side Widgets -->
+        <div class="col-lg-4">
+            <!-- Market Context -->
+            <div class="card card-custom mb-3">
+                <div class="card-header-custom">Global Macro Context</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0" id="marketTable" style="font-size: 0.9em;">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">Series</th>
+                                <th>Source</th>
+                                <th class="text-end pe-3">Latest</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <small class="text-muted d-block mt-2" style="font-size: 0.75em">
+                        *US Treasury & BLS Data
+                    </small>
+                </div>
+            </div>
+
+            <!-- FRED Attribution -->
+            <div class="card card-custom py-2 px-3 border-danger" style="border-left: 3px solid #dc3545;">
+                <small class="text-muted">
+                    <strong>FRED® Data</strong><br>
+                    This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of
+                    St. Louis.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global Data Storage
+        let chartInstances = {};
+
+        // Icon Mapping
+        const bankIcons = {
+            'BANCO DE CHILE': '🏦',
+            'BANCO SANTANDER': '♨️',
+            'BANCO ESTADO': '🦆',
+            'SCOTIABANK': '🍁',
+            'BCI': '✳️',
+            'ITAÚ': '🔶',
+            'BANCO FALABELLA': '🟢',
+            'BANCO RIPLEY': '🛍️',
+            'BANCO BICE': '🏛️',
+            'BANCO SECURITY': '🛡️',
+            'BANCO CONSORCIO': '🤝',
+            'BANCO INTERNACIONAL': '🌐',
+            'HSBC': '🔴',
+            'JP MORGAN': '📈',
+            'COOPEUCH': '🐝',
+            'COOCRETAL': '🌰',
+            'ORIENCOOP': '☀️',
+            'DETRACOOP': '🚜',
+            'AHORROCOOP': '💰',
+            'LAUTARO ROSAS': '⚓',
+            'CAPUAL': '👮',
+            'COOPEUCH': '🐝'
+        };
+
+        async function loadRanking() {
+            const top = document.getElementById('topSelect').value;
+            const denom = document.getElementById('denomSelect').value;
+
+            try {
+                const res = await fetch(`/api/v1/atc/ranking?top=${top}&denom=${denom}`);
+                const data = await res.json();
+
+                const tbody = document.querySelector('#rankingTable tbody');
+                tbody.innerHTML = '';
+
+                if (data.items) {
+                    data.items.forEach((item, index) => {
+                        const icon = bankIcons[item.institution.toUpperCase()] || '🏦';
+                        const tr = document.createElement('tr');
+                        // Add some flash/hover effect classes if needed
+                        tr.innerHTML = `
+                            <td class="text-secondary ps-4">${index + 1}</td>
+                            <td class="fw-bold text-light"><span class="me-2">${icon}</span> ${item.institution}</td>
+                            <td class="text-info">${item.product}</td>
+                            <td class="text-end pe-4 font-monospace text-warning fw-bold">
+                                ${item.cost ? item.cost.toLocaleString('es-CL', { maximumFractionDigits: 2 }) : 'N/A'} 
+                                <span class="text-muted small">${item.denom}</span>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error loading ranking");
+            }
+        }
+
+        async function loadMarket() {
+            // Updated to separate Commodities vs Indices
+            try {
+                const res = await fetch('/api/v1/market/indices');
+                const list = await res.json();
+
+                const tbody = document.querySelector('#marketTable tbody');
+                tbody.innerHTML = '';
+
+                // Define which are commodities vs macro
+                const commodities = ['GOLDAMGBD228NLBM', 'PCOPPUSDM', 'DCOILWTICO'];
+                const icons = {
+                    'GOLDAMGBD228NLBM': '🥇 Gold',
+                    'PCOPPUSDM': '⛏️ Copper',
+                    'DCOILWTICO': '🛢️ Oil',
+                    'CPIAUCSL': '🛒 CPI (us)',
+                    'DGS10': '📈 10Y Yield'
+                };
+
+                for (const item of list.items) {
+                    try {
+                        const hRes = await fetch(`/api/v1/market/history?series_id=${item.series_id}`);
+                        const hData = await hRes.json();
+                        const obs = hData.observations;
+                        const latest = obs.length > 0 ? obs[obs.length - 1] : { date: '-', value: '-' };
+
+                        // Calculate small trend if possible
+                        let trend = '';
+                        if (obs.length > 1) {
+                            const prev = obs[obs.length - 2].value;
+                            if (latest.value > prev) trend = '<span class="text-success">▲</span>';
+                            else if (latest.value < prev) trend = '<span class="text-danger">▼</span>';
+                            else trend = '<span class="text-muted">=</span>';
+                        }
+
+                        const label = icons[item.series_id] || item.series_id;
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="ps-3 text-light">${label}</td>
+                            <td class="text-secondary small">${item.source}</td>
+                            <td class="text-end pe-3 font-monospace">${latest.value} ${trend}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // --- DASHBOARD LOGIC ---
+
+        // Helper to destroy old charts
+        function destroyCharts() {
+            ['chartCPI', 'chartYields', 'chartCheap', 'chartExpensive', 'chartDist', 'chartGold', 'chartCopper', 'chartOil'].forEach(id => {
+                if (chartInstances[id]) {
+                    chartInstances[id].destroy();
+                    chartInstances[id] = null;
+                }
+            });
+        }
+
+        async function renderDashboard() {
+            destroyCharts();
+
+            // 1. Fetch Macro Data
+            const cpiRes = await fetch('/api/v1/market/history?series_id=CPIAUCSL');
+            const cpiData = await cpiRes.json();
+            const yieldsRes = await fetch('/api/v1/market/history?series_id=DGS10');
+            const yieldsData = await yieldsRes.json();
+
+            // Commodities
+            const goldRes = await fetch('/api/v1/market/history?series_id=GOLDAMGBD228NLBM');
+            const goldData = await goldRes.json();
+            const copperRes = await fetch('/api/v1/market/history?series_id=PCOPPUSDM');
+            const copperData = await copperRes.json();
+            const oilRes = await fetch('/api/v1/market/history?series_id=DCOILWTICO');
+            const oilData = await oilRes.json();
+
+            // 2. Fetch Ranking (Get enough data for distributions)
+            const rankRes = await fetch('/api/v1/atc/ranking?top=50&denom=clp');
+            const rankData = await rankRes.json();
+            const items = rankData.items || [];
+
+            // --- Chart Refinements: Animation & Layout ---
+            const chartOptions = {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 1500, easing: 'easeOutQuart' },
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
+                    y: { grid: { display: false }, ticks: { color: '#c9d1d9', font: { size: 11 } } }
+                }
+            };
+
+            // Helper for simple line charts
+            const renderLine = (id, label, obs, color) => {
+                if (!document.getElementById(id)) return;
+                const data = obs || [];
+                chartInstances[id] = new Chart(document.getElementById(id), {
+                    type: 'line',
+                    data: {
+                        labels: data.map(o => o.date),
+                        datasets: [{
+                            label: label,
+                            data: data.map(o => o.value),
+                            borderColor: color,
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0,
+                            backgroundColor: color + '1A' // 10% opacity
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { display: false }, y: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } } }
+                    }
+                });
+            };
+
+            // --- Macro Charts ---
+            renderLine('chartCPI', 'CPI Points', cpiData.observations, '#ff6b6b');
+            renderLine('chartYields', 'Yield %', yieldsData.observations, '#5bc0de');
+
+            // --- Commodities Charts ---
+            renderLine('chartGold', 'USD/Oz', goldData.observations, '#ffc107'); // Gold
+            renderLine('chartCopper', 'USD/Ton', copperData.observations, '#e67e22'); // Copper/Orange
+            renderLine('chartOil', 'USD/Bbl', oilData.observations, '#f8f9fa'); // White/Grey
+
+            // --- Chart 3: Top 5 Cheapest ---
+            const top5 = items.slice(0, 5);
+            chartInstances['chartCheap'] = new Chart(document.getElementById('chartCheap'), {
+                type: 'bar',
+                data: {
+                    labels: top5.map(i => i.product),
+                    datasets: [{
+                        label: 'ATC (CLP)',
+                        data: top5.map(i => i.cost),
+                        backgroundColor: '#238636',
+                        borderColor: '#2ea043',
+                        borderWidth: 1
+                    }]
+                },
+                options: chartOptions
+            });
+
+            // --- Chart 4: Top 5 Expensive ---
+            // If we have items, sort desc
+            const expensive5 = [...items].sort((a, b) => b.cost - a.cost).slice(0, 5);
+            chartInstances['chartExpensive'] = new Chart(document.getElementById('chartExpensive'), {
+                type: 'bar',
+                data: {
+                    labels: expensive5.map(i => i.institution),
+                    datasets: [{
+                        label: 'ATC (CLP)',
+                        data: expensive5.map(i => i.cost),
+                        backgroundColor: '#a40e26',
+                        borderColor: '#da3633',
+                        borderWidth: 1
+                    }]
+                },
+                options: chartOptions
+            });
+
+            // --- Chart 5: Distribution & Business Model Viz ---
+            const costs = items.map(i => i.cost).filter(c => c !== null);
+            const avg = costs.reduce((a, b) => a + b, 0) / costs.length;
+            const max = Math.max(...costs);
+            const min = Math.min(...costs);
+            const savings = max - min;
+
+            // Render Distribution
+            chartInstances['chartDist'] = new Chart(document.getElementById('chartDist'), {
+                type: 'bar',
+                data: {
+                    labels: ['Lowest', 'Average', 'Highest'],
+                    datasets: [{
+                        label: 'Cost Spread',
+                        data: [min, avg, max],
+                        backgroundColor: ['#238636', '#d29922', '#a40e26'],
+                        borderColor: ['#2ea043', '#dbab09', '#da3633'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 1500, easing: 'easeOutBounce' },
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: `Potential Annual Savings: $${savings.toLocaleString('es-CL')} CLP`, color: '#f0f6fc', font: { size: 14 } }
+                    },
+                    scales: { x: { grid: { display: false } }, y: { grid: { color: '#30363d' } } }
+                }
+            });
+        }
+
+        // Initialize when Modal Opens (Fixes canvas size issues)
+        const chartsModal = document.getElementById('chartsModal');
+        chartsModal.addEventListener('shown.bs.modal', function () {
+            renderDashboard();
+        });
+
+        // Init page
+        loadRanking();
+        loadMarket();
+    </script>
+</body>
+
+</html>
