@@ -1,4 +1,5 @@
 import React from 'react';
+import { FaUserTie } from 'react-icons/fa';
 
 const Header = ({ onOpenDashboard }) => {
     return (
@@ -32,7 +33,7 @@ const Header = ({ onOpenDashboard }) => {
                             border: '2px solid rgba(255, 193, 7, 0.6)',
                         }}
                     >
-                        🧠 Scloda's Analysis
+                        <FaUserTie style={{ marginRight: '6px', marginBottom: '2px' }} /> Scloda's Analysis
                     </button>
                 </div>
             </div>

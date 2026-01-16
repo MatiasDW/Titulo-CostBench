@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FaUserTie } from 'react-icons/fa';
+import AssetIcon from './AssetIcon';
 
 /**
  * ModelComparison - Shows ML model performance with carousel navigation
@@ -7,44 +9,45 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // ========== CONSTANTS ==========
 const MODEL_INFO = {
-    'Auto ARIMA': { short: 'Auto ARIMA', explanation: 'Automatically finds the best combination of past values.', bestFor: 'Trending assets', icon: '📈' },
-    'ARIMA': { short: 'ARIMA', explanation: 'Uses past values to predict future.', bestFor: 'Stable trends', icon: '📈' },
-    'Theta': { short: 'Theta Method', explanation: 'Decomposes and smooths the series.', bestFor: 'Volatile assets', icon: '🌊' },
-    'ETS': { short: 'ETS', explanation: 'Error, Trend, Seasonality model.', bestFor: 'Seasonal data', icon: '🔄' },
-    'Naive': { short: 'Naïve', explanation: 'Uses last value as prediction.', bestFor: 'Random walks', icon: '🎯' }
+    'Auto ARIMA': { short: 'Auto ARIMA', explanation: 'Encuentra automáticamente la mejor combinación de valores pasados.', bestFor: 'Activos en tendencia', icon: '📈' },
+    'ARIMA': { short: 'ARIMA', explanation: 'Usa valores pasados para predecir el futuro.', bestFor: 'Tendencias estables', icon: '📈' },
+    'Theta': { short: 'Método Theta', explanation: 'Descompone y suaviza la serie.', bestFor: 'Activos volátiles', icon: '🌊' },
+    'ETS': { short: 'ETS', explanation: 'Error, Trend, Seasonality.', bestFor: 'Datos estacionales', icon: '🔄' },
+    'Naive': { short: 'Naïve', explanation: 'Usa el último valor como predicción.', bestFor: 'Caminatas aleatorias', icon: '🎯' }
 };
 
 const CONFIDENCE_BADGES = {
-    excellent: { emoji: '🟢', label: 'Excellent', color: '#fff', bg: 'rgba(56, 161, 105, 0.9)' },
-    good: { emoji: '🟡', label: 'Good', color: '#1a1a00', bg: 'rgba(236, 201, 75, 1)' },
-    volatile: { emoji: '🟠', label: 'Volatile', color: '#fff', bg: 'rgba(237, 137, 54, 0.9)' },
+    excellent: { emoji: '🟢', label: 'Excelente', color: '#fff', bg: 'rgba(56, 161, 105, 0.9)' },
+    good: { emoji: '🟡', label: 'Bueno', color: '#1a1a00', bg: 'rgba(236, 201, 75, 1)' },
+    volatile: { emoji: '🟠', label: 'Volátil', color: '#fff', bg: 'rgba(237, 137, 54, 0.9)' },
     experimental: { emoji: '🔴', label: 'Experimental', color: '#fff', bg: 'rgba(229, 62, 62, 0.9)' }
 };
 
 const METRIC_INFO = {
-    mae: { name: 'MAE', full: 'Mean Absolute Error' },
-    rmse: { name: 'RMSE', full: 'Root Mean Square Error' },
-    mape: { name: 'MAPE', full: 'Mean Absolute Percentage Error' }
+    mae: { name: 'MAE', full: 'Error Absoluto Medio' },
+    rmse: { name: 'RMSE', full: 'Raíz del Error Cuadrático Medio' },
+    mape: { name: 'MAPE', full: 'Error Porcentual Absoluto Medio' }
 };
 
+// Updated to use iconType for AssetIcon component instead of emojis
 const assetConfig = {
-    GOLD: { icon: '🥇', color: '#ffd700' },
-    COPPER: { icon: '🔶', color: '#b87333' },
-    OIL: { icon: '🛢️', color: '#2d3748' },
-    USDCLP: { icon: '💵', color: '#22c55e' },
-    UF: { icon: '📊', color: '#8b5cf6' },
-    BTC: { icon: '₿', color: '#f7931a' },
-    ETH: { icon: '⟠', color: '#627eea' }
+    GOLD: { iconType: 'gold', color: '#ffd700' },
+    COPPER: { iconType: 'copper', color: '#b87333' },
+    OIL: { iconType: 'oil', color: '#2d3748' },
+    USDCLP: { iconType: 'usdclp', color: '#22c55e' },
+    UF: { iconType: 'uf', color: '#8b5cf6' },
+    BTC: { iconType: 'btc', color: '#f7931a' },
+    ETH: { iconType: 'eth', color: '#627eea' }
 };
 
 const SCLODA_TIPS = {
-    GOLD: "Safe haven. Inversely correlated to USD.",
-    COPPER: "Industrial demand indicator. Watch China.",
-    OIL: "Geopolitical sensitivity. OPEC decisions matter.",
-    USDCLP: "Local macro key. BCCh rates influence.",
-    UF: "Inflation-indexed. Predictable short-term.",
-    BTC: "High volatility. Use with caution.",
-    ETH: "DeFi exposure. Correlated to BTC."
+    GOLD: "Refugio seguro. Inversamente correlacionado con USD.",
+    COPPER: "Indicador de demanda industrial. Ojo con China.",
+    OIL: "Sensible a geopolítica. Decisiones OPEP importan.",
+    USDCLP: "Clave macro local. Tasas BCCh influyen.",
+    UF: "Indexada a inflación. Predecible a corto plazo.",
+    BTC: "Alta volatilidad. Usar con precaución.",
+    ETH: "Exposición DeFi. Correlacionado a BTC."
 };
 
 const getDemoData = () => ({
@@ -71,6 +74,7 @@ const ModelComparison = () => {
     const [modelData, setModelData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [analyses, setAnalyses] = useState({}); // Cache for dynamic AI analyses
 
     const assets = modelData ? Object.keys(modelData.assets || {}) : [];
     const totalAssets = assets.length;
@@ -106,6 +110,55 @@ const ModelComparison = () => {
         fetchData();
     }, []);
 
+    // Fetch dynamic analysis for current asset
+    useEffect(() => {
+        if (!modelData || assets.length === 0) return;
+
+        const fetchAnalysis = async () => {
+            const currentAsset = assets[currentIndex];
+            const data = modelData.assets[currentAsset];
+
+            // Check cache
+            const cacheKey = `scloda_model_analysis_v2_${currentAsset}`;
+
+            if (analyses[currentAsset]) return; // Already in state
+
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                const { analysis, timestamp } = JSON.parse(cached);
+                if (Date.now() - timestamp < 24 * 60 * 60 * 1000) { // 24h cache for model choice
+                    setAnalyses(prev => ({ ...prev, [currentAsset]: analysis }));
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch('/api/v1/scloda/model-analysis', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        asset: currentAsset,
+                        model_name: data.bestModel,
+                        metrics: data.metrics
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    setAnalyses(prev => ({ ...prev, [currentAsset]: result }));
+                    localStorage.setItem(cacheKey, JSON.stringify({
+                        analysis: result,
+                        timestamp: Date.now()
+                    }));
+                }
+            } catch (err) {
+                console.error("Failed to fetch analysis", err);
+            }
+        };
+
+        fetchAnalysis();
+    }, [currentIndex, modelData, assets, analyses]);
+
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
@@ -115,16 +168,19 @@ const ModelComparison = () => {
     }
 
     if (!modelData || totalAssets === 0) {
-        return <div className="alert alert-info">No model data available</div>;
+        return <div className="alert alert-info">No hay datos de modelos disponibles</div>;
     }
+
+    const currentAssetKey = assets[currentIndex];
+    const currentAnalysis = analyses[currentAssetKey];
 
     return (
         <div className="p-3" style={{ background: 'transparent' }}>
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h4 className="text-white mb-1">📊 ML Model Performance</h4>
-                    <small className="text-white-50">Use ← → arrows or click cards to navigate</small>
+                    <h4 className="text-white mb-1">📊 Rendimiento de Modelos ML</h4>
+                    <small className="text-white-50">Usa flechas ← → o haz clic para navegar</small>
                 </div>
             </div>
 
@@ -162,7 +218,7 @@ const ModelComparison = () => {
                         const idx = (currentIndex + offset + totalAssets) % totalAssets;
                         const asset = assets[idx];
                         const data = modelData.assets[asset];
-                        const config = assetConfig[asset] || { icon: '📊', color: '#6b7280' };
+                        const config = assetConfig[asset] || { iconType: 'trend', color: '#6b7280' };
                         const isCurrent = offset === 0;
                         const modelInfo = MODEL_INFO[data.bestModel] || MODEL_INFO['Auto ARIMA'];
                         const confidence = CONFIDENCE_BADGES[data.confidence] || CONFIDENCE_BADGES.good;
@@ -199,7 +255,7 @@ const ModelComparison = () => {
                                         {/* Header */}
                                         <div className="d-flex justify-content-between align-items-center mb-3">
                                             <div className="d-flex align-items-center gap-2">
-                                                <span style={{ fontSize: '2.2rem' }}>{config.icon}</span>
+                                                <AssetIcon type={config.iconType} size={36} color={config.color} />
                                                 <span className="fw-bold text-white" style={{ fontSize: '1.5rem' }}>{asset}</span>
                                             </div>
                                             <span className="badge" style={{ background: confidence.bg, color: confidence.color }}>
@@ -246,7 +302,7 @@ const ModelComparison = () => {
                                                 {/* Mini Model Comparison Bars */}
                                                 <div className="mb-3">
                                                     <small className="text-white-50 d-block mb-2" style={{ fontSize: '0.7rem' }}>
-                                                        Model Comparison (lower = better)
+                                                        Comparación de Modelos (menor error = mejor)
                                                     </small>
                                                     <div className="d-flex flex-column gap-1">
                                                         {[
@@ -273,7 +329,7 @@ const ModelComparison = () => {
                                                                     />
                                                                 </div>
                                                                 <small style={{ fontSize: '0.6rem', color: model.best ? '#4ade80' : '#9ca3af', width: '35px', textAlign: 'right' }}>
-                                                                    {model.best ? '✓ Best' : `${Math.round(model.score)}%`}
+                                                                    {model.best ? '✓' : `${Math.round(model.score)}%`}
                                                                 </small>
                                                             </div>
                                                         ))}
@@ -292,9 +348,9 @@ const ModelComparison = () => {
                                                     <div className="d-flex align-items-start gap-2">
                                                         <span style={{ fontSize: '1.2rem' }}>💡</span>
                                                         <div>
-                                                            <small className="text-success fw-bold d-block mb-1">Scloda's Insight</small>
+                                                            <small className="text-success fw-bold d-block mb-1">Nota de Scloda</small>
                                                             <span style={{ color: '#d1d5db', fontSize: '0.9rem' }}>
-                                                                {SCLODA_TIPS[asset] || 'Analyze trends carefully.'}
+                                                                {SCLODA_TIPS[asset] || 'Analizar tendencias con cuidado.'}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -305,7 +361,7 @@ const ModelComparison = () => {
                                         {/* Side cards - minimal */}
                                         {!isCurrent && (
                                             <div className="text-center py-4">
-                                                <small className="text-white-50">Click to view</small>
+                                                <small className="text-white-50">Click para ver detalles</small>
                                             </div>
                                         )}
                                     </div>
@@ -352,29 +408,27 @@ const ModelComparison = () => {
                             width: '48px', height: '48px',
                             background: 'linear-gradient(135deg, #238636, #34d399)',
                             fontSize: '1.5rem'
-                        }}>🧠</div>
+                        }}>< FaUserTie size={24} color="#fff" /></div>
                         <div>
-                            <h5 className="text-success mb-1">Scloda's Analysis</h5>
-                            <small className="text-white-50">AI-powered insights on model selection</small>
+                            <h5 className="text-success mb-1">Análisis de Scloda (AI)</h5>
+                            <small className="text-white-50">Insights inteligentes sobre la selección del modelo para {currentAssetKey}</small>
                         </div>
                     </div>
 
                     <div className="row g-3">
                         <div className="col-md-6">
                             <div className="p-3 rounded" style={{ background: 'rgba(56,161,105,0.1)' }}>
-                                <h6 className="text-success mb-2">📊 Model Selection</h6>
-                                <p className="text-white-50 small mb-0">
-                                    Auto ARIMA was selected for most assets because it automatically
-                                    determines the optimal parameters for trend and seasonality.
+                                <h6 className="text-success mb-2">📊 Selección del Modelo</h6>
+                                <p className="text-white small mb-0">
+                                    {currentAnalysis ? currentAnalysis.selection_reason : "Analizando datos del modelo..."}
                                 </p>
                             </div>
                         </div>
                         <div className="col-md-6">
                             <div className="p-3 rounded" style={{ background: 'rgba(236,201,75,0.1)' }}>
-                                <h6 className="text-warning mb-2">⚠️ Confidence Notes</h6>
-                                <p className="text-white-50 small mb-0">
-                                    MAPE under 5% indicates good predictions.
-                                    Higher values for commodities are normal due to volatility.
+                                <h6 className="text-warning mb-2">⚠️ Nivel de Confianza</h6>
+                                <p className="text-white small mb-0">
+                                    {currentAnalysis ? currentAnalysis.confidence_note : "Calculando confiabilidad..."}
                                 </p>
                             </div>
                         </div>

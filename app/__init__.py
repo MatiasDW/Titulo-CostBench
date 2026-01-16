@@ -61,6 +61,7 @@ def create_app(config_name='default'):
     from app.blueprints.web import bp as web_bp
     from app.blueprints.ml_api import bp as ml_bp  # ML endpoints
     from app.blueprints.market_api import market_api  # Market data endpoints
+    from app.blueprints.scloda_chat import scloda_bp  # Scloda AI chat
     
     app.register_blueprint(cmf_bp, url_prefix='/api/v1/cmf')
     app.register_blueprint(sernac_bp, url_prefix='/api/v1/sernac')
@@ -69,6 +70,7 @@ def create_app(config_name='default'):
     app.register_blueprint(web_bp)    # uses prefix defined in bp (none, root)
     app.register_blueprint(ml_bp)     # ML API: /api/v1/models/*
     app.register_blueprint(market_api) # Market data: /api/v1/market/*
+    app.register_blueprint(scloda_bp)  # Scloda AI: /api/v1/scloda/*
 
     
     # Health check endpoint

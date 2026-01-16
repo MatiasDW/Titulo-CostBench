@@ -9,6 +9,7 @@ import MarketDashboard from './components/Dashboard/MarketDashboard';
 import AnimatedBackground from './components/AnimatedBackground'; // Animated BG
 import ChartCarousel from './components/ChartCarousel'; // Rotating charts
 import ModelComparison from './components/ModelComparison'; // ML Model Performance
+import SclodaChat from './components/SclodaChat'; // Scloda AI Chat
 import './index.css'; // Global styles
 
 const App = () => {
@@ -124,6 +125,9 @@ const App = () => {
         {/* Hidden Dashboard Modal */}
         <MarketDashboard items={items} macro={macro} />
       </div>
+
+      {/* Scloda AI Chat Widget */}
+      <SclodaChat />
     </div>
   );
 };

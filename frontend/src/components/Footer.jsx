@@ -15,16 +15,30 @@ const Footer = () => {
 
                 <hr className="border-secondary opacity-25 my-4" />
 
-                <div className="row">
-                    <div className="col-12">
-                        <div className="fred-disclaimer p-3 rounded border border-danger border-opacity-25 bg-danger bg-opacity-10">
+                <div className="row g-3">
+                    <div className="col-md-6">
+                        <div className="fred-disclaimer p-3 rounded border border-danger border-opacity-25 bg-danger bg-opacity-10 h-100">
                             <div className="d-flex align-items-start">
                                 <span className="fs-4 me-3">⚖️</span>
                                 <div>
-                                    <h6 className="text-uppercase fw-bold text-light mb-1" style={{ fontSize: '0.8rem', letterSpacing: '1px' }}>FRED® Data Disclaimer</h6>
-                                    <p className="mb-0 text-secondary small">
+                                    <h6 className="text-uppercase fw-bold text-light mb-1" style={{ fontSize: '0.75rem', letterSpacing: '1px' }}>FRED® Data Disclaimer</h6>
+                                    <p className="mb-0 text-secondary" style={{ fontSize: '0.7rem' }}>
                                         This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis.
-                                        All data provided is for informational purposes only. Trading financial assets involves high risk.
+                                        All data provided is for informational purposes only.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="col-md-6">
+                        <div className="bcch-disclaimer p-3 rounded border border-info border-opacity-25 bg-info bg-opacity-10 h-100">
+                            <div className="d-flex align-items-start">
+                                <span className="fs-4 me-3">🏛️</span>
+                                <div>
+                                    <h6 className="text-uppercase fw-bold text-light mb-1" style={{ fontSize: '0.75rem', letterSpacing: '1px' }}>Banco Central de Chile</h6>
+                                    <p className="mb-0 text-secondary" style={{ fontSize: '0.7rem' }}>
+                                        Datos UF/USDCLP provistos por la Base de Datos Estadísticos (BDE) del Banco Central de Chile.
+                                        Este producto no está respaldado ni certificado por el BCCh.
                                     </p>
                                 </div>
                             </div>

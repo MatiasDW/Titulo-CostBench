@@ -11,3 +11,4 @@ lxml
 gunicorn
 pydantic
 bcchapi
+httpx>=0.27.0

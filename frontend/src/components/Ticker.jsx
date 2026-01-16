@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import AssetIcon from './AssetIcon';
 import './Ticker.css'; // Make sure to create this CSS file
+
+// Mapping from series_id to AssetIcon type and display label
+const SERIES_CONFIG = {
+    'CPIAUCSL': { label: 'US CPI', type: 'cpi' },
+    'DGS10': { label: 'US 10Y', type: '10y' },
+    'GOLDAMGBD228NLBM': { label: 'Gold', type: 'gold' },
+    'PCOPPUSDM': { label: 'Copper', type: 'copper' },
+    'DCOILWTICO': { label: 'Oil (WTI)', type: 'oil' },
+    'SLVPRUSD': { label: 'Silver', type: 'silver' },
+    'BTC-CLP': { label: 'Bitcoin', type: 'btc' },
+    'ETH-CLP': { label: 'Ether', type: 'eth' },
+    'USDCLP': { label: 'USD/CLP', type: 'usdclp' },
+    'UF': { label: 'UF', type: 'uf' }
+};
 
 const Ticker = () => {
     const [items, setItems] = useState([]);
@@ -24,19 +39,13 @@ const Ticker = () => {
                         const obs = hRes.data.observations;
                         const latest = obs.length > 0 ? obs[obs.length - 1] : { value: 'N/A' };
 
-                        let label = item.series_id;
-                        let icon = '📈';
+                        const config = SERIES_CONFIG[item.series_id] || { label: item.series_id, type: 'trend' };
 
-                        if (item.series_id === 'CPIAUCSL') { label = 'US CPI'; icon = '🇺🇸'; }
-                        if (item.series_id === 'DGS10') { label = 'US 10Y'; icon = '🏦'; }
-                        if (item.series_id === 'GOLDAMGBD228NLBM') { label = 'Gold'; icon = '🥇'; }
-                        if (item.series_id === 'PCOPPUSDM') { label = 'Copper'; icon = '⛏️'; }
-                        if (item.series_id === 'DCOILWTICO') { label = 'Oil (WTI)'; icon = '🛢️'; }
-                        if (item.series_id === 'SLVPRUSD') { label = 'Silver'; icon = '🥈'; }
-                        if (item.series_id === 'BTC-CLP') { label = 'Bitcoin'; icon = '🪙'; } // If implemented
-                        if (item.series_id === 'ETH-CLP') { label = 'Ether'; icon = '💠'; }
-
-                        return { label, value: latest.value, icon };
+                        return {
+                            label: config.label,
+                            value: latest.value,
+                            iconType: config.type
+                        };
                     } catch (e) {
                         return null;
                     }
@@ -62,7 +71,9 @@ const Ticker = () => {
                 <div className="ticker-move">
                     {items.map((item, idx) => (
                         <div key={idx} className="ticker-item me-5 d-inline-block">
-                            <span className="me-2">{item.icon}</span>
+                            <span className="me-2">
+                                <AssetIcon type={item.iconType} size={16} />
+                            </span>
                             <span className="fw-bold me-2">{item.label}:</span>
                             <span className="font-monospace text-warning">{item.value}</span>
                         </div>
