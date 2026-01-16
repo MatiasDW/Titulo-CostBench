@@ -50,11 +50,13 @@ const SCLODA_TIPS = {
 const getDemoData = () => ({
     lastUpdated: new Date().toISOString(),
     assets: {
-        GOLD: { bestModel: 'Auto ARIMA', metrics: { mae: 12.5, rmse: 15.2, mape: 0.65 }, confidence: 'excellent' },
-        COPPER: { bestModel: 'Auto ARIMA', metrics: { mae: 180, rmse: 220, mape: 6.14 }, confidence: 'volatile' },
-        OIL: { bestModel: 'ARIMA', metrics: { mae: 1.2, rmse: 1.8, mape: 1.92 }, confidence: 'excellent' },
-        USDCLP: { bestModel: 'Auto ARIMA', metrics: { mae: 8.5, rmse: 12.3, mape: 4.22 }, confidence: 'good' },
-        UF: { bestModel: 'Auto ARIMA', metrics: { mae: 250, rmse: 253, mape: 0.63 }, confidence: 'excellent' }
+        GOLD: { bestModel: 'Auto ARIMA', metrics: { mae: 12.5, rmse: 15.2, mape: 0.65 }, confidence: 'excellent', reason: 'Serie muy estable, tendencia suave.' },
+        COPPER: { bestModel: 'Theta', metrics: { mae: 180, rmse: 220, mape: 6.14 }, confidence: 'volatile', reason: 'Ciclos industriales marcados, Theta respondió mejor en backtesting.' },
+        OIL: { bestModel: 'Naive', metrics: { mae: 1.2, rmse: 1.8, mape: 1.92 }, confidence: 'excellent', reason: 'Random walk: "mañana se parece a hoy" superó modelos complejos.' },
+        USDCLP: { bestModel: 'Auto ARIMA', metrics: { mae: 8.5, rmse: 12.3, mape: 4.22 }, confidence: 'good', reason: 'FX con ruido, pero ARIMA captura autocorrelación de corto plazo.' },
+        UF: { bestModel: 'ARIMA(0,2,2)', metrics: { mae: 250, rmse: 253, mape: 0.63 }, confidence: 'excellent', reason: 'Indexada a inflación. Muy predecible en horizontes cortos.', isRuleBased: true },
+        BTC: { bestModel: 'Auto ARIMA', metrics: { mae: 2500, rmse: 3200, mape: 8.5 }, confidence: 'volatile', reason: 'Alta volatilidad, cambios de régimen frecuentes.', isHighVolatility: true },
+        ETH: { bestModel: 'Auto ARIMA', metrics: { mae: 180, rmse: 240, mape: 9.2 }, confidence: 'volatile', reason: 'Similar a BTC, con mayor ruido relativo.', isHighVolatility: true }
     }
 });
 
@@ -173,7 +175,7 @@ const ModelComparison = () => {
                                     scale: isCurrent ? 1 : 0.85,
                                     x: 0
                                 }}
-                                transition={{ type: 'spring', stiffness: 250, damping: 25 }}
+                                transition={{ type: 'spring', stiffness: 150, damping: 35, mass: 1.2 }}
                                 onClick={() => {
                                     if (offset === -1) goPrev();
                                     if (offset === 1) goNext();
@@ -213,8 +215,7 @@ const ModelComparison = () => {
                                                         {modelInfo.icon} {data.bestModel}
                                                     </span>
                                                     <p className="text-white-50 small mt-2 mb-0" style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>
-                                                        {modelInfo.explanation}
-                                                        <span className="text-success"> Best for: {modelInfo.bestFor}</span>
+                                                        {data.reason || modelInfo.explanation}
                                                     </p>
                                                 </div>
 
