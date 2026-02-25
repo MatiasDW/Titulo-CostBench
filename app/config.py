@@ -9,6 +9,15 @@ class Config:
     # Application
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     
+    # Database
+    SQLALCHEMY_DATABASE_URI = os.getenv(
+        'DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/costbench'
+    )
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
+    # JWT
+    JWT_EXPIRY_HOURS = int(os.getenv('JWT_EXPIRY_HOURS', '24'))
+    
     # Paths
     BASE_DIR = Path(__file__).parent.parent
     DATA_DIR = BASE_DIR / 'data'

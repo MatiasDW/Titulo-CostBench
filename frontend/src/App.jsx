@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 import Header from './components/Header';
-import Ticker from './components/Ticker'; // Import Ticker
-import Footer from './components/Footer'; // Import Footer
+import Ticker from './components/Ticker';
+import Footer from './components/Footer';
 import Filters from './components/Filters';
 import RankingTable from './components/RankingTable';
 import MarketDashboard from './components/Dashboard/MarketDashboard';
-import AnimatedBackground from './components/AnimatedBackground'; // Animated BG
-import ChartCarousel from './components/ChartCarousel'; // Rotating charts
-import ModelComparison from './components/ModelComparison'; // ML Model Performance
-import SclodaChat from './components/SclodaChat'; // Scloda AI Chat
-import './index.css'; // Global styles
+import AnimatedBackground from './components/AnimatedBackground';
+import ChartCarousel from './components/ChartCarousel';
+import ModelComparison from './components/ModelComparison';
+import SclodaChat from './components/SclodaChat';
+import ProtectedRoute from './components/Auth/ProtectedRoute';
+import LoginPage from './components/Auth/LoginPage';
+import RegisterPage from './components/Auth/RegisterPage';
+import './index.css';
 
 const App = () => {
   // State
@@ -77,28 +81,25 @@ const App = () => {
     fetchData();
   };
 
-  return (
-    <div className="container-fluid p-0"> {/* Full width wrapper */}
-      <AnimatedBackground /> {/* Dynamic Finance Background */}
-      <Ticker /> {/* Top Ticker */}
+  // Dashboard content (extracted for readability inside Routes)
+  const dashboard = (
+    <div className="container-fluid p-0">
+      <AnimatedBackground />
+      <Ticker />
 
-      {/* Header Full Width Wrapper */}
       <div className="container-fluid px-4 pt-4">
         <Header onOpenDashboard={() => { }} />
       </div>
 
-      {/* Live Charts Grid - Main Page */}
       <div className="container-fluid px-4 mb-4">
         <ChartCarousel macro={macro} />
       </div>
 
-      {/* ML Model Performance Section */}
       <div className="container-fluid px-4 mb-4">
         <ModelComparison />
       </div>
 
       <div className="container py-3">
-
         <Filters
           limit={limit}
           onLimitChange={setLimit}
@@ -121,14 +122,21 @@ const App = () => {
         </div>
 
         <Footer />
-
-        {/* Hidden Dashboard Modal */}
         <MarketDashboard items={items} macro={macro} />
       </div>
 
-      {/* Scloda AI Chat Widget */}
       <SclodaChat />
     </div>
+  );
+
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/*" element={
+        <ProtectedRoute>{dashboard}</ProtectedRoute>
+      } />
+    </Routes>
   );
 };
 

@@ -32,6 +32,8 @@ ENV/
 # Data files
 data/
 *.parquet
+db/data/
+logs.log
 
 # IDE
 .vscode/

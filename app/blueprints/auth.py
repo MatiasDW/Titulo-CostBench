@@ -1,0 +1,156 @@
+"""
+Auth Blueprint – /api/v1/auth
+
+Endpoints:
+  POST /register   – create account
+  POST /login      – authenticate and set JWT cookie
+  POST /logout     – clear JWT cookie
+  GET  /me         – return current user from cookie
+  PUT  /profile    – update risk_profile
+"""
+from functools import wraps
+
+from flask import Blueprint, g, jsonify, request, make_response, current_app
+
+from app.models.user import User
+from app.services.auth_service import (
+    register_user,
+    authenticate_user,
+    generate_token,
+    decode_token,
+    update_risk_profile,
+)
+from app.ml.logging_utils import get_logger
+
+logger = get_logger("auth.api")
+
+auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
+
+# Cookie name
+TOKEN_COOKIE = "access_token"
+
+
+# ------------------------------------------------------------------
+# Decorator: require_auth
+# ------------------------------------------------------------------
+
+def require_auth(fn):
+    """Extract JWT from HttpOnly cookie and inject ``g.current_user``."""
+
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        token = request.cookies.get(TOKEN_COOKIE)
+
+        if not token:
+            return jsonify({"error": "Autenticación requerida."}), 401
+
+        payload = decode_token(token)
+        if payload is None:
+            return jsonify({"error": "Sesión expirada o inválida."}), 401
+
+        user = User.query.get(payload["sub"])
+        if user is None or not user.is_active:
+            return jsonify({"error": "Usuario no encontrado."}), 401
+
+        g.current_user = user
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
+# ------------------------------------------------------------------
+# Decorator: require_admin (must be used AFTER require_auth)
+# ------------------------------------------------------------------
+
+def require_admin(fn):
+    """Reject non-admin users with 403."""
+
+    @wraps(fn)
+    @require_auth
+    def wrapper(*args, **kwargs):
+        if not g.current_user.is_admin:
+            return jsonify({"error": "Acceso restringido a administradores."}), 403
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
+# ------------------------------------------------------------------
+# Helper: set JWT cookie on response
+# ------------------------------------------------------------------
+
+def _set_token_cookie(response, user_id: int):
+    """Attach an HttpOnly JWT cookie to *response*."""
+    token = generate_token(user_id)
+    is_prod = current_app.config.get("ENV") == "production" or not current_app.debug
+    expiry_hours = current_app.config.get("JWT_EXPIRY_HOURS", 24)
+
+    response.set_cookie(
+        TOKEN_COOKIE,
+        value=token,
+        httponly=True,
+        secure=is_prod,
+        samesite="Lax",
+        max_age=expiry_hours * 3600,
+        path="/",
+    )
+    return response
+
+
+# ------------------------------------------------------------------
+# Endpoints
+# ------------------------------------------------------------------
+
+@auth_bp.route("/register", methods=["POST"])
+def register():
+    """POST /api/v1/auth/register"""
+    data = request.get_json(silent=True) or {}
+    body, status = register_user(data.get("email", ""), data.get("password", ""))
+
+    response = make_response(jsonify(body), status)
+
+    # Set cookie on successful registration
+    if status == 201:
+        _set_token_cookie(response, body["user"]["id"])
+
+    return response
+
+
+@auth_bp.route("/login", methods=["POST"])
+def login():
+    """POST /api/v1/auth/login"""
+    data = request.get_json(silent=True) or {}
+    body, status = authenticate_user(data.get("email", ""), data.get("password", ""))
+
+    response = make_response(jsonify(body), status)
+
+    if status == 200:
+        _set_token_cookie(response, body["user"]["id"])
+
+    return response
+
+
+@auth_bp.route("/logout", methods=["POST"])
+def logout():
+    """POST /api/v1/auth/logout – clear the JWT cookie."""
+    response = make_response(jsonify({"message": "Sesión cerrada."}), 200)
+    response.delete_cookie(TOKEN_COOKIE, path="/")
+    return response
+
+
+@auth_bp.route("/me", methods=["GET"])
+@require_auth
+def me():
+    """GET /api/v1/auth/me – return current user data."""
+    return jsonify({"user": g.current_user.to_dict()})
+
+
+@auth_bp.route("/profile", methods=["PUT"])
+@require_auth
+def profile():
+    """PUT /api/v1/auth/profile – update risk_profile."""
+    data = request.get_json(silent=True) or {}
+    body, status = update_risk_profile(
+        g.current_user.id, data.get("risk_profile", "")
+    )
+    return jsonify(body), status

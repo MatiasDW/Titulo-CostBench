@@ -176,19 +176,19 @@ const AnimatedBackground = () => {
             <div className="ticker-tape">
                 <motion.div
                     className="ticker-content"
-                    animate={{ x: [0, -2000] }}
+                    animate={{ x: [0, -3000] }}
                     transition={{
-                        duration: 30,
+                        duration: 40,
                         repeat: Infinity,
                         ease: 'linear',
                     }}
                 >
-                    {['BTC ▲ +2.4%', 'ETH ▼ -0.8%', 'GOLD ▲ +0.3%', 'COPPER ▲ +1.2%', 'USD/CLP ▼ -0.5%', 'UF ▲ +0.1%', 'OIL ▼ -1.8%', 'S&P500 ▲ +0.6%'].map((item, i) => (
+                    {['BTC ▲ +2.4%', 'ETH ▼ -0.8%', 'GOLD ▲ +0.3%', 'COPPER ▲ +1.2%', 'USD/CLP ▼ -0.5%', 'UF ▲ +0.1%', 'OIL ▼ -1.8%', 'S&P500 ▲ +0.6%', '🏠 Hipotecario ▼ -0.2%', '🏢 M² Santiago ▲ +1.1%', '📊 CAE ▼ -0.3%', '🏗️ PIB Construcción ▲ +0.8%'].map((item, i) => (
                         <span key={i} style={{ marginRight: '80px', opacity: 0.4, fontSize: '0.85rem', fontFamily: 'monospace' }}>
                             {item}
                         </span>
                     ))}
-                    {['BTC ▲ +2.4%', 'ETH ▼ -0.8%', 'GOLD ▲ +0.3%', 'COPPER ▲ +1.2%', 'USD/CLP ▼ -0.5%', 'UF ▲ +0.1%', 'OIL ▼ -1.8%', 'S&P500 ▲ +0.6%'].map((item, i) => (
+                    {['BTC ▲ +2.4%', 'ETH ▼ -0.8%', 'GOLD ▲ +0.3%', 'COPPER ▲ +1.2%', 'USD/CLP ▼ -0.5%', 'UF ▲ +0.1%', 'OIL ▼ -1.8%', 'S&P500 ▲ +0.6%', '🏠 Hipotecario ▼ -0.2%', '🏢 M² Santiago ▲ +1.1%', '📊 CAE ▼ -0.3%', '🏗️ PIB Construcción ▲ +0.8%'].map((item, i) => (
                         <span key={`dup-${i}`} style={{ marginRight: '80px', opacity: 0.4, fontSize: '0.85rem', fontFamily: 'monospace' }}>
                             {item}
                         </span>
@@ -196,7 +196,7 @@ const AnimatedBackground = () => {
                 </motion.div>
             </div>
 
-            {/* Dollar Signs Floating */}
+            {/* Dollar Signs + Real Estate Icons Floating */}
             {Array.from({ length: 8 }, (_, i) => (
                 <motion.div
                     key={`dollar-${i}`}
@@ -228,6 +228,78 @@ const AnimatedBackground = () => {
                     $
                 </motion.div>
             ))}
+
+            {/* Floating Real Estate Icons */}
+            {['🏠', '🏢', '🏗️', '🔑', '📐', '🏘️'].map((icon, i) => (
+                <motion.div
+                    key={`realty-${i}`}
+                    initial={{
+                        x: (i * 280) + Math.random() * 150,
+                        y: (typeof window !== 'undefined' ? window.innerHeight : 1080) + 80,
+                        opacity: 0,
+                    }}
+                    animate={{
+                        y: -120,
+                        opacity: [0, 0.12, 0.12, 0],
+                    }}
+                    transition={{
+                        duration: 18 + Math.random() * 12,
+                        repeat: Infinity,
+                        delay: 2 + Math.random() * 8,
+                        ease: 'linear'
+                    }}
+                    style={{
+                        position: 'absolute',
+                        fontSize: '1.6rem',
+                        pointerEvents: 'none',
+                        filter: 'grayscale(0.3)',
+                    }}
+                >
+                    {icon}
+                </motion.div>
+            ))}
+
+            {/* City Skyline Silhouette */}
+            <svg
+                className="skyline-bg"
+                viewBox="0 0 1200 200"
+                preserveAspectRatio="none"
+                style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '18%',
+                    opacity: 0.06,
+                    pointerEvents: 'none',
+                }}
+            >
+                <motion.path
+                    d="M0,200 L0,160 L40,160 L40,120 L55,120 L55,100 L70,100 L70,120 L90,120 L90,140 L120,140 L120,90 L135,90 L135,70 L145,70 L145,50 L155,50 L155,70 L165,70 L165,90 L180,90 L180,130 L210,130 L210,110 L225,110 L225,80 L235,80 L235,60 L245,60 L245,80 L260,80 L260,110 L290,110 L290,150 L320,150 L320,100 L335,100 L335,65 L345,65 L345,45 L360,35 L375,45 L375,65 L385,65 L385,100 L420,100 L420,130 L460,130 L460,85 L475,85 L475,55 L490,55 L490,40 L510,40 L510,55 L525,55 L525,85 L560,85 L560,120 L590,120 L590,95 L610,95 L610,70 L625,70 L625,50 L640,45 L655,50 L655,70 L670,70 L670,95 L700,95 L700,140 L740,140 L740,110 L755,110 L755,75 L770,75 L770,55 L785,55 L785,35 L800,30 L815,35 L815,55 L830,55 L830,75 L845,75 L845,110 L880,110 L880,130 L920,130 L920,100 L940,100 L940,70 L955,70 L955,90 L975,90 L975,120 L1010,120 L1010,145 L1050,145 L1050,110 L1070,110 L1070,80 L1085,80 L1085,60 L1100,55 L1115,60 L1115,80 L1130,80 L1130,110 L1160,110 L1160,140 L1200,140 L1200,200 Z"
+                    fill="#58a6ff"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 2, delay: 1 }}
+                />
+                {/* Window lights */}
+                {Array.from({ length: 25 }, (_, i) => (
+                    <motion.rect
+                        key={`win-${i}`}
+                        x={50 + (i * 46) % 1100}
+                        y={80 + (i * 17) % 90}
+                        width="4"
+                        height="5"
+                        fill="#ffc107"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: [0.3, 0.8, 0.3] }}
+                        transition={{
+                            duration: 2 + Math.random() * 3,
+                            repeat: Infinity,
+                            delay: Math.random() * 4,
+                        }}
+                    />
+                ))}
+            </svg>
 
             {/* Gradient Overlay - Enhanced */}
             <div
