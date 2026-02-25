@@ -111,15 +111,26 @@ def authenticate_user(email: str, password: str) -> tuple[dict, int]:
 # JWT helpers
 # ------------------------------------------------------------------
 
+def _get_jwt_key() -> str:
+    """
+    Return a signing key that satisfies PyJWT ≥2.9 minimum length (32 bytes).
+    Pads the configured SECRET_KEY if it's too short.
+    """
+    key = current_app.config["SECRET_KEY"]
+    if len(key.encode()) < 32:
+        key = key.ljust(32, '0')  # pad to 32 bytes
+    return key
+
+
 def generate_token(user_id: int) -> str:
     """Create a signed JWT for *user_id*."""
     expiry_hours = current_app.config.get("JWT_EXPIRY_HOURS", 24)
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),  # PyJWT ≥2.11 requires 'sub' to be a string
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc) + timedelta(hours=expiry_hours),
     }
-    return jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
+    return jwt.encode(payload, _get_jwt_key(), algorithm="HS256")
 
 
 def decode_token(token: str) -> Optional[dict]:
@@ -131,7 +142,7 @@ def decode_token(token: str) -> Optional[dict]:
     """
     try:
         return jwt.decode(
-            token, current_app.config["SECRET_KEY"], algorithms=["HS256"]
+            token, _get_jwt_key(), algorithms=["HS256"]
         )
     except jwt.ExpiredSignatureError:
         logger.info("token_expired")

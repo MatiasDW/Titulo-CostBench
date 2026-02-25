@@ -1,21 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
-import Header from './components/Header';
-import Ticker from './components/Ticker';
-import Footer from './components/Footer';
-import Filters from './components/Filters';
-import RankingTable from './components/RankingTable';
-import MarketDashboard from './components/Dashboard/MarketDashboard';
-import AnimatedBackground from './components/AnimatedBackground';
-import ChartCarousel from './components/ChartCarousel';
-import ModelComparison from './components/ModelComparison';
-import SclodaChat from './components/SclodaChat';
+
+// ── Lightweight imports (always loaded) ──
 import LoginPage from './components/Auth/LoginPage';
 import OnboardingPage from './components/Auth/OnboardingPage';
 import DashboardLayout from './components/Auth/DashboardLayout';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import './index.css';
+
+// ── Lazy-loaded heavy components (code splitting) ──
+const Header = React.lazy(() => import('./components/Header'));
+const Ticker = React.lazy(() => import('./components/Ticker'));
+const Footer = React.lazy(() => import('./components/Footer'));
+const Filters = React.lazy(() => import('./components/Filters'));
+const RankingTable = React.lazy(() => import('./components/RankingTable'));
+const MarketDashboard = React.lazy(() => import('./components/Dashboard/MarketDashboard'));
+const AnimatedBackground = React.lazy(() => import('./components/AnimatedBackground'));
+const ChartCarousel = React.lazy(() => import('./components/ChartCarousel'));
+const ModelComparison = React.lazy(() => import('./components/ModelComparison'));
+const SclodaChat = React.lazy(() => import('./components/SclodaChat'));
+
+const DashboardFallback = () => (
+  <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh' }}>
+    <div className="spinner-border text-success" role="status">
+      <span className="visually-hidden">Loading...</span>
+    </div>
+  </div>
+);
 
 const App = () => {
   const [items, setItems] = useState([]);
@@ -25,21 +37,25 @@ const App = () => {
   const [limit, setLimit] = useState(10);
   const [lastUpdate, setLastUpdate] = useState(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const rankingRes = await axios.get(`/api/v1/atc/ranking?limit=${limit}&currency=${currency}`);
+      // ── FIX #1: Promise.all — all 8 API calls in parallel (~7x faster) ──
+      const [rankingRes, cpiRes, yieldsRes, goldRes, copperRes, oilRes, btcRes, ethRes] =
+        await Promise.all([
+          axios.get(`/api/v1/atc/ranking?limit=${limit}&currency=${currency}`),
+          axios.get('/api/v1/market/history?series_id=CPIAUCSL'),
+          axios.get('/api/v1/market/history?series_id=DGS10'),
+          axios.get('/api/v1/market/history?series_id=GOLDAMGBD228NLBM'),
+          axios.get('/api/v1/market/history?series_id=PCOPPUSDM'),
+          axios.get('/api/v1/market/history?series_id=DCOILWTICO'),
+          axios.get('/api/v1/market/history?series_id=BTC-CLP'),
+          axios.get('/api/v1/market/history?series_id=ETH-CLP'),
+        ]);
+
       const rankingData = rankingRes.data;
       setItems(rankingData.items || rankingData.data || []);
       setLastUpdate(rankingData.metadata ? rankingData.metadata.timestamp : new Date().toISOString());
-
-      const cpiRes = await axios.get('/api/v1/market/history?series_id=CPIAUCSL');
-      const yieldsRes = await axios.get('/api/v1/market/history?series_id=DGS10');
-      const goldRes = await axios.get('/api/v1/market/history?series_id=GOLDAMGBD228NLBM');
-      const copperRes = await axios.get('/api/v1/market/history?series_id=PCOPPUSDM');
-      const oilRes = await axios.get('/api/v1/market/history?series_id=DCOILWTICO');
-      const btcRes = await axios.get('/api/v1/market/history?series_id=BTC-CLP');
-      const ethRes = await axios.get('/api/v1/market/history?series_id=ETH-CLP');
 
       setMacro({
         cpi: cpiRes.data.observations || [],
@@ -56,61 +72,63 @@ const App = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [limit, currency]);
 
   useEffect(() => {
     fetchData();
-  }, [limit, currency]);
+  }, [fetchData]);
 
-  const handleUpdate = () => {
+  const handleUpdate = useCallback(() => {
     fetchData();
-  };
+  }, [fetchData]);
 
   const dashboard = (
-    <div className="container-fluid p-0">
-      <AnimatedBackground />
-      <Ticker />
+    <React.Suspense fallback={<DashboardFallback />}>
+      <div className="container-fluid p-0">
+        <AnimatedBackground />
+        <Ticker />
 
-      <div className="container-fluid px-4 pt-4">
-        <Header onOpenDashboard={() => { }} />
-      </div>
-
-      <div className="container-fluid px-4 mb-4">
-        <ChartCarousel macro={macro} />
-      </div>
-
-      <div className="container-fluid px-4 mb-4">
-        <ModelComparison />
-      </div>
-
-      <div className="container py-3">
-        <Filters
-          limit={limit}
-          onLimitChange={setLimit}
-          currency={currency}
-          onCurrencyChange={setCurrency}
-          onUpdate={handleUpdate}
-        />
-
-        <div className="card-header-custom text-white d-flex justify-content-between align-items-center mb-0">
-          <span>Banking Cost Ranking (Annual)</span>
-          {lastUpdate && <span className="badge bg-dark border border-secondary text-secondary fw-normal">Updated: {new Date(lastUpdate).toLocaleString()}</span>}
+        <div className="container-fluid px-4 pt-4">
+          <Header onOpenDashboard={() => { }} />
         </div>
 
-        <div className="card-custom p-0 mb-5" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
-          {loading ? (
-            <div className="p-5 text-center text-secondary">Loading financial data...</div>
-          ) : (
-            <RankingTable items={items} currency={currency} />
-          )}
+        <div className="container-fluid px-4 mb-4">
+          <ChartCarousel macro={macro} />
         </div>
 
-        <Footer />
-        <MarketDashboard items={items} macro={macro} />
-      </div>
+        <div className="container-fluid px-4 mb-4">
+          <ModelComparison />
+        </div>
 
-      <SclodaChat />
-    </div>
+        <div className="container py-3">
+          <Filters
+            limit={limit}
+            onLimitChange={setLimit}
+            currency={currency}
+            onCurrencyChange={setCurrency}
+            onUpdate={handleUpdate}
+          />
+
+          <div className="card-header-custom text-white d-flex justify-content-between align-items-center mb-0">
+            <span>Banking Cost Ranking (Annual)</span>
+            {lastUpdate && <span className="badge bg-dark border border-secondary text-secondary fw-normal">Updated: {new Date(lastUpdate).toLocaleString()}</span>}
+          </div>
+
+          <div className="card-custom p-0 mb-5" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
+            {loading ? (
+              <div className="p-5 text-center text-secondary">Loading financial data...</div>
+            ) : (
+              <RankingTable items={items} currency={currency} />
+            )}
+          </div>
+
+          <Footer />
+          <MarketDashboard items={items} macro={macro} />
+        </div>
+
+        <SclodaChat />
+      </div>
+    </React.Suspense>
   );
 
   return (

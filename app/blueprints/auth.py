@@ -48,7 +48,7 @@ def require_auth(fn):
         if payload is None:
             return jsonify({"error": "Sesión expirada o inválida."}), 401
 
-        user = User.query.get(payload["sub"])
+        user = User.query.get(int(payload["sub"]))
         if user is None or not user.is_active:
             return jsonify({"error": "Usuario no encontrado."}), 401
 
@@ -82,7 +82,7 @@ def require_admin(fn):
 def _set_token_cookie(response, user_id: int):
     """Attach an HttpOnly JWT cookie to *response*."""
     token = generate_token(user_id)
-    is_prod = current_app.config.get("ENV") == "production" or not current_app.debug
+    is_prod = current_app.config.get("FLASK_ENV") == "production"
     expiry_hours = current_app.config.get("JWT_EXPIRY_HOURS", 24)
 
     response.set_cookie(
