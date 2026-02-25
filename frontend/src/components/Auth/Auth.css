@@ -101,7 +101,8 @@
     color: #58a6ff;
 }
 
-.auth-field input {
+.auth-field input,
+.auth-field .auth-select {
     width: 100%;
     padding: 0.75rem 0.75rem 0.75rem 2.5rem;
     background: rgba(13, 17, 23, 0.8);
@@ -116,15 +117,33 @@
     color: #484f58;
 }
 
-.auth-field input:focus {
+.auth-field input:focus,
+.auth-field .auth-select:focus {
     outline: none;
     border-color: #58a6ff;
     background: rgba(13, 17, 23, 1);
     box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.12);
 }
 
-.auth-field input:disabled {
+.auth-field input:disabled,
+.auth-field .auth-select:disabled {
     opacity: 0.5;
+}
+
+/* Select dropdown style */
+.auth-select {
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b949e' d='M6 8.5L1 3.5h10L6 8.5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 2.5rem;
+}
+
+.auth-select option {
+    background: #0d1117;
+    color: #e6edf3;
 }
 
 /* Submit button */
@@ -162,14 +181,82 @@
     color: #8b949e;
 }
 
-.auth-footer-text a {
+.auth-footer-text a,
+.auth-link-btn {
     color: #58a6ff;
     text-decoration: none;
     font-weight: 500;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-size: inherit;
 }
 
-.auth-footer-text a:hover {
+.auth-footer-text a:hover,
+.auth-link-btn:hover {
     text-decoration: underline;
+}
+
+
+/* ──────────────────────────────────────────────
+   SignUp Modal
+   ────────────────────────────────────────────── */
+
+.signup-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.signup-modal {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    background: rgba(22, 27, 34, 0.95);
+    backdrop-filter: blur(24px);
+    border: 1px solid #30363d;
+    border-radius: 14px;
+    padding: 2.25rem 2rem 1.75rem;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+.signup-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: none;
+    border: none;
+    color: #8b949e;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.signup-close:hover {
+    color: #e6edf3;
+}
+
+.signup-title {
+    color: #e6edf3;
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    text-align: center;
+}
+
+.signup-subtitle {
+    text-align: center;
+    color: #8b949e;
+    font-size: 0.88rem;
+    margin-bottom: 1.5rem;
 }
 
 

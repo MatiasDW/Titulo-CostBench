@@ -24,7 +24,7 @@ logger = get_logger("auth.service")
 # Registration
 # ------------------------------------------------------------------
 
-def register_user(email: str, password: str) -> tuple[dict, int]:
+def register_user(email: str, password: str, risk_profile: str = None) -> tuple[dict, int]:
     """
     Create a new user.
 
@@ -40,9 +40,18 @@ def register_user(email: str, password: str) -> tuple[dict, int]:
     if len(password) < 8:
         return {"error": "La contraseña debe tener al menos 8 caracteres."}, 400
 
+    # Validate risk_profile if provided
+    if risk_profile and risk_profile not in VALID_RISK_PROFILES:
+        return {
+            "error": f"Perfil inválido.  Opciones: {', '.join(VALID_RISK_PROFILES)}"
+        }, 400
+
     try:
         user = User(email=email)
         user.set_password(password)
+
+        if risk_profile:
+            user.risk_profile = risk_profile
 
         db.session.add(user)
         db.session.commit()

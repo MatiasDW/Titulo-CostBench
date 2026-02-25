@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -9,9 +9,10 @@ import {
 } from 'react-icons/fa';
 import { GiGoldBar, GiHouse, GiModernCity, GiFarmTractor } from 'react-icons/gi';
 import AnimatedBackground from '../AnimatedBackground';
+import SignUpModal from './SignUpModal';
 import './Auth.css';
 
-// Floating icons specific to auth pages: finance + real estate + security
+// Floating icons for the auth background
 const AUTH_FLOATING_ICONS = [
     { Icon: FaBitcoin, color: '#f7931a', size: 32 },
     { Icon: GiGoldBar, color: '#ffd700', size: 34 },
@@ -22,7 +23,7 @@ const AUTH_FLOATING_ICONS = [
     { Icon: FaKey, color: '#f78166', size: 24 },
     { Icon: FaLandmark, color: '#627eea', size: 30 },
     { Icon: FaUserShield, color: '#da3633', size: 26 },
-    { Icon: FaUserTie, color: '#ffc107', size: 26 },   // Scloda mascot
+    { Icon: FaUserTie, color: '#ffc107', size: 26 },
     { Icon: FaChartLine, color: '#238636', size: 28 },
     { Icon: FaBitcoin, color: '#f7931a', size: 22 },
     { Icon: GiHouse, color: '#58a6ff', size: 28 },
@@ -30,7 +31,7 @@ const AUTH_FLOATING_ICONS = [
 ];
 
 const LoginPage = () => {
-    const { login } = useAuth();
+    const { login, user, loading } = useAuth();
     const navigate = useNavigate();
 
     const [email, setEmail] = useState('');
@@ -38,6 +39,14 @@ const LoginPage = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showWelcome, setShowWelcome] = useState(true);
+    const [showSignUp, setShowSignUp] = useState(false);
+
+    // Redirect only if user was ALREADY authenticated when visiting /login
+    React.useEffect(() => {
+        if (!loading && user && !showSignUp) {
+            navigate('/home', { replace: true });
+        }
+    }, [loading]); // only run once after initial auth check
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -46,9 +55,9 @@ const LoginPage = () => {
 
         try {
             await login(email, password);
-            navigate('/', { replace: true });
+            navigate('/home', { replace: true });
         } catch (err) {
-            const msg = err.response?.data?.error || 'Error de conexión. Intenta de nuevo.';
+            const msg = err.response?.data?.error || 'Connection error. Please try again.';
             setError(msg);
         } finally {
             setIsLoading(false);
@@ -59,7 +68,7 @@ const LoginPage = () => {
         <div className="auth-page">
             <AnimatedBackground />
 
-            {/* ── Auth-specific floating icons ── */}
+            {/* Floating themed icons */}
             <div className="auth-floating-icons">
                 {AUTH_FLOATING_ICONS.map(({ Icon, color, size }, i) => (
                     <motion.div
@@ -88,7 +97,7 @@ const LoginPage = () => {
                 ))}
             </div>
 
-            {/* ── Scloda Welcome Modal ── */}
+            {/* Scloda Welcome Modal */}
             <AnimatePresence>
                 {showWelcome && (
                     <motion.div
@@ -119,17 +128,17 @@ const LoginPage = () => {
                                 <FaUserTie size={32} />
                             </motion.div>
 
-                            <h3 className="scloda-welcome-title">¡Hola! Soy Scloda 👋</h3>
+                            <h3 className="scloda-welcome-title">Hey there! I'm Scloda 👋</h3>
 
                             <p className="scloda-welcome-text">
-                                Bienvenido a <strong>CostBench</strong>, la plataforma que te permite entender
-                                el costo real de los productos bancarios chilenos a través de benchmarking
-                                transparente y basado en datos.
+                                Welcome to <strong>CostBench</strong>, the platform that helps you understand
+                                the true cost of Chilean banking products through transparent,
+                                data-driven benchmarking.
                             </p>
                             <p className="scloda-welcome-text">
-                                📊 Compara costos bancarios en tiempo real<br />
-                                🤖 Modelos de ML predicen tendencias del mercado<br />
-                                💬 Yo soy tu analista financiero AI — pregúntame lo que necesites
+                                📊 Compare banking costs in real-time<br />
+                                🤖 ML models predict market trends<br />
+                                💬 I'm your AI financial analyst — ask me anything
                             </p>
 
                             <motion.button
@@ -138,14 +147,14 @@ const LoginPage = () => {
                                 whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.97 }}
                             >
-                                ¡Entendido, vamos!
+                                Got it, let's go!
                             </motion.button>
                         </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* ── Login Card ── */}
+            {/* Login Card */}
             <motion.div
                 className="auth-card"
                 initial={{ opacity: 0, y: 40, scale: 0.92 }}
@@ -161,7 +170,7 @@ const LoginPage = () => {
                 </motion.div>
 
                 <motion.p className="auth-subtitle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
-                    Inicia sesión en tu cuenta
+                    Sign in to your account
                 </motion.p>
 
                 {error && (
@@ -178,19 +187,25 @@ const LoginPage = () => {
 
                     <motion.div className="auth-field" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
                         <FaLock className="auth-field-icon" />
-                        <input id="login-password" type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" disabled={isLoading} />
+                        <input id="login-password" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" disabled={isLoading} />
                     </motion.div>
 
                     <motion.button id="login-submit" type="submit" className="auth-btn" disabled={isLoading} whileHover={{ scale: 1.03, boxShadow: '0 0 25px rgba(35, 134, 54, 0.4)' }} whileTap={{ scale: 0.97 }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
                         {isLoading && <span className="spinner-border spinner-border-sm me-2" role="status" />}
-                        {isLoading ? 'Entrando...' : 'Iniciar Sesión'}
+                        {isLoading ? 'Signing in...' : 'Log In'}
                     </motion.button>
                 </form>
 
                 <motion.p className="auth-footer-text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
-                    ¿No tienes cuenta? <Link to="/register">Regístrate aquí</Link>
+                    Don't have an account?{' '}
+                    <button className="auth-link-btn" onClick={() => setShowSignUp(true)}>
+                        Register here
+                    </button>
                 </motion.p>
             </motion.div>
+
+            {/* Sign Up Modal */}
+            <SignUpModal isOpen={showSignUp} onClose={() => setShowSignUp(false)} />
         </div>
     );
 };

@@ -1,0 +1,225 @@
+/* ──────────────────────────────────────────────
+   Sidebar – Dark premium, fixed left panel
+   ────────────────────────────────────────────── */
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100vh;
+    background: #0d1117;
+    border-right: 1px solid #21262d;
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 0;
+    z-index: 50;
+    overflow-y: auto;
+}
+
+/* Toggle button */
+.sidebar-toggle {
+    position: fixed;
+    top: 12px;
+    left: 248px;
+    z-index: 60;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(22, 27, 34, 0.85);
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    color: #8b949e;
+    cursor: pointer;
+    transition: left 0.25s ease-in-out, background 0.15s, color 0.15s;
+    backdrop-filter: blur(8px);
+}
+
+.sidebar-toggle:hover {
+    background: rgba(48, 54, 61, 0.9);
+    color: #e6edf3;
+}
+
+.sidebar-toggle-collapsed {
+    left: 12px;
+}
+
+/* Brand */
+.sidebar-brand {
+    padding: 0 1.25rem 1rem;
+    border-bottom: 1px solid #21262d;
+    margin-bottom: 1rem;
+}
+
+.sidebar-logo {
+    width: 160px;
+    filter: drop-shadow(0 0 10px rgba(46, 160, 67, 0.15));
+}
+
+/* Clickable User info block */
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.75rem 1.25rem;
+    margin: 0 0.75rem 0;
+    background: rgba(22, 27, 34, 0.6);
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    width: calc(100% - 1.5rem);
+    text-align: left;
+}
+
+.sidebar-user:hover {
+    background: rgba(33, 38, 45, 0.9);
+    border-color: #30363d;
+}
+
+.sidebar-chevron {
+    color: #484f58;
+    margin-left: auto;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.sidebar-chevron.open {
+    transform: rotate(180deg);
+}
+
+/* Profile dropdown */
+.sidebar-profile-menu {
+    overflow: hidden;
+    margin: 0 0.75rem 0.75rem;
+    border: 1px solid #21262d;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    background: rgba(13, 17, 23, 0.8);
+}
+
+.sidebar-profile-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 1.25rem;
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: #8b949e;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    text-align: left;
+}
+
+.sidebar-profile-item:hover {
+    background: rgba(88, 166, 255, 0.08);
+    color: #e6edf3;
+}
+
+.sidebar-profile-item.admin-item {
+    color: #ffc107;
+}
+
+.sidebar-profile-item.admin-item:hover {
+    background: rgba(255, 193, 7, 0.08);
+    color: #ffd54f;
+}
+
+.sidebar-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #238636, #2ea043);
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.sidebar-user-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.sidebar-email {
+    font-size: 0.78rem;
+    color: #e6edf3;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-role {
+    font-size: 0.7rem;
+    color: #8b949e;
+}
+
+/* Navigation */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 0.75rem;
+}
+
+.sidebar-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #8b949e;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    text-align: left;
+    width: 100%;
+}
+
+.sidebar-nav-item:hover {
+    background: rgba(88, 166, 255, 0.08);
+    color: #e6edf3;
+}
+
+.sidebar-nav-item.active {
+    background: rgba(88, 166, 255, 0.12);
+    color: #58a6ff;
+}
+
+/* Spacer pushes logout to bottom */
+.sidebar-spacer {
+    flex: 1;
+}
+
+/* Logout */
+.sidebar-logout {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.6rem 0.75rem;
+    margin: 0 0.75rem 0.5rem;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #f85149;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: left;
+    width: calc(100% - 1.5rem);
+}
+
+.sidebar-logout:hover {
+    background: rgba(218, 54, 51, 0.12);
+}

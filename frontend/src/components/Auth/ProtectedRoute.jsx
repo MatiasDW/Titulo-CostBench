@@ -4,8 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 
 /**
  * Wraps a route so only authenticated users can access it.
- * Shows a loading spinner while the initial session check runs,
- * then redirects to /login if no user is found.
+ * Redirects to /login if no user is found.
  */
 const ProtectedRoute = ({ children }) => {
     const { user, loading } = useAuth();

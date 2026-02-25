@@ -3,7 +3,6 @@ import axios from 'axios';
 
 const AuthContext = createContext(null);
 
-// Axios instance with credentials (sends HttpOnly cookies automatically)
 const api = axios.create({
     baseURL: '/api/v1/auth',
     withCredentials: true,
@@ -12,9 +11,8 @@ const api = axios.create({
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true); // true until initial /me check completes
+    const [loading, setLoading] = useState(true);
 
-    // Restore session from cookie on mount
     useEffect(() => {
         api.get('/me')
             .then(res => setUser(res.data.user))
@@ -28,8 +26,12 @@ export function AuthProvider({ children }) {
         return res.data;
     }, []);
 
-    const register = useCallback(async (email, password) => {
-        const res = await api.post('/register', { email, password });
+    const register = useCallback(async (email, password, riskProfile) => {
+        const res = await api.post('/register', {
+            email,
+            password,
+            risk_profile: riskProfile || undefined,
+        });
         setUser(res.data.user);
         return res.data;
     }, []);
@@ -45,7 +47,16 @@ export function AuthProvider({ children }) {
         return res.data;
     }, []);
 
-    const value = { user, loading, login, register, logout, updateProfile };
+    const completeOnboarding = useCallback(async (interests, riskProfile) => {
+        const res = await api.put('/onboarding', {
+            interests: interests || [],
+            risk_profile: riskProfile || undefined,
+        });
+        setUser(res.data.user);
+        return res.data;
+    }, []);
+
+    const value = { user, loading, login, register, logout, updateProfile, completeOnboarding };
 
     return (
         <AuthContext.Provider value={value}>

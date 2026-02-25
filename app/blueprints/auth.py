@@ -105,7 +105,11 @@ def _set_token_cookie(response, user_id: int):
 def register():
     """POST /api/v1/auth/register"""
     data = request.get_json(silent=True) or {}
-    body, status = register_user(data.get("email", ""), data.get("password", ""))
+    body, status = register_user(
+        data.get("email", ""),
+        data.get("password", ""),
+        data.get("risk_profile"),
+    )
 
     response = make_response(jsonify(body), status)
 
@@ -154,3 +158,39 @@ def profile():
         g.current_user.id, data.get("risk_profile", "")
     )
     return jsonify(body), status
+
+
+@auth_bp.route("/onboarding", methods=["PUT"])
+@require_auth
+def onboarding():
+    """PUT /api/v1/auth/onboarding – save preferences and mark onboarding done."""
+    from app.extensiones import db
+    from app.models.user import VALID_RISK_PROFILES
+
+    data = request.get_json(silent=True) or {}
+
+    risk_profile = data.get("risk_profile")
+    interests = data.get("interests", [])
+
+    # Validate
+    if risk_profile and risk_profile not in VALID_RISK_PROFILES:
+        return jsonify({"error": "Invalid risk profile."}), 400
+
+    if not isinstance(interests, list):
+        return jsonify({"error": "Interests must be a list."}), 400
+
+    try:
+        user = g.current_user
+        if risk_profile:
+            user.risk_profile = risk_profile
+        user.interests = interests
+        user.onboarding_completed = True
+        db.session.commit()
+
+        logger.info("onboarding_completed", user_id=user.id)
+        return jsonify({"user": user.to_dict()}), 200
+
+    except Exception:
+        db.session.rollback()
+        logger.error("onboarding_failed", exc_info=True)
+        return jsonify({"error": "Internal server error."}), 500

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from './components/Header';
 import Ticker from './components/Ticker';
@@ -11,45 +11,35 @@ import AnimatedBackground from './components/AnimatedBackground';
 import ChartCarousel from './components/ChartCarousel';
 import ModelComparison from './components/ModelComparison';
 import SclodaChat from './components/SclodaChat';
-import ProtectedRoute from './components/Auth/ProtectedRoute';
 import LoginPage from './components/Auth/LoginPage';
-import RegisterPage from './components/Auth/RegisterPage';
+import OnboardingPage from './components/Auth/OnboardingPage';
+import DashboardLayout from './components/Auth/DashboardLayout';
+import ProtectedRoute from './components/Auth/ProtectedRoute';
 import './index.css';
 
 const App = () => {
-  // State
   const [items, setItems] = useState([]);
-  const [macro, setMacro] = useState({ cpi: [], yields: [], commodities: [] }); // Add commodities defaults
+  const [macro, setMacro] = useState({ cpi: [], yields: [], commodities: [] });
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState('CLP');
   const [limit, setLimit] = useState(10);
   const [lastUpdate, setLastUpdate] = useState(null);
 
-  // Fetch Data
   const fetchData = async () => {
     setLoading(true);
     try {
-      // 1. Fetch Items
       const rankingRes = await axios.get(`/api/v1/atc/ranking?limit=${limit}&currency=${currency}`);
-      // Verify structure: viewer.html used data.items. Let's start safely.
       const rankingData = rankingRes.data;
       setItems(rankingData.items || rankingData.data || []);
       setLastUpdate(rankingData.metadata ? rankingData.metadata.timestamp : new Date().toISOString());
 
-      // 2. Fetch Macro (only once needed really, but fine to refresh)
-      // We might need to fetch series individually if /market aggregate endpoint doesn't exist or returns differently
-      // viewer.html fetches /market/history?series_id=...
-      // Let's assume /api/v1/market returns aggregations, or we construct it here.
-      // If /api/v1/market doesn't exist, we should use separate calls like Ticker does.
-
-      // Let's try to fetch specific series for the Dashboard
       const cpiRes = await axios.get('/api/v1/market/history?series_id=CPIAUCSL');
       const yieldsRes = await axios.get('/api/v1/market/history?series_id=DGS10');
       const goldRes = await axios.get('/api/v1/market/history?series_id=GOLDAMGBD228NLBM');
       const copperRes = await axios.get('/api/v1/market/history?series_id=PCOPPUSDM');
       const oilRes = await axios.get('/api/v1/market/history?series_id=DCOILWTICO');
       const btcRes = await axios.get('/api/v1/market/history?series_id=BTC-CLP');
-      const ethRes = await axios.get('/api/v1/market/history?series_id=ETH-CLP'); // Fetch ETH
+      const ethRes = await axios.get('/api/v1/market/history?series_id=ETH-CLP');
 
       setMacro({
         cpi: cpiRes.data.observations || [],
@@ -68,20 +58,14 @@ const App = () => {
     }
   };
 
-  // derived metrics
-  const cheapCost = items.length > 0 ? items[0].cost : 0;
-  const expensiveCost = items.length > 0 ? items[items.length - 1].cost : 0;
-  const arbitrage = expensiveCost - cheapCost;
-
   useEffect(() => {
     fetchData();
-  }, [limit, currency]); // Trigger on limit/currency change!
+  }, [limit, currency]);
 
   const handleUpdate = () => {
     fetchData();
   };
 
-  // Dashboard content (extracted for readability inside Routes)
   const dashboard = (
     <div className="container-fluid p-0">
       <AnimatedBackground />
@@ -132,10 +116,17 @@ const App = () => {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/*" element={
-        <ProtectedRoute>{dashboard}</ProtectedRoute>
+      <Route path="/onboarding" element={
+        <ProtectedRoute>
+          <OnboardingPage />
+        </ProtectedRoute>
       } />
+      <Route path="/home" element={
+        <DashboardLayout>{dashboard}</DashboardLayout>
+      } />
+      {/* Redirect / to /home */}
+      <Route path="/" element={<Navigate to="/home" replace />} />
+      <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
   );
 };

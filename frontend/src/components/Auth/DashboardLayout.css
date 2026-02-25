@@ -1,0 +1,21 @@
+/* ──────────────────────────────────────────────
+   DashboardLayout – Sidebar + main content area
+   ────────────────────────────────────────────── */
+
+.dashboard-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.dashboard-main {
+    margin-left: 240px;
+    /* sidebar width */
+    flex: 1;
+    min-width: 0;
+    transition: margin-left 0.25s ease-in-out;
+}
+
+/* When sidebar is collapsed */
+.dashboard-layout.sidebar-hidden .dashboard-main {
+    margin-left: 0;
+}

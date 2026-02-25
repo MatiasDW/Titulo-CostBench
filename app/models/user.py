@@ -1,6 +1,7 @@
-"""User model for authentication and risk profile."""
+"""User model for authentication, risk profile, and onboarding preferences."""
 import bcrypt
 from datetime import datetime
+from sqlalchemy.dialects.postgresql import ARRAY
 from app.extensiones import db
 
 
@@ -18,6 +19,8 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), nullable=False, default="user")
     risk_profile = db.Column(db.String(20), nullable=True)
+    interests = db.Column(ARRAY(db.Text), nullable=False, default=list)
+    onboarding_completed = db.Column(db.Boolean, nullable=False, default=False)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(
         db.DateTime(timezone=True), nullable=False, default=datetime.utcnow
@@ -62,6 +65,8 @@ class User(db.Model):
             "role": self.role,
             "is_admin": self.is_admin,
             "risk_profile": self.risk_profile,
+            "interests": self.interests or [],
+            "onboarding_completed": self.onboarding_completed,
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
