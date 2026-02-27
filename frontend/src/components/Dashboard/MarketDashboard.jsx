@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect, memo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useMemo, memo } from 'react';
+import useSclodaInsights from '../../hooks/useSclodaInsights';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -29,83 +29,8 @@ ChartJS.register(
 );
 
 const MarketDashboard = ({ items, macro, analytics }) => {
-    // State for dynamic insights
-    const [insights, setInsights] = useState({});
-
-    // Fetch dynamic insights for macro assets
-    useEffect(() => {
-        if (!macro) return;
-
-        const fetchInsights = async () => {
-            const assetsToFetch = [
-                { key: 'cpi', data: macro?.cpi },
-                { key: 'yields', data: macro?.yields },
-                { key: 'gold', data: macro?.gold },
-                { key: 'copper', data: macro?.copper },
-                { key: 'oil', data: macro?.oil },
-                { key: 'btc', data: macro?.btc },
-                { key: 'eth', data: macro?.eth }
-            ];
-
-            const promises = assetsToFetch.map(async (asset) => {
-                const data = asset.data;
-                if (!data || data.length < 2) return null;
-
-                // Check cache first (v2 for formal spanish)
-                const cacheKey = `scloda_insight_v2_${asset.key}`;
-                const cached = localStorage.getItem(cacheKey);
-
-                if (cached) {
-                    const { insight, timestamp } = JSON.parse(cached);
-                    // 12 hour cache validity
-                    if (Date.now() - timestamp < 12 * 60 * 60 * 1000) {
-                        return { key: asset.key, insight };
-                    }
-                }
-
-                // Calculate trend data
-                const current = data[data.length - 1].value;
-                const prev = data[data.length - 2].value;
-                const change = ((current - prev) / prev) * 100;
-                const trend = change > 0 ? 'up' : change < 0 ? 'down' : 'neutral';
-
-                try {
-                    const response = await fetch('/api/v1/scloda/insight', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            asset: asset.key,
-                            change_percent: change,
-                            trend: trend
-                        })
-                    });
-
-                    if (response.ok) {
-                        const result = await response.json();
-                        // Save to cache
-                        localStorage.setItem(cacheKey, JSON.stringify({
-                            insight: result.insight,
-                            timestamp: Date.now()
-                        }));
-                        return { key: asset.key, insight: result.insight };
-                    }
-                } catch (err) {
-                    console.error(`Failed to fetch insight for ${asset.key}`, err);
-                }
-                return null;
-            });
-
-            const results = await Promise.all(promises);
-            const newInsights = {};
-            results.forEach(res => {
-                if (res) newInsights[res.key] = res.insight;
-            });
-
-            setInsights(prev => ({ ...prev, ...newInsights }));
-        };
-
-        fetchInsights();
-    }, [macro]); // Re-run when macro data changes
+    // ── Fix #1: Single-flight insights via shared hook (no duplicate LLM calls) ──
+    const { insights } = useSclodaInsights(macro);
 
     // Chart Global Options
     const commonOptions = {

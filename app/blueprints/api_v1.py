@@ -3,18 +3,33 @@ API v1 Blueprint.
 Endpoints for Entrega 2: ATC Ranking, Market Context, Data List.
 """
 from flask import Blueprint, request, jsonify, current_app
+import logging
 import pandas as pd
 import os
 
 bp = Blueprint('api_v1', __name__, url_prefix='/api/v1')
 
+logger = logging.getLogger(__name__)
+
 DATA_DIR = os.path.abspath('data')
 
 def load_parquet(rel_path):
+    """Read a Parquet file with resilient retry (see ``io_utils``).
+
+    Returns ``None`` when the file is missing **or** when all retries are
+    exhausted, so every caller's existing ``if df is None`` guard keeps
+    working and the user never gets a raw 500.
+    """
     path = os.path.join(DATA_DIR, rel_path)
-    if os.path.exists(path):
-        return pd.read_parquet(path)
-    return None
+    if not os.path.exists(path):
+        return None
+    try:
+        from pathlib import Path as _P
+        from app.services.io_utils import read_parquet as _read
+        return _read(_P(path))
+    except Exception:
+        logger.exception("Failed to read Parquet after retries: %s", rel_path)
+        return None
 
 @bp.route('/atc/ranking', methods=['GET'])
 def get_atc_ranking():

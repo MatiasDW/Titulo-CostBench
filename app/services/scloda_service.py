@@ -23,6 +23,17 @@ OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-001")
 
+# ── Fail-Fast config ──────────────────────────────────────────
+# Strict timeout — if the LLM doesn't answer in this window we
+# cut the connection and let the *user* decide whether to retry.
+LLM_TIMEOUT_SECONDS = int(os.getenv("SCLODA_TIMEOUT", "12"))
+
+# Pre-baked Scloda message shown on any LLM failure.
+_FRIENDLY_ERROR = (
+    "⏳ Las redes están un poco saturadas en este momento y no pude "
+    "procesar tu consulta. ¿Puedes intentarlo de nuevo en unos segundos?"
+)
+
 
 def _load_system_prompt() -> str:
     """Load system prompt from AI_PROMPT_GUIDE.md if available, otherwise use default."""
@@ -323,37 +334,53 @@ def chat_completion(
             "tokens_used": tokens_used
         }
         
+    except httpx.TimeoutException:
+        logger.warning("chat_timeout", timeout=LLM_TIMEOUT_SECONDS)
+        return {
+            "response": _FRIENDLY_ERROR,
+            "tokens_used": 0,
+            "error": "timeout"
+        }
     except Exception as e:
         logger.error("chat_error", error=str(e))
         return {
-            "response": f"😅 Ups, tuve un problema técnico. Intenta de nuevo en un momento.",
+            "response": _FRIENDLY_ERROR,
             "tokens_used": 0,
             "error": str(e)
         }
 
 
 def _call_openrouter(messages: list[dict], tools: list[dict] | None = None) -> dict:
-    """Make an API call to OpenRouter."""
+    """Make an API call to OpenRouter with a strict fail-fast timeout.
+
+    If the LLM doesn't respond within ``LLM_TIMEOUT_SECONDS`` the
+    connection is severed immediately — no retries, no extra cost.
+    The caller surfaces a friendly Scloda message so the user can
+    press Send again at "human speed".
+    """
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://costbench.cl",
         "X-Title": "CostBench - Scloda Chat"
     }
-    
+
     payload = {
         "model": OPENROUTER_MODEL,
         "messages": messages,
         "temperature": 0.7,
         "max_tokens": 1024
     }
-    
+
     if tools:
         payload["tools"] = tools
         payload["tool_choice"] = "auto"
-    
+
+    # Strict timeout — fail fast, let the user retry.
+    timeout = httpx.Timeout(LLM_TIMEOUT_SECONDS, connect=5.0)
+
     try:
-        with httpx.Client(timeout=30.0) as client:
+        with httpx.Client(timeout=timeout) as client:
             response = client.post(
                 OPENROUTER_API_URL,
                 headers=headers,
@@ -361,14 +388,17 @@ def _call_openrouter(messages: list[dict], tools: list[dict] | None = None) -> d
             )
             response.raise_for_status()
             return response.json()
-            
+
     except httpx.TimeoutException:
-        return {"error": "timeout", "response": "La consulta tardó demasiado. Intenta de nuevo."}
+        logger.warning("openrouter_timeout", timeout_s=LLM_TIMEOUT_SECONDS)
+        return {"error": "timeout", "response": _FRIENDLY_ERROR}
     except httpx.HTTPStatusError as e:
-        logger.error("openrouter_error", status=e.response.status_code, body=e.response.text)
-        return {"error": "api_error", "response": f"Error de API: {e.response.status_code}"}
+        logger.error("openrouter_http_error",
+                     status=e.response.status_code, body=e.response.text[:200])
+        return {"error": "api_error", "response": _FRIENDLY_ERROR}
     except Exception as e:
-        return {"error": str(e)}
+        logger.error("openrouter_unexpected", error=str(e))
+        return {"error": str(e), "response": _FRIENDLY_ERROR}
 
 
 def get_service_status() -> dict:

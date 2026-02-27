@@ -1,8 +1,20 @@
-"""Parquet I/O utilities."""
+"""Parquet I/O utilities with resilient read (retry-on-write-collision)."""
+import logging
+import time
+
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, Optional
 import json
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Retry config – protects against scheduler overwriting a .parquet file at
+# the exact millisecond a user request tries to read it.
+# ---------------------------------------------------------------------------
+_READ_MAX_RETRIES = 3
+_READ_BACKOFF_BASE = 0.05  # 50 ms → 150 ms → 450 ms
 
 
 def write_parquet(df: pd.DataFrame, filepath: Path, compression: str = 'snappy') -> Dict[str, Any]:
@@ -36,18 +48,60 @@ def write_parquet(df: pd.DataFrame, filepath: Path, compression: str = 'snappy')
 
 def read_parquet(filepath: Path) -> pd.DataFrame:
     """
-    Read Parquet file into DataFrame.
-    
+    Read Parquet file into DataFrame **with retry logic**.
+
+    If the file is being overwritten by the scheduler at the exact moment
+    a user request arrives, the underlying I/O call may raise ``OSError``
+    or ``pyarrow.lib.ArrowInvalid``.  This wrapper retries up to
+    ``_READ_MAX_RETRIES`` times with exponential back-off before
+    propagating the exception.
+
     Args:
         filepath: Path to Parquet file
-    
+
     Returns:
         DataFrame
+
+    Raises:
+        FileNotFoundError: if the file does not exist at all.
+        Exception: after exhausting all retries.
     """
     if not filepath.exists():
         raise FileNotFoundError(f"Parquet file not found: {filepath}")
-    
-    return pd.read_parquet(filepath, engine='pyarrow')
+
+    last_exc: Exception | None = None
+
+    for attempt in range(_READ_MAX_RETRIES + 1):
+        try:
+            return pd.read_parquet(filepath, engine='pyarrow')
+        except (OSError, Exception) as exc:
+            # Only retry on I/O-level or Arrow corruption errors.
+            exc_name = type(exc).__name__
+            is_retryable = (
+                isinstance(exc, OSError)
+                or 'Arrow' in exc_name
+                or 'Parquet' in exc_name
+            )
+            if not is_retryable:
+                raise
+
+            last_exc = exc
+            if attempt < _READ_MAX_RETRIES:
+                wait = _READ_BACKOFF_BASE * (3 ** attempt)
+                logger.warning(
+                    "Parquet read failed (attempt %d/%d, retrying in %.0f ms): %s – %s",
+                    attempt + 1, _READ_MAX_RETRIES + 1, wait * 1000,
+                    filepath.name, exc,
+                )
+                time.sleep(wait)
+            else:
+                logger.error(
+                    "Parquet read exhausted retries for %s: %s",
+                    filepath.name, exc,
+                )
+
+    # Should not reach here, but satisfy the type checker
+    raise last_exc  # type: ignore[misc]
 
 
 def profile_parquet(filepath: Path, sample_rows: int = 5) -> Dict[str, Any]:
