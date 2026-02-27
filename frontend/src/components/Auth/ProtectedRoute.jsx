@@ -1,13 +1,16 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 /**
  * Wraps a route so only authenticated users can access it.
- * Redirects to /login if no user is found.
+ * - Redirects to /login if no user
+ * - Redirects to /onboarding if user hasn't completed onboarding
+ *   (except when already on /onboarding)
  */
 const ProtectedRoute = ({ children }) => {
     const { user, loading } = useAuth();
+    const location = useLocation();
 
     if (loading) {
         return (
@@ -21,6 +24,11 @@ const ProtectedRoute = ({ children }) => {
 
     if (!user) {
         return <Navigate to="/login" replace />;
+    }
+
+    // Redirect to onboarding if not completed (unless already there)
+    if (!user.onboarding_completed && location.pathname !== '/onboarding') {
+        return <Navigate to="/onboarding" replace />;
     }
 
     return children;

@@ -128,7 +128,7 @@ def run_step_3_multicurrency():
     except Exception as e:
         print(f"ERROR step 3: {e}")
 
-from app.services.fred import fetch_fred_series
+from app.services.fred import fetch_fred_series, fetch_bcch_copper, fetch_bcch_gold
 from app.services.crypto import fetch_buda_series
 from populate_analytics import run_analytics_step # Import Analytics
 from populate_analytics import run_analytics_step # Import Analytics
@@ -148,12 +148,21 @@ def run_step_4_macro():
         yield_df = fetch_fred_series('DGS10')
         print(f"   -> 10Y Yield records: {len(yield_df)}")
 
-        # 3. Commodities (Gold, Copper, Oil, Silver)
-        print("Fetching Commodities (Gold, Copper, Oil, Silver) from FRED...")
-        gold_df = fetch_fred_series('GOLDAMGBD228NLBM') 
-        copper_df = fetch_fred_series('PCOPPUSDM') 
-        oil_df = fetch_fred_series('DCOILWTICO') 
-        silver_df = fetch_fred_series('SLVPRUSD') # Silver Price: London Fix
+        # 3. Commodities (Gold + Copper from BCCh, Oil from FRED)
+        print("Fetching Gold from Banco Central de Chile (BCCh)...")
+        gold_df = fetch_bcch_gold()
+        print(f"   -> Gold records: {len(gold_df)} (source: {gold_df['source'].iloc[0] if len(gold_df) > 0 else '?'})")
+
+        print("Fetching Copper from Banco Central de Chile (BCCh)...")
+        copper_df = fetch_bcch_copper()
+        print(f"   -> Copper records: {len(copper_df)} (source: {copper_df['source'].iloc[0] if len(copper_df) > 0 else '?'})")
+
+        print("Fetching Oil (DCOILWTICO) from FRED...")
+        oil_df = fetch_fred_series('DCOILWTICO')
+        print(f"   -> Oil records: {len(oil_df)}")
+
+        # Note: SLVPRUSD discontinued on FRED — removed
+        silver_df = pd.DataFrame(columns=['date', 'value', 'series_id', 'source'])
 
         # 4. Crypto (Buda)
         print("Fetching Crypto (BTC, ETH, XRP, SOL) from Buda.com...")

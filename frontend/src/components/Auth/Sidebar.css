@@ -159,6 +159,16 @@
 .sidebar-role {
     font-size: 0.7rem;
     color: #8b949e;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.sidebar-risk-badge {
+    font-size: 0.65rem;
+    color: #d2a8ff;
+    opacity: 0.85;
 }
 
 /* Navigation */

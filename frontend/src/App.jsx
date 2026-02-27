@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import axios from 'axios';
 
 // ── Lightweight imports (always loaded) ──
 import LoginPage from './components/Auth/LoginPage';
 import OnboardingPage from './components/Auth/OnboardingPage';
 import DashboardLayout from './components/Auth/DashboardLayout';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
+import useDashboardData from './hooks/useDashboardData';
 import './index.css';
 
 // ── Lazy-loaded heavy components (code splitting) ──
@@ -30,57 +30,15 @@ const DashboardFallback = () => (
 );
 
 const App = () => {
-  const [items, setItems] = useState([]);
-  const [macro, setMacro] = useState({ cpi: [], yields: [], commodities: [] });
-  const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState('CLP');
   const [limit, setLimit] = useState(10);
-  const [lastUpdate, setLastUpdate] = useState(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      // ── FIX #1: Promise.all — all 8 API calls in parallel (~7x faster) ──
-      const [rankingRes, cpiRes, yieldsRes, goldRes, copperRes, oilRes, btcRes, ethRes] =
-        await Promise.all([
-          axios.get(`/api/v1/atc/ranking?limit=${limit}&currency=${currency}`),
-          axios.get('/api/v1/market/history?series_id=CPIAUCSL'),
-          axios.get('/api/v1/market/history?series_id=DGS10'),
-          axios.get('/api/v1/market/history?series_id=GOLDAMGBD228NLBM'),
-          axios.get('/api/v1/market/history?series_id=PCOPPUSDM'),
-          axios.get('/api/v1/market/history?series_id=DCOILWTICO'),
-          axios.get('/api/v1/market/history?series_id=BTC-CLP'),
-          axios.get('/api/v1/market/history?series_id=ETH-CLP'),
-        ]);
-
-      const rankingData = rankingRes.data;
-      setItems(rankingData.items || rankingData.data || []);
-      setLastUpdate(rankingData.metadata ? rankingData.metadata.timestamp : new Date().toISOString());
-
-      setMacro({
-        cpi: cpiRes.data.observations || [],
-        yields: yieldsRes.data.observations || [],
-        gold: goldRes.data.observations || [],
-        copper: copperRes.data.observations || [],
-        oil: oilRes.data.observations || [],
-        btc: btcRes.data.observations || [],
-        eth: ethRes.data.observations || []
-      });
-
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [limit, currency]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  // ── FIX #6: Single source of truth for all dashboard data ──
+  const { items, macro, loading, lastUpdate, refetch } = useDashboardData({ limit, currency });
 
   const handleUpdate = useCallback(() => {
-    fetchData();
-  }, [fetchData]);
+    refetch();
+  }, [refetch]);
 
   const dashboard = (
     <React.Suspense fallback={<DashboardFallback />}>
@@ -140,9 +98,10 @@ const App = () => {
         </ProtectedRoute>
       } />
       <Route path="/home" element={
-        <DashboardLayout>{dashboard}</DashboardLayout>
+        <ProtectedRoute>
+          <DashboardLayout>{dashboard}</DashboardLayout>
+        </ProtectedRoute>
       } />
-      {/* Redirect / to /home */}
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>

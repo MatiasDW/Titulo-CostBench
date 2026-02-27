@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Line } from 'react-chartjs-2';
 import { FaUserTie } from 'react-icons/fa';
@@ -213,7 +213,7 @@ const ChartCarousel = ({ macro }) => {
                             <h6 className={`${chart.colorClass} mb-0`} style={{ fontSize: '0.95rem' }}>
                                 {chart.title}
                             </h6>
-                            <small className="text-muted" style={{ fontSize: '0.65rem' }}>
+                            <small style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.6)' }}>
                                 {chart.subtitle}
                             </small>
                         </div>
@@ -347,4 +347,4 @@ const ChartCarousel = ({ macro }) => {
     );
 };
 
-export default ChartCarousel;
+export default memo(ChartCarousel);

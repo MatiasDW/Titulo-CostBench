@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, memo } from 'react';
 import { motion } from 'framer-motion';
 import {
     Chart as ChartJS,
@@ -421,4 +421,4 @@ const MarketDashboard = ({ items, macro, analytics }) => {
     );
 };
 
-export default MarketDashboard;
+export default memo(MarketDashboard);

@@ -15,10 +15,10 @@ const NAV_ITEMS = [
     { path: '/macro', label: 'Macro', icon: FaGlobeAmericas },
 ];
 
-const RISK_LABELS = {
-    conservative: '🛡️ Conservative',
-    moderate: '⚖️ Moderate',
-    aggressive: '🔥 Aggressive',
+const RISK_BADGES = {
+    conservative: { icon: '🛡️', label: 'Conservative' },
+    moderate: { icon: '⚖️', label: 'Moderate' },
+    aggressive: { icon: '🔥', label: 'Aggressive' },
 };
 
 const Sidebar = ({ collapsed, onToggle }) => {
@@ -69,7 +69,13 @@ const Sidebar = ({ collapsed, onToggle }) => {
                             <div className="sidebar-user-info">
                                 <span className="sidebar-email">{user?.email}</span>
                                 <span className="sidebar-role">
-                                    {user?.is_admin ? '⭐ Admin' : (RISK_LABELS[user?.risk_profile] || 'No profile set')}
+                                    {user?.is_admin && '⭐ Admin'}
+                                    {user?.risk_profile && (
+                                        <span className="sidebar-risk-badge">
+                                            {RISK_BADGES[user.risk_profile]?.icon} {RISK_BADGES[user.risk_profile]?.label}
+                                        </span>
+                                    )}
+                                    {!user?.is_admin && !user?.risk_profile && 'No profile set'}
                                 </span>
                             </div>
                             <FaChevronDown

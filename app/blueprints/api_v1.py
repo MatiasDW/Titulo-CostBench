@@ -109,6 +109,68 @@ def get_market_history():
         'observations': obs
     })
 
+# Series metadata — currency & unit for every indicator
+SERIES_META = {
+    'CPIAUCSL':         {'unit': 'Index',    'currency': '',     'label': 'US CPI'},
+    'DGS10':            {'unit': '%',        'currency': '',     'label': 'Treasury 10Y'},
+    'GOLDAMGBD228NLBM': {'unit': 'USD/oz',   'currency': 'USD',  'label': 'Gold (BCCh)'},
+    'PCOPPUSDM':        {'unit': 'USD/lb',   'currency': 'USD',  'label': 'Copper (BCCh)'},
+    'DCOILWTICO':       {'unit': 'USD/bbl',  'currency': 'USD',  'label': 'Oil WTI'},
+    'SLVPRUSD':         {'unit': 'USD/oz',   'currency': 'USD',  'label': 'Silver'},
+    'BTC-CLP':          {'unit': 'CLP',      'currency': 'CLP',  'label': 'Bitcoin'},
+    'ETH-CLP':          {'unit': 'CLP',      'currency': 'CLP',  'label': 'Ethereum'},
+    'XRP-CLP':          {'unit': 'CLP',      'currency': 'CLP',  'label': 'XRP'},
+    'SOL-CLP':          {'unit': 'CLP',      'currency': 'CLP',  'label': 'Solana'},
+    'USDCLP':           {'unit': 'CLP/USD',  'currency': 'CLP',  'label': 'USD/CLP'},
+    'UF':               {'unit': 'CLP',      'currency': 'CLP',  'label': 'UF'},
+}
+
+
+@bp.route('/market/latest', methods=['GET'])
+def get_market_latest():
+    """
+    GET /api/v1/market/latest
+    Returns the latest value + percentage change for ALL series in one shot.
+    Each item includes unit/currency metadata for clear UI display.
+    """
+    df = load_parquet('market/macro_indicators.parquet')
+    if df is None:
+        return jsonify({'items': []}), 200
+
+    results = []
+    for sid, group in df.groupby('series_id'):
+        group_sorted = group.sort_values('date')
+        if group_sorted.empty:
+            continue
+
+        latest = group_sorted.iloc[-1]
+        latest_val = float(latest['value'])
+
+        # Calculate change_pct from previous observation
+        change_pct = 0.0
+        if len(group_sorted) >= 2:
+            prev_val = float(group_sorted.iloc[-2]['value'])
+            if prev_val != 0:
+                change_pct = round(((latest_val - prev_val) / prev_val) * 100, 2)
+
+        meta = SERIES_META.get(sid, {'unit': '', 'currency': '', 'label': sid})
+        source = latest.get('source', '')
+
+        results.append({
+            'series_id': sid,
+            'label': meta['label'],
+            'value': latest_val,
+            'change_pct': change_pct,
+            'unit': meta['unit'],
+            'currency': meta['currency'],
+            'source': source,
+            'is_mock': 'MOCK' in str(source).upper(),
+            'date': latest['date'].strftime('%Y-%m-%d') if hasattr(latest['date'], 'strftime') else str(latest['date']),
+        })
+
+    return jsonify({'items': results})
+
+
 @bp.route('/data/list', methods=['GET'])
 def list_data():
     """Debug endpoint to list data files."""

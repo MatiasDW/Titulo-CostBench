@@ -1,12 +1,22 @@
 """Flask application factory."""
 from flask import Flask, jsonify
 from flask_cors import CORS
+
+try:
+    from flask_compress import Compress
+except ImportError:
+    Compress = None
+
 from app.config import config
 
 
 def create_app(config_name='default'):
     """Create and configure the Flask application."""
     app = Flask(__name__)
+
+    # Enable gzip compression if flask-compress is available
+    if Compress is not None:
+        Compress(app)
     
     # Load configuration
     app.config.from_object(config[config_name])

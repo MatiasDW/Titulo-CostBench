@@ -86,3 +86,95 @@ def _get_mock_data(series_id):
         'series_id': series_id,
         'source': 'FRED_MOCK'
     })
+
+
+def fetch_bcch_copper():
+    """
+    Fetch copper price (USD/lb) from Banco Central de Chile (BCCh).
+    Series: F019.PPB.PRE.40.M — Precio del cobre refinado BML.
+    Falls back to FRED PCOPPUSDM if BCCh unavailable.
+    """
+    try:
+        from bcchapi import Siete
+        import os
+
+        user = os.getenv('BDE_USER')
+        pwd = os.getenv('BDE_PASS')
+        if not user or not pwd:
+            logger.warning("bcch_copper: No BDE credentials, falling back to FRED")
+            return fetch_fred_series('PCOPPUSDM')
+
+        siete = Siete(usr=user, pwd=pwd)
+        df = siete.cuadro(
+            series=['F019.PPB.PRE.40.M'],
+            desde='2015-01-01',
+            hasta=pd.Timestamp.now().strftime('%Y-%m-%d')
+        )
+
+        if df is None or df.empty:
+            logger.warning("bcch_copper: Empty response, falling back to FRED")
+            return fetch_fred_series('PCOPPUSDM')
+
+        df = df.reset_index()
+        df.columns = ['date', 'value']
+        df['date'] = pd.to_datetime(df['date'])
+        df['value'] = pd.to_numeric(df['value'], errors='coerce')
+        df = df.dropna(subset=['value'])
+        df['series_id'] = 'PCOPPUSDM'  # Keep same ID for compatibility
+        df['source'] = 'BCCh'
+
+        logger.info(f"bcch_copper: {len(df)} rows fetched from Banco Central")
+        return df
+
+    except ImportError:
+        logger.warning("bcch_copper: bcchapi not available, falling back to FRED")
+        return fetch_fred_series('PCOPPUSDM')
+    except Exception as e:
+        logger.error(f"bcch_copper error: {e}", exc_info=True)
+        return fetch_fred_series('PCOPPUSDM')
+
+
+def fetch_bcch_gold():
+    """
+    Fetch gold price (USD/oz) from Banco Central de Chile (BCCh).
+    Series: F019.PPB.PRE.44.D — Precio de la onza troy de oro (diario).
+    Falls back to FRED mock if BCCh unavailable.
+    """
+    try:
+        from bcchapi import Siete
+        import os
+
+        user = os.getenv('BDE_USER')
+        pwd = os.getenv('BDE_PASS')
+        if not user or not pwd:
+            logger.warning("bcch_gold: No BDE credentials, falling back to FRED mock")
+            return _get_mock_data('GOLDAMGBD228NLBM')
+
+        siete = Siete(usr=user, pwd=pwd)
+        df = siete.cuadro(
+            series=['F019.PPB.PRE.44.D'],
+            desde='2015-01-01',
+            hasta=pd.Timestamp.now().strftime('%Y-%m-%d')
+        )
+
+        if df is None or df.empty:
+            logger.warning("bcch_gold: Empty response, falling back to FRED mock")
+            return _get_mock_data('GOLDAMGBD228NLBM')
+
+        df = df.reset_index()
+        df.columns = ['date', 'value']
+        df['date'] = pd.to_datetime(df['date'])
+        df['value'] = pd.to_numeric(df['value'], errors='coerce')
+        df = df.dropna(subset=['value'])
+        df['series_id'] = 'GOLDAMGBD228NLBM'  # Keep same ID for compatibility
+        df['source'] = 'BCCh'
+
+        logger.info(f"bcch_gold: {len(df)} rows fetched from Banco Central")
+        return df
+
+    except ImportError:
+        logger.warning("bcch_gold: bcchapi not available, falling back to FRED mock")
+        return _get_mock_data('GOLDAMGBD228NLBM')
+    except Exception as e:
+        logger.error(f"bcch_gold error: {e}", exc_info=True)
+        return _get_mock_data('GOLDAMGBD228NLBM')

@@ -6,7 +6,8 @@ Endpoints:
 - POST /api/v1/scloda/insight - Generate insight for a chart
 - GET /api/v1/scloda/health - Check service status
 """
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
+from app.blueprints.auth import require_auth
 from app.services.scloda_service import chat_completion, get_service_status, generate_chart_insight
 from app.ml.logging_utils import get_logger
 
@@ -16,6 +17,7 @@ scloda_bp = Blueprint("scloda", __name__, url_prefix="/api/v1/scloda")
 
 
 @scloda_bp.route("/message", methods=["POST"])
+@require_auth
 def send_message():
     """
     POST /api/v1/scloda/message
@@ -52,12 +54,21 @@ def send_message():
             return jsonify({"error": "Message too long (max 2000 chars)"}), 400
         
         history = data.get("history", [])
+
+        # Build user profile from authenticated user ("Modo Sniper")
+        user = g.current_user
+        user_profile = {
+            "risk_profile": user.risk_profile,
+            "interests": user.interests or [],
+            "email": user.email,
+        }
         
-        logger.info("chat_request", message_length=len(user_message))
+        logger.info("chat_request", message_length=len(user_message), risk=user_profile["risk_profile"])
         
         result = chat_completion(
             user_message=user_message,
-            conversation_history=history
+            conversation_history=history,
+            user_profile=user_profile
         )
         
         logger.info("chat_response", 

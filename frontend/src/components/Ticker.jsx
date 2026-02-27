@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import axios from 'axios';
 import AssetIcon from './AssetIcon';
-import './Ticker.css'; // Make sure to create this CSS file
+import './Ticker.css';
 
-// Mapping from series_id to AssetIcon type and display label
+// Mapping from series_id to display config
 const SERIES_CONFIG = {
     'CPIAUCSL': { label: 'US CPI', type: 'cpi' },
     'DGS10': { label: 'US 10Y', type: '10y' },
@@ -14,7 +14,25 @@ const SERIES_CONFIG = {
     'BTC-CLP': { label: 'Bitcoin', type: 'btc' },
     'ETH-CLP': { label: 'Ether', type: 'eth' },
     'USDCLP': { label: 'USD/CLP', type: 'usdclp' },
-    'UF': { label: 'UF', type: 'uf' }
+    'UF': { label: 'UF', type: 'uf' },
+    'XRP-CLP': { label: 'XRP', type: 'xrp' },
+    'SOL-CLP': { label: 'SOL', type: 'sol' },
+};
+
+const formatValue = (value, unit) => {
+    if (value == null) return '—';
+    // For CLP values (crypto), show with dots separator
+    if (unit === 'CLP') return `$${Math.round(value).toLocaleString('es-CL')}`;
+    // For percentages
+    if (unit === '%') return `${value.toFixed(2)}%`;
+    // For index values
+    if (unit === 'Index') return value.toFixed(1);
+    // For USD values, show 2 decimals
+    if (unit?.startsWith('USD')) return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    // CLP/USD
+    if (unit === 'CLP/USD') return `$${Math.round(value).toLocaleString('es-CL')}`;
+    // Fallback
+    return value.toLocaleString('es-CL', { maximumFractionDigits: 2 });
 };
 
 const Ticker = () => {
@@ -23,66 +41,70 @@ const Ticker = () => {
     useEffect(() => {
         const fetchMarketData = async () => {
             try {
-                // Fetch market indices + commodities
-                const res = await axios.get('/api/v1/market');
-                // Adjust if API returns different structure. 
-                // Assuming it returns { data: { cpi:..., yields:..., commodities: [...] } }
-                // Or we might need to fetch /market/indices
+                const res = await axios.get('/api/v1/market/latest');
+                const latest = res.data.items || [];
 
-                // For now, let's try to hit the same endpoint or just mock if API isn't ready for unified feed
-                const indicesRes = await axios.get('/api/v1/market/indices');
-                const indices = indicesRes.data.items || [];
-
-                const fetchedItems = await Promise.all(indices.map(async (item) => {
-                    try {
-                        const hRes = await axios.get(`/api/v1/market/history?series_id=${item.series_id}`);
-                        const obs = hRes.data.observations;
-                        const latest = obs.length > 0 ? obs[obs.length - 1] : { value: 'N/A' };
-
-                        const config = SERIES_CONFIG[item.series_id] || { label: item.series_id, type: 'trend' };
-
+                const tickerItems = latest
+                    .filter(item => !item.is_mock) // Hide mock data from ticker
+                    .map(item => {
+                        const cfg = SERIES_CONFIG[item.series_id] || { label: item.label || item.series_id, type: 'trend' };
                         return {
-                            label: config.label,
-                            value: latest.value,
-                            iconType: config.type
+                            label: cfg.label,
+                            value: item.value,
+                            changePct: item.change_pct,
+                            unit: item.unit || '',
+                            iconType: cfg.type,
                         };
-                    } catch (e) {
-                        return null;
-                    }
-                }));
+                    });
 
-                setItems(fetchedItems.filter(i => i !== null));
-
+                setItems(tickerItems);
             } catch (error) {
                 console.error("Error fetching ticker data", error);
             }
         };
 
         fetchMarketData();
-        const interval = setInterval(fetchMarketData, 60000); // Update every minute
+        const interval = setInterval(fetchMarketData, 60000);
         return () => clearInterval(interval);
     }, []);
 
     if (items.length === 0) return null;
 
+    const displayItems = [...items, ...items];
+
     return (
         <div className="ticker-container bg-dark border-bottom border-secondary text-white py-1">
             <div className="ticker-wrap">
                 <div className="ticker-move">
-                    {items.map((item, idx) => (
-                        <div key={idx} className="ticker-item me-5 d-inline-block">
-                            <span className="me-2">
-                                <AssetIcon type={item.iconType} size={16} />
-                            </span>
-                            <span className="fw-bold me-2">{item.label}:</span>
-                            <span className="font-monospace text-warning">{item.value}</span>
-                        </div>
-                    ))}
-                    {/* Duplicate for infinite loop illusion if needed, but CSS animation handles it usually */}
+                    {displayItems.map((item, idx) => {
+                        const isUp = item.changePct > 0;
+                        const isDown = item.changePct < 0;
+                        const arrow = isUp ? '▲' : isDown ? '▼' : '→';
+                        const colorClass = isUp ? 'text-success' : isDown ? 'text-danger' : 'text-muted';
+
+                        return (
+                            <div key={idx} className="ticker-item me-4 d-inline-block">
+                                <span className="me-1">
+                                    <AssetIcon type={item.iconType} size={14} />
+                                </span>
+                                <span className="fw-bold me-1" style={{ fontSize: '0.78rem' }}>
+                                    {item.label}
+                                </span>
+                                <span className={`${colorClass}`} style={{ fontSize: '0.72rem', fontFamily: 'monospace' }}>
+                                    {arrow} {Math.abs(item.changePct).toFixed(1)}%
+                                </span>
+                                {item.unit && (
+                                    <span className="ms-1" style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.65)' }}>
+                                        {formatValue(item.value, item.unit)}
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>
     );
 };
 
-export default Ticker;
+export default memo(Ticker);

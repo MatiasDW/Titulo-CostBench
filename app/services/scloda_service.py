@@ -137,9 +137,105 @@ Usa las herramientas para consultar:
 Responde de forma concisa pero completa. Usa emojis con moderación (📊💡⚠️) para hacer la conversación más amigable."""
 
 
+# ── Risk-profile rules for "Modo Sniper" ──────────────────────
+RISK_PROFILE_RULES = {
+    "conservative": {
+        "label": "Conservador",
+        "tone": "prudente y protector",
+        "focus": (
+            "- Prioriza preservación de capital y estabilidad\n"
+            "- Enfatiza riesgos y posibles caídas ANTES de oportunidades\n"
+            "- Recomienda instrumentos de bajo riesgo (depósitos, UF, renta fija)\n"
+            "- Usa frases como 'ten en cuenta el riesgo', 'protege tu capital'\n"
+            "- Advierte explícitamente sobre volatilidad en cripto y commodities\n"
+            "- Horizonte de inversión largo plazo, diversificación defensiva"
+        ),
+    },
+    "moderate": {
+        "label": "Moderado",
+        "tone": "equilibrado y analítico",
+        "focus": (
+            "- Balancea oportunidades con gestión de riesgo\n"
+            "- Presenta ambos lados: potencial ganancia Y riesgo de pérdida\n"
+            "- Sugiere diversificación entre activos estables y crecimiento\n"
+            "- Menciona ratios riesgo/retorno cuando sea relevante\n"
+            "- Permite exposición moderada a cripto y commodities\n"
+            "- Horizonte de inversión medio plazo"
+        ),
+    },
+    "aggressive": {
+        "label": "Agresivo",
+        "tone": "directo y orientado a oportunidades",
+        "focus": (
+            "- Enfócate en oportunidades de alta rentabilidad\n"
+            "- Analiza momentum, tendencias y señales técnicas\n"
+            "- Habla de alpha, beta, y volatilidad como oportunidad\n"
+            "- Te puedes permitir ser más audaz en sugerencias\n"
+            "- Igualmente SIEMPRE menciona el riesgo (obligatorio)\n"
+            "- Horizonte de inversión corto/medio plazo, tolerancia alta a drawdowns"
+        ),
+    },
+}
+
+# Interest label mapping
+INTEREST_LABELS = {
+    "crypto": "Criptomonedas (BTC, ETH)",
+    "commodities": "Commodities (Oro, Cobre, Petróleo)",
+    "fixed_income": "Renta Fija (Bonos, Depósitos)",
+    "banking": "Costos Bancarios (CTA, comisiones)",
+    "macro": "Macroeconomía (CPI, tasas, política monetaria)",
+    "forex": "Divisas (USD/CLP, UF)",
+    "stocks": "Acciones",
+    "ml_models": "Modelos ML y predicciones",
+}
+
+
+def _build_user_context(user_profile: dict | None) -> str:
+    """
+    Build a dynamic system-prompt section from the user's profile.
+    Returns empty string if no profile or no risk_profile set.
+    """
+    if not user_profile:
+        return ""
+
+    risk = user_profile.get("risk_profile")
+    interests = user_profile.get("interests", [])
+
+    if not risk:
+        return ""
+
+    rules = RISK_PROFILE_RULES.get(risk)
+    if not rules:
+        return ""
+
+    # Build personalized section
+    lines = [
+        "",
+        "## 🎯 MODO SNIPER — Perfil Personalizado",
+        "",
+        f"El usuario tiene perfil **{rules['label']}**.",
+        f"Tu tono debe ser **{rules['tone']}**.",
+        "",
+        "### Reglas específicas para este perfil:",
+        rules["focus"],
+    ]
+
+    if interests:
+        labels = [INTEREST_LABELS.get(i, i) for i in interests]
+        lines.extend([
+            "",
+            "### Áreas de interés del usuario:",
+            ", ".join(labels),
+            "Cuando sea posible, conecta tus respuestas con estos temas de interés.",
+        ])
+
+    return "\n".join(lines)
+
+
 def chat_completion(
     user_message: str,
-    conversation_history: list[dict] | None = None
+    conversation_history: list[dict] | None = None,
+    user_profile: dict | None = None
 ) -> dict[str, Any]:
     """
     Process a chat message and return Scloda's response.
@@ -147,6 +243,7 @@ def chat_completion(
     Args:
         user_message: The user's message
         conversation_history: Previous messages in the conversation
+        user_profile: Optional dict with risk_profile, interests, email
         
     Returns:
         dict with 'response' (text) and 'tokens_used'
@@ -158,8 +255,11 @@ def chat_completion(
             "error": "no_api_key"
         }
     
-    # Build messages - load prompt from file
+    # Build messages — base prompt + dynamic user context
     system_prompt = _load_system_prompt()
+    user_context = _build_user_context(user_profile)
+    if user_context:
+        system_prompt += user_context
     messages = [{"role": "system", "content": system_prompt}]
     
     # Add conversation history (last 10 messages max)
