@@ -41,8 +41,8 @@ export function AuthProvider({ children }) {
         setUser(null);
     }, []);
 
-    const updateProfile = useCallback(async (riskProfile) => {
-        const res = await api.put('/profile', { risk_profile: riskProfile });
+    const updateProfile = useCallback(async (data) => {
+        const res = await api.put('/profile', data);
         setUser(res.data.user);
         return res.data;
     }, []);

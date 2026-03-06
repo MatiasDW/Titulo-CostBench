@@ -152,12 +152,58 @@ def me():
 @auth_bp.route("/profile", methods=["PUT"])
 @require_auth
 def profile():
-    """PUT /api/v1/auth/profile – update risk_profile."""
+    """PUT /api/v1/auth/profile – update user profile (personal info + preferences)."""
+    from app.extensiones import db
+    from app.models.user import VALID_RISK_PROFILES
+
     data = request.get_json(silent=True) or {}
-    body, status = update_risk_profile(
-        g.current_user.id, data.get("risk_profile", "")
+    user = g.current_user
+
+    # Personal info + KYC fields (all optional, trimmed strings)
+    STRING_FIELDS = (
+        "first_name", "last_name", "phone", "bio",
+        "rut", "nationality", "address", "city",
+        "occupation", "income_range", "investment_experience",
     )
-    return jsonify(body), status
+    for field in STRING_FIELDS:
+        if field in data:
+            val = (data[field] or "").strip() or None
+            setattr(user, field, val)
+
+    # Date of birth (special handling)
+    if "date_of_birth" in data:
+        dob = data["date_of_birth"]
+        if dob:
+            try:
+                from datetime import date
+                user.date_of_birth = date.fromisoformat(dob)
+            except (ValueError, TypeError):
+                return jsonify({"error": "Invalid date_of_birth format. Use YYYY-MM-DD."}), 400
+        else:
+            user.date_of_birth = None
+
+    # Risk profile (optional, validated)
+    risk = data.get("risk_profile")
+    if risk is not None:
+        if risk and risk not in VALID_RISK_PROFILES:
+            return jsonify({"error": f"Invalid risk profile. Options: {', '.join(VALID_RISK_PROFILES)}"}), 400
+        user.risk_profile = risk or None
+
+    # Interests (optional, must be list)
+    if "interests" in data:
+        interests = data["interests"]
+        if not isinstance(interests, list):
+            return jsonify({"error": "Interests must be a list."}), 400
+        user.interests = interests
+
+    try:
+        db.session.commit()
+        logger.info("profile_updated", user_id=user.id)
+        return jsonify({"user": user.to_dict()}), 200
+    except Exception:
+        db.session.rollback()
+        logger.error("profile_update_failed", exc_info=True)
+        return jsonify({"error": "Internal server error."}), 500
 
 
 @auth_bp.route("/onboarding", methods=["PUT"])

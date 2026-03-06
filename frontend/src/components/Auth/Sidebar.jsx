@@ -2,15 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import {
-    FaHome, FaTrophy, FaGlobeAmericas,
-    FaSignOutAlt, FaUserTie, FaChartLine,
-    FaBars, FaTimes, FaUserCog, FaChevronDown
-} from 'react-icons/fa';
+import { FaHome, FaTrophy, FaGlobeAmericas, FaSignOutAlt, FaUserCog, FaBars, FaTimes, FaUserTie, FaChartLine, FaChevronDown, FaWallet, FaExchangeAlt } from 'react-icons/fa';
+import useSounds from '../../hooks/useSounds';
 import './Sidebar.css';
 
 const NAV_ITEMS = [
     { path: '/home', label: 'Home', icon: FaHome },
+    { path: '/wallet', label: 'Wallet', icon: FaWallet },
+    { path: '/trade', label: 'Trade', icon: FaExchangeAlt },
     { path: '/ranking', label: 'Ranking', icon: FaTrophy },
     { path: '/macro', label: 'Macro', icon: FaGlobeAmericas },
 ];
@@ -26,10 +25,31 @@ const Sidebar = ({ collapsed, onToggle }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const [profileOpen, setProfileOpen] = useState(false);
+    const { playClick, playNav, playToggle, playHover } = useSounds();
 
     const handleLogout = async () => {
+        playClick();
         await logout();
         navigate('/login', { replace: true });
+    };
+
+    const handleNavClick = (path) => {
+        if (location.pathname !== path) {
+            playNav();
+        } else {
+            playClick();
+        }
+        navigate(path);
+    };
+
+    const handleToggle = () => {
+        playToggle();
+        onToggle();
+    };
+
+    const handleProfileToggle = () => {
+        playToggle();
+        setProfileOpen(prev => !prev);
     };
 
     return (
@@ -37,7 +57,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
             {/* Hamburger toggle button */}
             <button
                 className={`sidebar-toggle ${collapsed ? 'sidebar-toggle-collapsed' : ''}`}
-                onClick={onToggle}
+                onClick={handleToggle}
                 aria-label={collapsed ? 'Open menu' : 'Close menu'}
             >
                 {collapsed ? <FaBars size={18} /> : <FaTimes size={18} />}
@@ -61,7 +81,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
                         {/* Clickable User Profile */}
                         <button
                             className="sidebar-user"
-                            onClick={() => setProfileOpen(prev => !prev)}
+                            onClick={handleProfileToggle}
                         >
                             <div className="sidebar-avatar">
                                 {user?.is_admin ? <FaUserTie size={18} /> : <FaChartLine size={18} />}
@@ -96,15 +116,15 @@ const Sidebar = ({ collapsed, onToggle }) => {
                                 >
                                     <button
                                         className="sidebar-profile-item"
-                                        onClick={() => { setProfileOpen(false); navigate('/onboarding'); }}
+                                        onClick={() => { playClick(); setProfileOpen(false); navigate('/profile'); }}
                                     >
                                         <FaUserCog size={14} />
-                                        <span>Edit Preferences</span>
+                                        <span>Edit Profile</span>
                                     </button>
                                     {user?.is_admin && (
                                         <button
                                             className="sidebar-profile-item admin-item"
-                                            onClick={() => { setProfileOpen(false); /* TODO: admin panel */ }}
+                                            onClick={() => { playClick(); setProfileOpen(false); /* TODO: admin panel */ }}
                                         >
                                             <FaUserTie size={14} />
                                             <span>Admin Panel</span>
@@ -122,12 +142,26 @@ const Sidebar = ({ collapsed, onToggle }) => {
                                     <motion.button
                                         key={path}
                                         className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-                                        onClick={() => navigate(path)}
+                                        onClick={() => handleNavClick(path)}
+                                        onMouseEnter={playHover}
                                         whileHover={{ x: 4 }}
-                                        whileTap={{ scale: 0.97 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        layout
                                     >
                                         <Icon size={16} />
                                         <span>{label}</span>
+                                        {/* Active indicator dot */}
+                                        {isActive && (
+                                            <motion.div
+                                                className="sidebar-active-dot"
+                                                layoutId="activeNav"
+                                                transition={{
+                                                    type: 'spring',
+                                                    stiffness: 500,
+                                                    damping: 30,
+                                                }}
+                                            />
+                                        )}
                                     </motion.button>
                                 );
                             })}

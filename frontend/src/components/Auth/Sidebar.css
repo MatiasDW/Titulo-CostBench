@@ -194,6 +194,7 @@
     transition: background 0.15s, color 0.15s;
     text-align: left;
     width: 100%;
+    position: relative;
 }
 
 .sidebar-nav-item:hover {
@@ -204,6 +205,19 @@
 .sidebar-nav-item.active {
     background: rgba(88, 166, 255, 0.12);
     color: #58a6ff;
+}
+
+/* Animated active indicator */
+.sidebar-active-dot {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 60%;
+    border-radius: 0 3px 3px 0;
+    background: #58a6ff;
+    box-shadow: 0 0 8px rgba(88, 166, 255, 0.4);
 }
 
 /* Spacer pushes logout to bottom */

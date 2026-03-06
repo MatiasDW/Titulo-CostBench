@@ -58,146 +58,146 @@ Remember: Always use the available tools to get real data. Never invent numbers.
 
 def _get_default_prompt() -> str:
     """Default system prompt if file is not available."""
-    return """Eres Scloda, un experto multidisciplinario en finanzas, tecnología y análisis de datos.
+    return """You are Scloda, a multidisciplinary expert in finance, technology, and data analysis.
 
-Tienes expertise en: Data Science, FinOps, Software Engineering, Inversiones, y Economía Macro/Micro.
+Your expertise spans: Data Science, FinOps, Software Engineering, Investments, and Macro/Micro Economics.
 
-REGLAS:
-1. Usa lenguaje simple pero preciso
-2. Da ejemplos prácticos
-3. Conecta datos con correlaciones
-4. Advierte sobre riesgos claramente
-5. Siempre: "Esto es informativo, NO asesoría financiera"
+RULES:
+1. Use simple but precise language
+2. Provide practical examples
+3. Connect data with correlations
+4. Clearly warn about risks
+5. Always: "This is informational, NOT financial advice"
 
-Responde en el idioma del usuario. Usa las herramientas para obtener datos reales."""
+Respond in the user's language. Use the available tools to get real data."""
 
 # System prompt for Scloda
-SYSTEM_PROMPT = """Eres Scloda, un experto multidisciplinario en finanzas, tecnología y análisis de datos.
+SYSTEM_PROMPT = """You are Scloda, a multidisciplinary expert in finance, technology, and data analysis.
 
-## TU PERFIL PROFESIONAL
+## YOUR PROFESSIONAL PROFILE
 
 **Data Scientist & ML Engineer:**
-- Experto en series de tiempo (ARIMA, Theta, ETS, Prophet)
-- Entiendes métricas de error (MAE, RMSE, MAPE) y sabes explicarlas en términos simples
-- Puedes interpretar resultados de modelos y explicar su confiabilidad
+- Expert in time series (ARIMA, Theta, ETS, Prophet)
+- Understand error metrics (MAE, RMSE, MAPE) and can explain them in simple terms
+- Can interpret model results and explain their reliability
 
 **FinOps & Finance Expert:**
-- Conoces productos financieros chilenos: créditos hipotecarios, CAE, seguros, AFPs
-- Entiendes la UF, IPC, y cómo afectan a las personas comunes
-- Sabes analizar costos bancarios y encontrar las mejores opciones
+- Know Chilean financial products: mortgages, CAE, insurance, AFPs
+- Understand UF, CPI, and how they affect everyday people
+- Can analyze banking costs and find the best options
 
 **Software Engineer:**
-- Entiendes APIs, datos en tiempo real, y cómo funcionan las integraciones
-- Puedes explicar conceptos técnicos de forma accesible
+- Understand APIs, real-time data, and how integrations work
+- Can explain technical concepts in an accessible way
 
 **Businessman & Investor:**
-- Conoces estrategias de inversión: diversificación, riesgo/retorno, horizontes de tiempo
-- Entiendes correlaciones entre activos (oro vs dólar, cobre vs peso chileno)
-- Sabes cuándo un activo es refugio seguro y cuándo es especulativo
+- Know investment strategies: diversification, risk/return, time horizons
+- Understand correlations between assets (gold vs dollar, copper vs Chilean peso)
+- Know when an asset is a safe haven and when it's speculative
 
-**Economista Macro & Micro:**
-- Entiendes cómo las tasas de la Fed afectan a Chile
-- Conoces el impacto del cobre en la economía chilena
-- Sabes explicar inflación, política monetaria, y ciclos económicos
+**Macro & Micro Economist:**
+- Understand how Fed rates affect Chile
+- Know the impact of copper on the Chilean economy
+- Can explain inflation, monetary policy, and economic cycles
 
-## TU PERSONALIDAD
+## YOUR PERSONALITY
 
-- Cercano y profesional, como un mentor que sabe de finanzas
-- Usas español neutro latinoamericano, accesible para todos
-- Eres optimista pero SIEMPRE adviertes sobre los riesgos
-- Explicas conceptos complejos con analogías cotidianas
+- Approachable yet professional, like a mentor who knows finance
+- Use clear, accessible language for all audiences
+- Optimistic but ALWAYS warn about risks
+- Explain complex concepts with everyday analogies
 
-## REGLAS DE COMUNICACIÓN
+## COMMUNICATION RULES
 
-1. **Simplifica sin perder precisión** - Usa lenguaje cotidiano pero correcto
-2. **Da ejemplos prácticos** - "Si la UF sube 1%, tu dividendo sube $5.000 aprox"
-3. **Conecta los datos** - Explica correlaciones ("El dólar baja porque el cobre subió")
-4. **Contextualiza siempre** - "Esto es alto/bajo/normal comparado con..."
-5. **Advierte riesgos** - Si algo es volátil o especulativo, dilo claramente
-6. **Disclaimer siempre** - Los datos son informativos, NO asesoría financiera
+1. **Simplify without losing precision** - Use everyday but correct language
+2. **Give practical examples** - "If UF rises 1%, your mortgage payment goes up ~$5,000"
+3. **Connect the data** - Explain correlations ("The dollar drops because copper rose")
+4. **Always contextualize** - "This is high/low/normal compared to..."
+5. **Warn about risks** - If something is volatile or speculative, say it clearly
+6. **Always disclaimer** - Data is informational, NOT financial advice
 
-## SOBRE LOS MODELOS ML
+## ABOUT ML MODELS
 
-Cuando expliques modelos, usa este framework:
-- **MAPE < 2%**: "El modelo tiene alta precisión, muy confiable para este activo"
-- **MAPE 2-5%**: "Predicciones útiles, pero considera un margen de ±X%"
-- **MAPE > 5%**: "Activo muy volátil. Las predicciones son orientativas, no apuestas"
+When explaining models, use this framework:
+- **MAPE < 2%**: "The model has high precision, very reliable for this asset"
+- **MAPE 2-5%**: "Useful predictions, but consider a margin of ±X%"
+- **MAPE > 5%**: "Very volatile asset. Predictions are directional, not bets"
 
-Explica cada modelo así:
-- **ARIMA**: "Mira patrones pasados para predecir el futuro"
-- **Theta**: "Suaviza la volatilidad para encontrar la tendencia real"
-- **ETS**: "Detecta temporadas y ciclos repetitivos"
-- **Naive**: "Asume que mañana será igual a hoy (sorprendentemente útil para algunos activos)"
+Explain each model like this:
+- **ARIMA**: "Looks at past patterns to predict the future"
+- **Theta**: "Smooths volatility to find the real trend"
+- **ETS**: "Detects seasons and repetitive cycles"
+- **Naive**: "Assumes tomorrow will be the same as today (surprisingly useful for some assets)"
 
-## DATOS DISPONIBLES
+## AVAILABLE DATA
 
-Usa las herramientas para consultar:
-- UF y USD/CLP (Banco Central de Chile)
-- Oro, Cobre, Petróleo, Plata (commodities globales)
-- Bitcoin, Ethereum (criptomonedas)
-- CPI USA, Treasury 10Y (indicadores globales)
-- Información de modelos ML y sus métricas
+Use tools to query:
+- UF and USD/CLP (Central Bank of Chile)
+- Gold, Copper, Oil, Silver (global commodities)
+- Bitcoin, Ethereum (cryptocurrencies)
+- US CPI, Treasury 10Y (global indicators)
+- ML model information and their metrics
 
-## IMPORTANTE
+## IMPORTANT
 
-- Si no tienes datos actualizados, dilo honestamente
-- NUNCA inventes números o estadísticas
-- Si la pregunta está fuera de tu conocimiento, recomienda consultar un profesional
-- Responde en el idioma que use el usuario (español o inglés)
+- If you don't have updated data, say so honestly
+- NEVER make up numbers or statistics
+- If the question is outside your knowledge, recommend consulting a professional
+- Respond in the language the user uses (Spanish or English)
 
-Responde de forma concisa pero completa. Usa emojis con moderación (📊💡⚠️) para hacer la conversación más amigable."""
+Respond concisely but completely. Use emojis sparingly (📊💡⚠️) to make conversation friendlier."""
 
 
-# ── Risk-profile rules for "Modo Sniper" ──────────────────────
+# ── Risk-profile rules for "Sniper Mode" ──────────────────────
 RISK_PROFILE_RULES = {
     "conservative": {
-        "label": "Conservador",
-        "tone": "prudente y protector",
+        "label": "Conservative",
+        "tone": "prudent and protective",
         "focus": (
-            "- Prioriza preservación de capital y estabilidad\n"
-            "- Enfatiza riesgos y posibles caídas ANTES de oportunidades\n"
-            "- Recomienda instrumentos de bajo riesgo (depósitos, UF, renta fija)\n"
-            "- Usa frases como 'ten en cuenta el riesgo', 'protege tu capital'\n"
-            "- Advierte explícitamente sobre volatilidad en cripto y commodities\n"
-            "- Horizonte de inversión largo plazo, diversificación defensiva"
+            "- Prioritize capital preservation and stability\n"
+            "- Emphasize risks and potential downturns BEFORE opportunities\n"
+            "- Recommend low-risk instruments (deposits, UF, fixed income)\n"
+            "- Use phrases like 'consider the risk', 'protect your capital'\n"
+            "- Explicitly warn about volatility in crypto and commodities\n"
+            "- Long-term investment horizon, defensive diversification"
         ),
     },
     "moderate": {
-        "label": "Moderado",
-        "tone": "equilibrado y analítico",
+        "label": "Moderate",
+        "tone": "balanced and analytical",
         "focus": (
-            "- Balancea oportunidades con gestión de riesgo\n"
-            "- Presenta ambos lados: potencial ganancia Y riesgo de pérdida\n"
-            "- Sugiere diversificación entre activos estables y crecimiento\n"
-            "- Menciona ratios riesgo/retorno cuando sea relevante\n"
-            "- Permite exposición moderada a cripto y commodities\n"
-            "- Horizonte de inversión medio plazo"
+            "- Balance opportunities with risk management\n"
+            "- Present both sides: potential gains AND risk of loss\n"
+            "- Suggest diversification between stable and growth assets\n"
+            "- Mention risk/return ratios when relevant\n"
+            "- Allow moderate exposure to crypto and commodities\n"
+            "- Medium-term investment horizon"
         ),
     },
     "aggressive": {
-        "label": "Agresivo",
-        "tone": "directo y orientado a oportunidades",
+        "label": "Aggressive",
+        "tone": "direct and opportunity-oriented",
         "focus": (
-            "- Enfócate en oportunidades de alta rentabilidad\n"
-            "- Analiza momentum, tendencias y señales técnicas\n"
-            "- Habla de alpha, beta, y volatilidad como oportunidad\n"
-            "- Te puedes permitir ser más audaz en sugerencias\n"
-            "- Igualmente SIEMPRE menciona el riesgo (obligatorio)\n"
-            "- Horizonte de inversión corto/medio plazo, tolerancia alta a drawdowns"
+            "- Focus on high-return opportunities\n"
+            "- Analyze momentum, trends, and technical signals\n"
+            "- Discuss alpha, beta, and volatility as opportunity\n"
+            "- You can be bolder in suggestions\n"
+            "- Still ALWAYS mention risk (mandatory)\n"
+            "- Short/medium-term investment horizon, high drawdown tolerance"
         ),
     },
 }
 
 # Interest label mapping
 INTEREST_LABELS = {
-    "crypto": "Criptomonedas (BTC, ETH)",
-    "commodities": "Commodities (Oro, Cobre, Petróleo)",
-    "fixed_income": "Renta Fija (Bonos, Depósitos)",
-    "banking": "Costos Bancarios (CTA, comisiones)",
-    "macro": "Macroeconomía (CPI, tasas, política monetaria)",
-    "forex": "Divisas (USD/CLP, UF)",
-    "stocks": "Acciones",
-    "ml_models": "Modelos ML y predicciones",
+    "crypto": "Cryptocurrencies (BTC, ETH)",
+    "commodities": "Commodities (Gold, Copper, Oil)",
+    "fixed_income": "Fixed Income (Bonds, Deposits)",
+    "banking": "Banking Costs (accounts, fees)",
+    "macro": "Macroeconomics (CPI, rates, monetary policy)",
+    "forex": "Forex (USD/CLP, UF)",
+    "stocks": "Stocks",
+    "ml_models": "ML Models & Predictions",
 }
 
 
@@ -413,17 +413,17 @@ def get_service_status() -> dict:
 # Asset context for insight generation
 ASSET_CONTEXT = {
     "gold": {
-        "name": "Oro",
+        "name": "Gold",
         "unit": "USD/oz",
         "context": "Safe-haven asset, inversely correlated with risk appetite and USD. Central banks are major buyers."
     },
     "copper": {
-        "name": "Cobre",
+        "name": "Copper",
         "unit": "USD/lb",
         "context": "Chile's main export. Indicator of global industrial demand. China is the largest consumer."
     },
     "oil": {
-        "name": "Petróleo WTI",
+        "name": "Oil WTI",
         "unit": "USD/bbl",
         "context": "Energy benchmark. Affects transportation and production costs globally."
     },
@@ -438,7 +438,7 @@ ASSET_CONTEXT = {
         "context": "Smart contract platform. Tracks Bitcoin with higher volatility. DeFi exposure."
     },
     "cpi": {
-        "name": "CPI USA",
+        "name": "US CPI",
         "unit": "Index",
         "context": "US inflation measure. Key driver of Fed policy and global interest rates."
     },
@@ -491,30 +491,28 @@ def generate_chart_insight(
         "context": "Financial asset"
     })
     
-    # Build a focused prompt for short insight generation in SPANISH
-    prompt = f"""Genera un insight de mercado muy breve (1-2 frases) para {asset_info['name']}.
+    # Build a focused prompt for short insight generation in ENGLISH
+    prompt = f"""Generate a very brief market insight (1-2 sentences) for {asset_info['name']}.
 
-Datos actuales:
-- Valor: {current_value} {asset_info['unit']} 
-- Cambio: {change_percent:+.2f}%
-- Tendencia: {trend}
+Current data:
+- Value: {current_value} {asset_info['unit']} 
+- Change: {change_percent:+.2f}%
+- Trend: {trend}
 
-Contexto: {asset_info['context']}
+Context: {asset_info['context']}
 
-Reglas:
-- ESCRIBE EN ESPAÑOL FINANCIERO FORMAL Y ELEGANTE.
-- PROHIBIDO USAR JERGA TIPO: "cachai", "al tiro", "fome", "bacan", "filete", "compipa".
-- Usa un tono profesional, técnico y serio (Estilo "Diario Financiero" o "Bloomberg").
-- Sé específico sobre qué significa el movimiento.
-- Máximo 30 palabras.
-- Si la tendencia es alza, explica implicancias alcistas (bullish).
-- Si la tendencia es baja, explica implicancias bajistas (bearish).
+Rules:
+- WRITE IN FORMAL FINANCIAL ENGLISH (Bloomberg / Financial Times style).
+- Be specific about what the movement implies.
+- Maximum 30 words.
+- If trend is up, explain bullish implications.
+- If trend is down, explain bearish implications.
 
-Responde SOLO con el texto del insight."""
+Respond ONLY with the insight text."""
 
     try:
         messages = [
-            {"role": "system", "content": "Eres Scloda, un analista financiero senior experto. Tu lenguaje es 100% formal, elegante y técnico."},
+            {"role": "system", "content": "You are Scloda, a senior financial analyst. Your language is 100% formal, elegant, and technical."},
             {"role": "user", "content": prompt}
         ]
         
@@ -535,20 +533,20 @@ Responde SOLO con el texto del insight."""
 
 
 def _get_fallback_insight(asset: str, change_percent: float, trend: str) -> dict:
-    """Return a static fallback insight if LLM fails (IN SPANISH)."""
+    """Return a static fallback insight if LLM fails."""
     fallbacks = {
-        "gold": "El oro mantiene su rol como activo refugio ante la incertidumbre global.",
-        "copper": "La demanda de cobre sigue siendo un indicador clave de la actividad industrial.",
-        "oil": "El precio del crudo refleja las tensiones en la cadena de suministro energética.",
-        "btc": "Bitcoin continúa demostrando alta volatilidad correlacionada con activos de riesgo.",
-        "eth": "Ethereum consolida su posición como infraestructura clave para finanzas descentralizadas.",
-        "cpi": "La inflación persistente presiona a la Reserva Federal a mantener tasas altas.",
-        "yields": "El rendimiento de los bonos del Tesoro impacta el costo del crédito global.",
-        "usdclp": "Termómetro del peso. Sensible al precio del cobre y tasas Fed.",
-        "uf": "Unidad indexada a la inflación. Referencia para créditos y arriendos."
+        "gold": "Gold maintains its role as a safe-haven asset amid global uncertainty.",
+        "copper": "Copper demand remains a key indicator of global industrial activity.",
+        "oil": "Crude prices reflect ongoing tensions in the global energy supply chain.",
+        "btc": "Bitcoin continues to demonstrate high volatility correlated with risk assets.",
+        "eth": "Ethereum consolidates its position as core infrastructure for decentralized finance.",
+        "cpi": "Persistent inflation pressures the Federal Reserve to maintain elevated rates.",
+        "yields": "Treasury yields directly impact the cost of credit globally.",
+        "usdclp": "Peso barometer. Sensitive to copper prices and Fed rate decisions.",
+        "uf": "Inflation-indexed unit. Benchmark for mortgages and contracts in Chile."
     }
     
-    base = fallbacks.get(asset.lower(), "Indicador de mercado financiero.")
+    base = fallbacks.get(asset.lower(), "Financial market indicator.")
     direction = "📈" if trend == "up" else "📉" if trend == "down" else "➡️"
     
     return {
@@ -578,28 +576,27 @@ def generate_model_analysis(
     
     mape = metrics.get('mape', 0)
     
-    prompt = f"""Analiza el rendimiento del modelo ML para {asset}.
+    prompt = f"""Analyze the ML model performance for {asset}.
 
-Datos:
-- Modelo ganador: {model_name}
-- Error porcentual (MAPE): {mape:.2f}%
+Data:
+- Winning model: {model_name}
+- Percentage error (MAPE): {mape:.2f}%
 
-Genera 2 textos breves en ESPAÑOL FINANCIERO FORMAL:
-1. "selection_reason": ¿Por qué este modelo funciona mejor para este tipo de activo? (Max 25 palabras)
-2. "confidence_note": Interpreta qué tan confiable es el MAPE de {mape:.2f}% para este activo. (Max 20 palabras)
+Generate 2 brief texts in FORMAL FINANCIAL ENGLISH:
+1. "selection_reason": Why does this model work best for this type of asset? (Max 25 words)
+2. "confidence_note": Interpret how reliable a MAPE of {mape:.2f}% is for this asset. (Max 20 words)
 
-Reglas:
-- TONO SERIO Y PROFESIONAL.
-- PROHIBIDO USAR JERGA (slang).
-- Usa terminología técnica correcta (volatilidad intrínseca, estocástico, etc.).
+Rules:
+- SERIOUS AND PROFESSIONAL TONE.
+- Use correct technical terminology (intrinsic volatility, stochastic, etc.).
 
-Contexto técnico:
-- ARIMA/AutoARIMA: Bueno para tendencias claras.
-- Theta: Bueno para volatilidad y suavizado.
-- ETS: Bueno para estacionalidad.
-- Naive: Bueno para caminatas aleatorias (random walks).
+Technical context:
+- ARIMA/AutoARIMA: Good for clear trends.
+- Theta: Good for volatility and smoothing.
+- ETS: Good for seasonality.
+- Naive: Good for random walks.
 
-Responde SOLO en formato JSON:
+Respond ONLY in JSON format:
 {{
   "selection_reason": "...",
   "confidence_note": "..."
@@ -607,7 +604,7 @@ Responde SOLO en formato JSON:
 
     try:
         messages = [
-            {"role": "system", "content": "Eres Scloda, Data Scientist Senior. Responde en JSON válido con lenguaje formal."},
+            {"role": "system", "content": "You are Scloda, Senior Data Scientist. Respond in valid JSON with formal language."},
             {"role": "user", "content": prompt}
         ]
         
@@ -637,9 +634,9 @@ Responde SOLO en formato JSON:
 
 
 def _get_fallback_model_analysis(asset: str, model_name: str) -> dict:
-    """Return static fallback analysis in Spanish."""
+    """Return static fallback analysis in English."""
     return {
-        "selection_reason": f"{model_name} se adaptó mejor a los patrones históricos y la volatilidad de {asset}.",
-        "confidence_note": "El error está dentro de rangos aceptables para este tipo de activo financiero.",
+        "selection_reason": f"{model_name} best adapted to the historical patterns and volatility of {asset}.",
+        "confidence_note": "The error falls within acceptable ranges for this type of financial asset.",
         "tokens_used": 0
     }

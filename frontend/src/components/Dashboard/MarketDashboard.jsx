@@ -137,7 +137,7 @@ const MarketDashboard = ({ items, macro, analytics }) => {
             <div className="modal-dialog modal-xl modal-dialog-scrollable">
                 <div className="modal-content">
                     <div className="modal-header">
-                        <h5 className="modal-title">Panel de Análisis de Mercado</h5>
+                        <h5 className="modal-title">Market Analysis Panel</h5>
                         <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div className="modal-body bg-dark">
@@ -147,36 +147,36 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                             <div className="row g-3 mb-4">
                                 <div className="col-md-4">
                                     <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.1s' }}>
-                                        <h6 className="text-success">🇨🇱 Top 5 Más Económicos (Anual)</h6>
+                                        <h6 className="text-success">🇨🇱 Top 5 Most Affordable (Annual)</h6>
                                         <div style={{ height: '200px' }}>
                                             <Bar data={cheapData} options={horizontalOptions} />
                                         </div>
                                         <AIInsight
-                                            insight={analytics?.insight_cheap || macro?.insight_cheap || "Analizando eficiencia local..."}
+                                            insight={analytics?.insight_cheap || macro?.insight_cheap || "Analyzing local efficiency..."}
                                             colorClass="text-success"
                                         />
                                     </div>
                                 </div>
                                 <div className="col-md-4">
                                     <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.2s' }}>
-                                        <h6 className="text-danger">🇨🇱 Top 5 Más Costosos</h6>
+                                        <h6 className="text-danger">🇨🇱 Top 5 Most Expensive</h6>
                                         <div style={{ height: '200px' }}>
                                             <Bar data={expensiveData} options={horizontalOptions} />
                                         </div>
                                         <AIInsight
-                                            insight={analytics?.insight_expensive || macro?.insight_expensive || "Analizando sobrecostos..."}
+                                            insight={analytics?.insight_expensive || macro?.insight_expensive || "Analyzing cost overruns..."}
                                             colorClass="text-danger"
                                         />
                                     </div>
                                 </div>
                                 <div className="col-md-4">
                                     <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.3s' }}>
-                                        <h6 className="text-info">🇨🇱 Distribución de Costos</h6>
+                                        <h6 className="text-info">🇨🇱 Cost Distribution</h6>
                                         <div style={{ height: '200px' }}>
                                             <Bar data={distData} options={commonOptions} />
                                         </div>
                                         <AIInsight
-                                            insight={analytics?.insight_distribution || macro?.insight_distribution || "Analizando dispersión de mercado..."}
+                                            insight={analytics?.insight_distribution || macro?.insight_distribution || "Analyzing market dispersion..."}
                                             colorClass="text-info"
                                         />
                                     </div>
@@ -187,24 +187,24 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                             <div className="row g-3">
                                 <div className="col-md-6">
                                     <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.4s' }}>
-                                        <h6>🇺🇸 Tendencia IPC EE.UU. (Inflación)</h6>
+                                        <h6>🇺🇸 US CPI Trend (Inflation)</h6>
                                         <div style={{ height: '250px' }}>
                                             <Line data={cpiData} options={commonOptions} />
                                         </div>
                                         <AIInsight
-                                            insight={insights['cpi'] || macro?.insight_cpi || "Rastreando impacto inflacionario..."}
+                                            insight={insights['cpi'] || macro?.insight_cpi || "Tracking inflationary impact..."}
                                             colorClass="text-danger"
                                         />
                                     </div>
                                 </div>
                                 <div className="col-md-6">
                                     <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.5s' }}>
-                                        <h6>🇺🇸 Bonos del Tesoro 10A</h6>
+                                        <h6>🇺🇸 Treasury Bonds 10Y</h6>
                                         <div style={{ height: '250px' }}>
                                             <Line data={yieldData} options={commonOptions} />
                                         </div>
                                         <AIInsight
-                                            insight={insights['yields'] || macro?.insight_10y || "Monitoreando tasa libre de riesgo..."}
+                                            insight={insights['yields'] || macro?.insight_10y || "Monitoring risk-free rate..."}
                                             colorClass="text-primary"
                                         />
                                     </div>
@@ -215,12 +215,12 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                             <div className="row g-3 mt-3">
                                 <div className="col-md-4">
                                     <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.6s' }}>
-                                        <h6 className="text-warning">🥇 Precio del Oro</h6>
+                                        <h6 className="text-warning">🥇 Gold Price</h6>
                                         <div style={{ height: '200px' }}>
                                             <Line data={{
                                                 labels: macro?.gold?.map(d => new Date(d.date).toLocaleDateString()) || [],
                                                 datasets: [{
-                                                    label: 'Oro (USD)',
+                                                    label: 'Gold (USD)',
                                                     data: macro?.gold?.map(d => d.value) || [],
                                                     borderColor: '#bf8700',
                                                     backgroundColor: 'rgba(191, 135, 0, 0.1)',
@@ -231,19 +231,19 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                                             }} options={commonOptions} />
                                         </div>
                                         <AIInsight
-                                            insight={insights['gold'] || macro?.insight_gold || "Evaluando estatus de refugio..."}
+                                            insight={insights['gold'] || macro?.insight_gold || "Evaluating safe-haven status..."}
                                             colorClass="text-warning"
                                         />
                                     </div>
                                 </div>
                                 <div className="col-md-4">
                                     <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.7s' }}>
-                                        <h6 className="text-danger">⛏️ Cobre</h6>
+                                        <h6 className="text-danger">⛏️ Copper</h6>
                                         <div style={{ height: '200px' }}>
                                             <Line data={{
                                                 labels: macro?.copper?.map(d => new Date(d.date).toLocaleDateString()) || [],
                                                 datasets: [{
-                                                    label: 'Cobre (USD)',
+                                                    label: 'Copper (USD)',
                                                     data: macro?.copper?.map(d => d.value) || [],
                                                     borderColor: '#da3633',
                                                     backgroundColor: 'rgba(218, 54, 51, 0.1)',
@@ -254,19 +254,19 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                                             }} options={commonOptions} />
                                         </div>
                                         <AIInsight
-                                            insight={insights['copper'] || macro?.insight_copper || "Evaluando ingresos por exportación..."}
+                                            insight={insights['copper'] || macro?.insight_copper || "Evaluating export revenue..."}
                                             colorClass="text-danger"
                                         />
                                     </div>
                                 </div>
                                 <div className="col-md-4">
                                     <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.8s' }}>
-                                        <h6 className="text-light">🛢️ Petróleo WTI</h6>
+                                        <h6 className="text-light">🛢️ Oil WTI</h6>
                                         <div style={{ height: '200px' }}>
                                             <Line data={{
                                                 labels: macro?.oil?.map(d => new Date(d.date).toLocaleDateString()) || [],
                                                 datasets: [{
-                                                    label: 'Petróleo (USD)',
+                                                    label: 'Oil WTI (USD)',
                                                     data: macro?.oil?.map(d => d.value) || [],
                                                     borderColor: '#c9d1d9',
                                                     backgroundColor: 'rgba(201, 209, 217, 0.1)',
@@ -277,7 +277,7 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                                             }} options={commonOptions} />
                                         </div>
                                         <AIInsight
-                                            insight={insights['oil'] || macro?.insight_oil || "Verificando costos energéticos..."}
+                                            insight={insights['oil'] || macro?.insight_oil || "Verifying energy costs..."}
                                             colorClass="text-light"
                                         />
                                     </div>
@@ -304,7 +304,7 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                                             }} options={commonOptions} />
                                         </div>
                                         <AIInsight
-                                            insight={insights['btc'] || macro?.insight_crypto || "Escaneando liquidez digital..."}
+                                            insight={insights['btc'] || macro?.insight_crypto || "Scanning digital liquidity..."}
                                             colorClass="text-warning"
                                         />
                                     </div>
@@ -327,7 +327,7 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                                             }} options={commonOptions} />
                                         </div>
                                         <AIInsight
-                                            insight={insights['eth'] || macro?.insight_crypto || "Escaneando liquidez digital..."}
+                                            insight={insights['eth'] || macro?.insight_crypto || "Scanning digital liquidity..."}
                                             colorClass="text-primary"
                                         />
                                     </div>
@@ -337,8 +337,8 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                         </div>
                     </div>
                     <div className="modal-footer">
-                        <small className="text-muted me-auto">*Fuentes: CMF Chile, BLS, Tesoro de EE.UU.</small>
-                        <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <small className="text-muted me-auto">*Sources: CMF Chile, BLS, US Treasury</small>
+                        <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>

@@ -16,17 +16,17 @@ const _cache = new Map();   // key → insight string
 const _inflight = new Map();   // key → Promise<string|null>
 
 const CACHE_TTL = 12 * 60 * 60 * 1000; // 12 h
-const LS_PREFIX = 'scloda_insight_v3_';
+const LS_PREFIX = 'scloda_insight_v4_';
 
 // ── Asset chart configs (single source of truth) ──
 export const ASSET_CHARTS = [
-    { key: 'gold', title: '🥇 Oro', subtitle: 'USD/oz', color: '#bf8700', colorClass: 'text-warning', fallback: 'Activo refugio tradicional. Inversamente correlacional al riesgo.' },
-    { key: 'copper', title: '⛏️ Cobre', subtitle: 'USD/lb', color: '#da3633', colorClass: 'text-danger', fallback: 'Sueldo de Chile. Indicador clave de demanda industrial global.' },
-    { key: 'btc', title: '🪙 Bitcoin', subtitle: 'CLP', color: '#f2a900', colorClass: 'text-warning', fallback: 'Activo digital volátil. Proxy de riesgo.' },
-    { key: 'eth', title: '💠 Ethereum', subtitle: 'CLP', color: '#627eea', colorClass: 'text-primary', fallback: 'Plataforma de contratos inteligentes. Alta exposición DeFi.' },
-    { key: 'oil', title: '🛢️ Petróleo WTI', subtitle: 'USD/bbl', color: '#c9d1d9', colorClass: 'text-light', fallback: 'Referencia energética. Afecta inflación y transporte.' },
-    { key: 'cpi', title: '📊 IPC EE.UU.', subtitle: 'Índice', color: '#f78166', colorClass: 'text-danger', fallback: 'Inflación USA. Clave para decisiones de la Fed.' },
-    { key: 'yields', title: '📈 Treasury 10Y', subtitle: 'Tasa %', color: '#58a6ff', colorClass: 'text-primary', fallback: 'Tasa libre de riesgo. Presiona monedas emergentes al subir.' },
+    { key: 'gold', title: '🥇 Gold', subtitle: 'USD/oz', color: '#bf8700', colorClass: 'text-warning', fallback: 'Traditional safe-haven asset. Inversely correlated with risk appetite.' },
+    { key: 'copper', title: '⛏️ Copper', subtitle: 'USD/lb', color: '#da3633', colorClass: 'text-danger', fallback: 'Chile\'s lifeblood. Key indicator of global industrial demand.' },
+    { key: 'btc', title: '🪙 Bitcoin', subtitle: 'CLP', color: '#f2a900', colorClass: 'text-warning', fallback: 'Volatile digital asset. Risk sentiment proxy.' },
+    { key: 'eth', title: '💠 Ethereum', subtitle: 'CLP', color: '#627eea', colorClass: 'text-primary', fallback: 'Smart contract platform. High DeFi exposure.' },
+    { key: 'oil', title: '🛢️ Oil WTI', subtitle: 'USD/bbl', color: '#c9d1d9', colorClass: 'text-light', fallback: 'Energy benchmark. Impacts inflation and transportation costs.' },
+    { key: 'cpi', title: '📊 US CPI', subtitle: 'Index', color: '#f78166', colorClass: 'text-danger', fallback: 'US inflation gauge. Key driver of Fed policy decisions.' },
+    { key: 'yields', title: '📈 Treasury 10Y', subtitle: 'Yield %', color: '#58a6ff', colorClass: 'text-primary', fallback: 'Risk-free rate. Higher yields pressure emerging market currencies.' },
 ];
 
 // ── Helpers ──

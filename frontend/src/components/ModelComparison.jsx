@@ -9,24 +9,24 @@ import AssetIcon from './AssetIcon';
 
 // ========== CONSTANTS ==========
 const MODEL_INFO = {
-    'Auto ARIMA': { short: 'Auto ARIMA', explanation: 'Encuentra automáticamente la mejor combinación de valores pasados.', bestFor: 'Activos en tendencia', icon: '📈' },
-    'ARIMA': { short: 'ARIMA', explanation: 'Usa valores pasados para predecir el futuro.', bestFor: 'Tendencias estables', icon: '📈' },
-    'Theta': { short: 'Método Theta', explanation: 'Descompone y suaviza la serie.', bestFor: 'Activos volátiles', icon: '🌊' },
-    'ETS': { short: 'ETS', explanation: 'Error, Trend, Seasonality.', bestFor: 'Datos estacionales', icon: '🔄' },
-    'Naive': { short: 'Naïve', explanation: 'Usa el último valor como predicción.', bestFor: 'Caminatas aleatorias', icon: '🎯' }
+    'Auto ARIMA': { short: 'Auto ARIMA', explanation: 'Automatically finds the best combination of past values.', bestFor: 'Trending assets', icon: '📈' },
+    'ARIMA': { short: 'ARIMA', explanation: 'Uses past values to forecast the future.', bestFor: 'Stable trends', icon: '📈' },
+    'Theta': { short: 'Theta Method', explanation: 'Decomposes and smooths the series.', bestFor: 'Volatile assets', icon: '🌊' },
+    'ETS': { short: 'ETS', explanation: 'Error, Trend, Seasonality.', bestFor: 'Seasonal data', icon: '🔄' },
+    'Naive': { short: 'Naïve', explanation: 'Uses the last value as prediction.', bestFor: 'Random walks', icon: '🎯' }
 };
 
 const CONFIDENCE_BADGES = {
-    excellent: { emoji: '🟢', label: 'Excelente', color: '#fff', bg: 'rgba(56, 161, 105, 0.9)' },
-    good: { emoji: '🟡', label: 'Bueno', color: '#1a1a00', bg: 'rgba(236, 201, 75, 1)' },
-    volatile: { emoji: '🟠', label: 'Volátil', color: '#fff', bg: 'rgba(237, 137, 54, 0.9)' },
+    excellent: { emoji: '🟢', label: 'Excellent', color: '#fff', bg: 'rgba(56, 161, 105, 0.9)' },
+    good: { emoji: '🟡', label: 'Good', color: '#1a1a00', bg: 'rgba(236, 201, 75, 1)' },
+    volatile: { emoji: '🟠', label: 'Volatile', color: '#fff', bg: 'rgba(237, 137, 54, 0.9)' },
     experimental: { emoji: '🔴', label: 'Experimental', color: '#fff', bg: 'rgba(229, 62, 62, 0.9)' }
 };
 
 const METRIC_INFO = {
-    mae: { name: 'MAE', full: 'Error Absoluto Medio' },
-    rmse: { name: 'RMSE', full: 'Raíz del Error Cuadrático Medio' },
-    mape: { name: 'MAPE', full: 'Error Porcentual Absoluto Medio' }
+    mae: { name: 'MAE', full: 'Mean Absolute Error' },
+    rmse: { name: 'RMSE', full: 'Root Mean Squared Error' },
+    mape: { name: 'MAPE', full: 'Mean Absolute Percentage Error' }
 };
 
 // Updated to use iconType for AssetIcon component instead of emojis
@@ -41,25 +41,25 @@ const assetConfig = {
 };
 
 const SCLODA_TIPS = {
-    GOLD: "Refugio seguro. Inversamente correlacionado con USD.",
-    COPPER: "Indicador de demanda industrial. Ojo con China.",
-    OIL: "Sensible a geopolítica. Decisiones OPEP importan.",
-    USDCLP: "Clave macro local. Tasas BCCh influyen.",
-    UF: "Indexada a inflación. Predecible a corto plazo.",
-    BTC: "Alta volatilidad. Usar con precaución.",
-    ETH: "Exposición DeFi. Correlacionado a BTC."
+    GOLD: "Safe haven. Inversely correlated with USD.",
+    COPPER: "Industrial demand indicator. Watch China closely.",
+    OIL: "Geopolitically sensitive. OPEC decisions matter.",
+    USDCLP: "Local macro key. BCCh rates influence.",
+    UF: "Inflation-indexed. Predictable short-term.",
+    BTC: "High volatility. Use with caution.",
+    ETH: "DeFi exposure. Correlated with BTC."
 };
 
 const getDemoData = () => ({
     lastUpdated: new Date().toISOString(),
     assets: {
-        GOLD: { bestModel: 'Auto ARIMA', metrics: { mae: 12.5, rmse: 15.2, mape: 0.65 }, confidence: 'excellent', reason: 'Serie muy estable, tendencia suave.' },
-        COPPER: { bestModel: 'Theta', metrics: { mae: 180, rmse: 220, mape: 6.14 }, confidence: 'volatile', reason: 'Ciclos industriales marcados, Theta respondió mejor en backtesting.' },
-        OIL: { bestModel: 'Naive', metrics: { mae: 1.2, rmse: 1.8, mape: 1.92 }, confidence: 'excellent', reason: 'Random walk: "mañana se parece a hoy" superó modelos complejos.' },
-        USDCLP: { bestModel: 'Auto ARIMA', metrics: { mae: 8.5, rmse: 12.3, mape: 4.22 }, confidence: 'good', reason: 'FX con ruido, pero ARIMA captura autocorrelación de corto plazo.' },
-        UF: { bestModel: 'ARIMA(0,2,2)', metrics: { mae: 250, rmse: 253, mape: 0.63 }, confidence: 'excellent', reason: 'Indexada a inflación. Muy predecible en horizontes cortos.', isRuleBased: true },
-        BTC: { bestModel: 'Auto ARIMA', metrics: { mae: 2500, rmse: 3200, mape: 8.5 }, confidence: 'volatile', reason: 'Alta volatilidad, cambios de régimen frecuentes.', isHighVolatility: true },
-        ETH: { bestModel: 'Auto ARIMA', metrics: { mae: 180, rmse: 240, mape: 9.2 }, confidence: 'volatile', reason: 'Similar a BTC, con mayor ruido relativo.', isHighVolatility: true }
+        GOLD: { bestModel: 'Auto ARIMA', metrics: { mae: 12.5, rmse: 15.2, mape: 0.65 }, confidence: 'excellent', reason: 'Very stable series, smooth trend.' },
+        COPPER: { bestModel: 'Theta', metrics: { mae: 180, rmse: 220, mape: 6.14 }, confidence: 'volatile', reason: 'Marked industrial cycles, Theta performed best in backtesting.' },
+        OIL: { bestModel: 'Naive', metrics: { mae: 1.2, rmse: 1.8, mape: 1.92 }, confidence: 'excellent', reason: 'Random walk: "tomorrow looks like today" outperformed complex models.' },
+        USDCLP: { bestModel: 'Auto ARIMA', metrics: { mae: 8.5, rmse: 12.3, mape: 4.22 }, confidence: 'good', reason: 'Noisy FX, but ARIMA captures short-term autocorrelation.' },
+        UF: { bestModel: 'ARIMA(0,2,2)', metrics: { mae: 250, rmse: 253, mape: 0.63 }, confidence: 'excellent', reason: 'Inflation-indexed. Highly predictable over short horizons.', isRuleBased: true },
+        BTC: { bestModel: 'Auto ARIMA', metrics: { mae: 2500, rmse: 3200, mape: 8.5 }, confidence: 'volatile', reason: 'High volatility, frequent regime changes.', isHighVolatility: true },
+        ETH: { bestModel: 'Auto ARIMA', metrics: { mae: 180, rmse: 240, mape: 9.2 }, confidence: 'volatile', reason: 'Similar to BTC, with higher relative noise.', isHighVolatility: true }
     }
 });
 
@@ -168,7 +168,7 @@ const ModelComparison = () => {
     }
 
     if (!modelData || totalAssets === 0) {
-        return <div className="alert alert-info">No hay datos de modelos disponibles</div>;
+        return <div className="alert alert-info">No model data available</div>;
     }
 
     const currentAssetKey = assets[currentIndex];
@@ -179,8 +179,8 @@ const ModelComparison = () => {
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h4 className="text-white mb-1">📊 Rendimiento de Modelos ML</h4>
-                    <small className="text-white-50">Usa flechas ← → o haz clic para navegar</small>
+                    <h4 className="text-white mb-1">📊 ML Model Performance</h4>
+                    <small className="text-white-50">Use arrow keys ← → or click to navigate</small>
                 </div>
             </div>
 
@@ -278,7 +278,7 @@ const ModelComparison = () => {
                                                         }}
                                                     >
                                                         <small className="text-info fw-bold d-block mb-1" style={{ fontSize: '0.7rem' }}>
-                                                            📊 ¿Por qué este modelo?
+                                                            📊 Why this model?
                                                         </small>
                                                         <span style={{ color: '#e5e7eb', fontSize: '0.85rem', lineHeight: '1.5' }}>
                                                             {data.reason || modelInfo.explanation}
@@ -302,7 +302,7 @@ const ModelComparison = () => {
                                                 {/* Mini Model Comparison Bars */}
                                                 <div className="mb-3">
                                                     <small className="text-white-50 d-block mb-2" style={{ fontSize: '0.7rem' }}>
-                                                        Comparación de Modelos (menor error = mejor)
+                                                        Model Comparison (lower error = better)
                                                     </small>
                                                     <div className="d-flex flex-column gap-1">
                                                         {[
@@ -348,9 +348,9 @@ const ModelComparison = () => {
                                                     <div className="d-flex align-items-start gap-2">
                                                         <span style={{ fontSize: '1.2rem' }}>💡</span>
                                                         <div>
-                                                            <small className="text-success fw-bold d-block mb-1">Nota de Scloda</small>
+                                                            <small className="text-success fw-bold d-block mb-1">Scloda's Note</small>
                                                             <span style={{ color: '#d1d5db', fontSize: '0.9rem' }}>
-                                                                {SCLODA_TIPS[asset] || 'Analizar tendencias con cuidado.'}
+                                                                {SCLODA_TIPS[asset] || 'Analyze trends carefully.'}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -361,7 +361,7 @@ const ModelComparison = () => {
                                         {/* Side cards - minimal */}
                                         {!isCurrent && (
                                             <div className="text-center py-4">
-                                                <small className="text-white-50">Click para ver detalles</small>
+                                                <small className="text-white-50">Click to view details</small>
                                             </div>
                                         )}
                                     </div>
@@ -410,25 +410,25 @@ const ModelComparison = () => {
                             fontSize: '1.5rem'
                         }}>< FaUserTie size={24} color="#fff" /></div>
                         <div>
-                            <h5 className="text-success mb-1">Análisis de Scloda (AI)</h5>
-                            <small className="text-white-50">Insights inteligentes sobre la selección del modelo para {currentAssetKey}</small>
+                            <h5 className="text-success mb-1">Scloda Analysis (AI)</h5>
+                            <small className="text-white-50">Smart insights on model selection for {currentAssetKey}</small>
                         </div>
                     </div>
 
                     <div className="row g-3">
                         <div className="col-md-6">
                             <div className="p-3 rounded" style={{ background: 'rgba(56,161,105,0.1)' }}>
-                                <h6 className="text-success mb-2">📊 Selección del Modelo</h6>
+                                <h6 className="text-success mb-2">📊 Model Selection</h6>
                                 <p className="text-white small mb-0">
-                                    {currentAnalysis ? currentAnalysis.selection_reason : "Analizando datos del modelo..."}
+                                    {currentAnalysis ? currentAnalysis.selection_reason : "Analyzing model data..."}
                                 </p>
                             </div>
                         </div>
                         <div className="col-md-6">
                             <div className="p-3 rounded" style={{ background: 'rgba(236,201,75,0.1)' }}>
-                                <h6 className="text-warning mb-2">⚠️ Nivel de Confianza</h6>
+                                <h6 className="text-warning mb-2">⚠️ Confidence Level</h6>
                                 <p className="text-white small mb-0">
-                                    {currentAnalysis ? currentAnalysis.confidence_note : "Calculando confiabilidad..."}
+                                    {currentAnalysis ? currentAnalysis.confidence_note : "Calculating reliability..."}
                                 </p>
                             </div>
                         </div>

@@ -2,14 +2,16 @@ import React, { memo } from 'react';
 import { Line } from 'react-chartjs-2';
 import { FaUserTie } from 'react-icons/fa';
 
-// ── Shared chart.js options (static, never changes → no re-render) ──
+// ── Shared chart.js options ──
 const CHART_OPTIONS = {
     responsive: true,
     maintainAspectRatio: false,
     animation: false,
     plugins: { legend: { display: false } },
     scales: {
-        x: { display: false },
+        x: {
+            display: false,
+        },
         y: {
             grid: { color: '#30363d' },
             ticks: { color: '#8b949e', maxTicksLimit: 3, font: { size: 9 } },
@@ -20,6 +22,22 @@ const CHART_OPTIONS = {
         line: { tension: 0.4 },
     },
 };
+
+// Short month names
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** Max recent observations to display */
+const MAX_POINTS = 30;
+
+/** Format "2026-02-15" → "15 Feb" (day-based, avoids duplicate month labels) */
+function formatDateLabel(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = MONTH_SHORT[d.getMonth()];
+    return `${day} ${month}`;
+}
 
 // ── Helpers ──
 
@@ -53,10 +71,19 @@ function formatValue(value, key) {
  *   insightText string | null  (resolved by useSclodaInsights)
  *   isLoading   boolean        (insight still fetching)
  */
-const ChartCard = ({ chart, data, insightText, isLoading }) => {
+const ChartCard = ({ chart, data: rawData, insightText, isLoading }) => {
+    // Safety net: only show recent data (fixes ancient Copper observations, etc.)
+    const data = rawData.length > MAX_POINTS ? rawData.slice(-MAX_POINTS) : rawData;
     const trend = getTrend(data);
     const currentValue = data[data.length - 1]?.value;
     const displayInsight = insightText || chart.fallback;
+
+    // Date range for subtitle badge
+    const firstDate = data[0]?.date || data[0]?.observation_date;
+    const lastDate = data[data.length - 1]?.date || data[data.length - 1]?.observation_date;
+    const rangeLabel = firstDate && lastDate
+        ? `${formatDateLabel(firstDate)} → ${formatDateLabel(lastDate)}`
+        : null;
 
     return (
         <div
@@ -107,12 +134,33 @@ const ChartCard = ({ chart, data, insightText, isLoading }) => {
                     </div>
                 </div>
 
+                {/* Date range badge */}
+                {rangeLabel && (
+                    <div style={{
+                        textAlign: 'center',
+                        marginBottom: '2px',
+                    }}>
+                        <span style={{
+                            fontSize: '0.6rem',
+                            fontFamily: 'monospace',
+                            color: `${chart.color}99`,
+                            background: `${chart.color}10`,
+                            border: `1px solid ${chart.color}20`,
+                            borderRadius: '10px',
+                            padding: '1px 8px',
+                            letterSpacing: '0.3px',
+                        }}>
+                            {rangeLabel}
+                        </span>
+                    </div>
+                )}
+
                 {/* Chart (REAL DATA) */}
-                <div style={{ height: '70px', marginBottom: '8px' }}>
+                <div style={{ height: '80px', marginBottom: '6px' }}>
                     {data.length > 0 ? (
                         <Line
                             data={{
-                                labels: data.map((_, idx) => idx),
+                                labels: data.map((d) => formatDateLabel(d.date || d.observation_date)),
                                 datasets: [
                                     {
                                         data: data.map((d) => d.value),

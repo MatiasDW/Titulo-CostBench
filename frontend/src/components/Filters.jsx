@@ -1,6 +1,8 @@
 import React from 'react';
+import useSounds from '../hooks/useSounds';
 
 const Filters = ({ limit, onLimitChange, currency, onCurrencyChange, onUpdate }) => {
+    const { playClick, playRefresh } = useSounds();
     return (
         <div className="card-custom p-4 mb-4">
             <div className="row g-3">
@@ -9,7 +11,7 @@ const Filters = ({ limit, onLimitChange, currency, onCurrencyChange, onUpdate })
                     <select
                         className="form-select"
                         value={limit}
-                        onChange={(e) => onLimitChange(parseInt(e.target.value))}
+                        onChange={(e) => { playClick(); onLimitChange(parseInt(e.target.value)); }}
                     >
                         <option value="5">Top 5 Cheapest</option>
                         <option value="10">Top 10 Cheapest</option>
@@ -22,7 +24,7 @@ const Filters = ({ limit, onLimitChange, currency, onCurrencyChange, onUpdate })
                     <select
                         className="form-select"
                         value={currency}
-                        onChange={(e) => onCurrencyChange(e.target.value)}
+                        onChange={(e) => { playClick(); onCurrencyChange(e.target.value); }}
                     >
                         <option value="CLP">CLP (Chilean Peso)</option>
                         <option value="UF">UF (Unidad de Fomento)</option>
@@ -35,7 +37,7 @@ const Filters = ({ limit, onLimitChange, currency, onCurrencyChange, onUpdate })
             </div>
             <div className="row mt-3">
                 <div className="col-12">
-                    <button className="btn btn-success w-100 fw-bold" onClick={onUpdate}>
+                    <button className="btn btn-success w-100 fw-bold" onClick={() => { playRefresh(); onUpdate(); }}>
                         Update Ranking
                     </button>
                 </div>

@@ -9,6 +9,7 @@ import {
 } from 'react-icons/fa';
 import { GiGoldBar, GiHouse, GiModernCity, GiFarmTractor } from 'react-icons/gi';
 import AnimatedBackground from '../AnimatedBackground';
+import useSounds from '../../hooks/useSounds';
 import SignUpModal from './SignUpModal';
 import './Auth.css';
 
@@ -40,6 +41,7 @@ const LoginPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [showWelcome, setShowWelcome] = useState(true);
     const [showSignUp, setShowSignUp] = useState(false);
+    const { playLogin, playError, playClick } = useSounds();
 
     // Redirect only if user was ALREADY authenticated when visiting /login
     React.useEffect(() => {
@@ -55,9 +57,11 @@ const LoginPage = () => {
 
         try {
             await login(email, password);
+            playLogin();
             navigate('/home', { replace: true });
         } catch (err) {
             const msg = err.response?.data?.error || 'Connection error. Please try again.';
+            playError();
             setError(msg);
         } finally {
             setIsLoading(false);

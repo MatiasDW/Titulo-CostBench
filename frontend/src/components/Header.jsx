@@ -4,23 +4,22 @@ import { FaUserTie } from 'react-icons/fa';
 const Header = ({ onOpenDashboard }) => {
     return (
         <div className="row align-items-center mb-5 border-bottom border-secondary pb-4">
-            <div className="col-lg-5 text-start ps-0"> {/* Strictly align left, remove padding */}
+            <div className="col-lg-5 text-start" style={{ paddingLeft: '55px' }}> {/* Clear sidebar toggle button */}
                 {/* Logo stored in frontend/public/img, accessed via root relative path */}
                 <img
                     src="/img/costbench_logo.svg"
                     alt="CostBench"
                     width="280"
                     className="mb-3 mb-lg-0 floating-logo" // Energy animation
-                    style={{ marginLeft: '-15px' }} // Negative margin to align with container edge if needed
                 />
             </div>
             <div className="col-lg-7 text-lg-end">
                 <div className="d-flex flex-column align-items-end justify-content-center h-100">
                     <h5 className="text-light mb-1 fw-light fst-italic" style={{ letterSpacing: '0.5px' }}>
-                        "To allow anyone to understand the true cost of banking products through transparent, data-driven benchmarking."
+                        "Empowering smarter financial decisions through ML-driven market intelligence and real-time macro analysis."
                     </h5>
                     <p className="text-secondary mb-0 fw-light">
-                        A financial market where efficiency is transparent and aligned with global macro reality.
+                        Chile's commodities, currencies, and crypto — tracked, modeled, and explained by AI.
                     </p>
 
                     <button

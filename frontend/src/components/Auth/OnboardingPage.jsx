@@ -8,6 +8,7 @@ import {
 } from 'react-icons/fa';
 import { GiGoldBar } from 'react-icons/gi';
 import AnimatedBackground from '../AnimatedBackground';
+import useSounds from '../../hooks/useSounds';
 import './Onboarding.css';
 
 const INTEREST_CARDS = [
@@ -62,10 +63,13 @@ const OnboardingPage = () => {
     const [selectedInterests, setSelectedInterests] = useState([]);
     const [selectedRisk, setSelectedRisk] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const { playSelect, playDeselect, playClick, playNav, playSuccess } = useSounds();
 
     const toggleInterest = (id) => {
+        const isSelected = selectedInterests.includes(id);
+        isSelected ? playDeselect() : playSelect();
         setSelectedInterests(prev =>
-            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+            isSelected ? prev.filter(i => i !== id) : [...prev, id]
         );
     };
 
@@ -75,6 +79,7 @@ const OnboardingPage = () => {
         setIsLoading(true);
         try {
             await completeOnboarding(selectedInterests, selectedRisk || undefined);
+            playSuccess();
         } catch (err) {
             console.error('Onboarding save error:', err);
         }

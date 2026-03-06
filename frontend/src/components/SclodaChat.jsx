@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaUserTie, FaTimes, FaPaperPlane } from 'react-icons/fa';
+import useSounds from '../hooks/useSounds';
 import './SclodaChat.css';
 
 /**
@@ -10,13 +11,14 @@ const SclodaChat = () => {
     const [messages, setMessages] = useState([
         {
             role: 'assistant',
-            content: '¡Hola! 👋 Soy Scloda, tu analista financiero. Puedo ayudarte a entender datos del mercado chileno: UF, dólar, commodities, criptos y más. ¿En qué te puedo ayudar?'
+            content: 'Hello! 👋 I\'m Scloda, your AI financial analyst. I can help you understand market data: UF, USD/CLP, commodities, crypto and more. How can I help?'
         }
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
+    const { playChatOpen, playChatClose, playSend, playReceive, playClick } = useSounds();
 
     // Scroll to bottom when messages change
     useEffect(() => {
@@ -36,6 +38,7 @@ const SclodaChat = () => {
         const userMessage = input.trim();
         setInput('');
         setLoading(true);
+        playSend();
 
         // Add user message
         setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
@@ -58,17 +61,17 @@ const SclodaChat = () => {
 
             const data = await response.json();
 
-            // Add assistant response
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: data.response || 'No pude procesar tu mensaje. Intenta de nuevo.'
+                content: data.response || 'I couldn\'t process your message. Please try again.'
             }]);
+            playReceive();
 
         } catch (error) {
             console.error('Chat error:', error);
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: '😅 Ups, tuve un problema de conexión. Intenta de nuevo.'
+                content: '😅 Oops, I had a connection issue. Please try again.'
             }]);
         } finally {
             setLoading(false);
@@ -84,9 +87,9 @@ const SclodaChat = () => {
 
     // Quick suggestions
     const suggestions = [
-        '¿Cuánto vale la UF?',
-        '¿Cómo está el dólar?',
-        '¿Qué pasó con el cobre?'
+        'What\'s the current UF value?',
+        'How is the dollar doing?',
+        'What happened with copper?'
     ];
 
     return (
@@ -94,11 +97,11 @@ const SclodaChat = () => {
             {/* Chat Button */}
             <button
                 className={`scloda-chat-button ${isOpen ? 'hidden' : ''}`}
-                onClick={() => setIsOpen(true)}
-                aria-label="Abrir chat con Scloda"
+                onClick={() => { playChatOpen(); setIsOpen(true); }}
+                aria-label="Open Scloda chat"
             >
                 <FaUserTie size={24} />
-                <span className="scloda-chat-button-label">Pregúntale a Scloda</span>
+                <span className="scloda-chat-button-label">Ask Scloda</span>
             </button>
 
             {/* Chat Window */}
@@ -112,13 +115,13 @@ const SclodaChat = () => {
                             </div>
                             <div>
                                 <h6>Scloda</h6>
-                                <small>Analista Financiero AI</small>
+                                <small>AI Financial Analyst</small>
                             </div>
                         </div>
                         <button
                             className="scloda-chat-close"
-                            onClick={() => setIsOpen(false)}
-                            aria-label="Cerrar chat"
+                            onClick={() => { playChatClose(); setIsOpen(false); }}
+                            aria-label="Close chat"
                         >
                             <FaTimes size={16} />
                         </button>
@@ -181,7 +184,7 @@ const SclodaChat = () => {
                         <input
                             ref={inputRef}
                             type="text"
-                            placeholder="Escribe tu pregunta..."
+                            placeholder="Type your question..."
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={handleKeyPress}
@@ -190,7 +193,7 @@ const SclodaChat = () => {
                         <button
                             onClick={sendMessage}
                             disabled={!input.trim() || loading}
-                            aria-label="Enviar mensaje"
+                            aria-label="Send message"
                         >
                             <FaPaperPlane size={14} />
                         </button>

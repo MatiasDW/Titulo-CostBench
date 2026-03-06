@@ -4,6 +4,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // ── Lightweight imports (always loaded) ──
 import LoginPage from './components/Auth/LoginPage';
 import OnboardingPage from './components/Auth/OnboardingPage';
+import ProfilePage from './components/Auth/ProfilePage';
+import WalletPage from './components/Trading/WalletPage';
+import TradePage from './components/Trading/TradePage';
 import DashboardLayout from './components/Auth/DashboardLayout';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import useDashboardData from './hooks/useDashboardData';
@@ -95,6 +98,21 @@ const App = () => {
       <Route path="/onboarding" element={
         <ProtectedRoute>
           <OnboardingPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <ProfilePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/wallet" element={
+        <ProtectedRoute>
+          <DashboardLayout><WalletPage /></DashboardLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/trade" element={
+        <ProtectedRoute>
+          <DashboardLayout><TradePage /></DashboardLayout>
         </ProtectedRoute>
       } />
       <Route path="/home" element={
