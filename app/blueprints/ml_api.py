@@ -242,3 +242,47 @@ def ml_health():
     }
     
     return jsonify(health)
+
+# Markov Insights Endpoint
+@bp.route('/market/markov-insights', methods=['GET'])
+def get_markov_insights():
+    """
+    Fetch the latest statistically significant Markov predictions.
+    
+    Returns:
+        {insights: [{predictor, target, p_value, split_matrix}], run_date}
+    """
+    try:
+        from app.models.ml import MarkovCombination
+        from app.extensiones import db
+        from sqlalchemy import desc
+
+        # Get the latest run_date available
+        latest_record = MarkovCombination.query.order_by(desc(MarkovCombination.run_date)).first()
+        
+        if not latest_record:
+            return jsonify({'insights': [], 'message': 'No Markov data computed yet.'})
+            
+        # Get all records from that exact run_date
+        records = MarkovCombination.query.filter_by(
+            run_date=latest_record.run_date
+        ).order_by(MarkovCombination.p_value).all()
+        
+        # Ensure HG=F to USDCLP=X (Copper to CLP) is ALWAYS included as the foundational metric
+        has_copper = any(r.predictor == 'HG=F' and r.target == 'USDCLP=X' for r in records)
+        if not has_copper:
+            copper_record = MarkovCombination.query.filter_by(
+                predictor='HG=F', 
+                target='USDCLP=X'
+            ).order_by(desc(MarkovCombination.run_date)).first()
+            
+            if copper_record:
+                records.insert(0, copper_record) # Put it at the top so it doesn't get paginated out if we ever slice arrays
+
+        return jsonify({
+            'run_date': latest_record.run_date.isoformat(),
+            'insights': [r.to_dict() for r in records]
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

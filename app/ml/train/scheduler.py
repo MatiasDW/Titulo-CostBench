@@ -62,6 +62,28 @@ def schedule_quincenal_training():
     logger.info("quincenal_job_scheduled")
 
 
+def schedule_weekly_markov():
+    """Schedule weekly (Sunday 4am) Markov Combination update."""
+    scheduler = get_scheduler()
+    
+    trigger = CronTrigger(
+        day_of_week="sun",
+        hour=4,
+        minute=0,
+        timezone="America/Santiago"
+    )
+    
+    scheduler.add_job(
+        func=trigger_markov_now,
+        trigger=trigger,
+        id="weekly_markov_update",
+        name="Weekly Markov Update",
+        replace_existing=True
+    )
+    
+    logger.info("weekly_markov_scheduled")
+
+
 def trigger_training_now() -> dict:
     """
     Manually trigger the ARIMA training job for all assets.
@@ -153,6 +175,55 @@ def trigger_training_now() -> dict:
     return results
 
 
+def trigger_markov_now() -> dict:
+    """
+    Manually trigger the Markov combination study and append it to the database.
+    
+    Returns dict with summary of added records.
+    """
+    logger.info("markov_job_started")
+    results = {"added_records": 0}
+    
+    try:
+        from scripts.markov.find_best_pairs import run_all_combinations
+        from app.models.ml import MarkovCombination
+        import sys
+        
+        # Needed to use Flask-SQLAlchemy outside app context if triggered purely by APScheduler in background
+        from flask import current_app
+        from app.extensiones import db
+
+        stats = run_all_combinations()
+        if not stats:
+            logger.warning("markov_job_empty", message="No significant pairs found.")
+            return results
+        
+        # We need an app context to interact with DB
+        if current_app:
+            with current_app.app_context():
+                for res in stats: # Save all significant combinations
+                    new_markov = MarkovCombination(
+                        predictor=res['Ticker_Pred'],
+                        target=res['Ticker_Targ'],
+                        p_value=float(res['Min_P_Value']),
+                        lag1_correlation=float(res['Lag1_Correlation']),
+                        transition_matrix=res['transition_matrix_json']
+                    )
+                    db.session.add(new_markov)
+                db.session.commit()
+                results["added_records"] = len(stats)
+        else:
+            logger.error("markov_job_failed", error="No Flask application context available.")
+            
+        logger.info("markov_job_complete", added=results["added_records"])
+        
+    except Exception as e:
+        logger.error("markov_job_failed", error=str(e))
+        results["_error"] = str(e)
+        
+    return results
+
+
 def start_scheduler():
     """Start the background scheduler."""
     if not APSCHEDULER_AVAILABLE:
@@ -161,6 +232,7 @@ def start_scheduler():
     
     scheduler = get_scheduler()
     schedule_quincenal_training()
+    schedule_weekly_markov()
     
     if not scheduler.running:
         scheduler.start()

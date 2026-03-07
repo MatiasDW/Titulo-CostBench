@@ -78,6 +78,7 @@ def create_app(config_name='default'):
     from app.blueprints.scloda_chat import scloda_bp  # Scloda AI chat
     from app.blueprints.auth import auth_bp  # Authentication
     from app.blueprints.trading import trading_bp  # Paper Trading
+    from app.blueprints.real_estate_api import real_estate_bp # Real Estate Module
     
     app.register_blueprint(cmf_bp, url_prefix='/api/v1/cmf')
     app.register_blueprint(sernac_bp, url_prefix='/api/v1/sernac')
@@ -89,6 +90,7 @@ def create_app(config_name='default'):
     app.register_blueprint(scloda_bp)  # Scloda AI: /api/v1/scloda/*
     app.register_blueprint(auth_bp)    # Auth: /api/v1/auth/*
     app.register_blueprint(trading_bp) # Trading: /api/v1/trading/*
+    app.register_blueprint(real_estate_bp, url_prefix='/api/v1/real-estate')
 
     
     # Health check endpoint

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { FaHome, FaTrophy, FaGlobeAmericas, FaSignOutAlt, FaUserCog, FaBars, FaTimes, FaUserTie, FaChartLine, FaChevronDown, FaWallet, FaExchangeAlt } from 'react-icons/fa';
+import { FaHome, FaTrophy, FaGlobeAmericas, FaSignOutAlt, FaUserCog, FaBars, FaTimes, FaUserTie, FaChartLine, FaChevronDown, FaWallet, FaExchangeAlt, FaBuilding } from 'react-icons/fa';
 import useSounds from '../../hooks/useSounds';
 import './Sidebar.css';
 
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
     { path: '/home', label: 'Home', icon: FaHome },
     { path: '/wallet', label: 'Wallet', icon: FaWallet },
     { path: '/trade', label: 'Trade', icon: FaExchangeAlt },
+    { path: '/real-estate', label: 'Real Estate', icon: FaBuilding },
     { path: '/ranking', label: 'Ranking', icon: FaTrophy },
     { path: '/macro', label: 'Macro', icon: FaGlobeAmericas },
 ];

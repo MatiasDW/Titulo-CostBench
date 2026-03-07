@@ -7,6 +7,7 @@ import OnboardingPage from './components/Auth/OnboardingPage';
 import ProfilePage from './components/Auth/ProfilePage';
 import WalletPage from './components/Trading/WalletPage';
 import TradePage from './components/Trading/TradePage';
+import RealEstatePage from './components/RealEstate/RealEstatePage';
 import DashboardLayout from './components/Auth/DashboardLayout';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import useDashboardData from './hooks/useDashboardData';
@@ -22,6 +23,7 @@ import AnimatedBackground from './components/AnimatedBackground';
 import ChartCarousel from './components/ChartCarousel';
 import ModelComparison from './components/ModelComparison';
 import SclodaChat from './components/SclodaChat';
+import MarketIntelligenceCard from './components/Dashboard/MarketIntelligenceCard';
 
 
 
@@ -61,6 +63,10 @@ const App = () => {
           onCurrencyChange={setCurrency}
           onUpdate={handleUpdate}
         />
+
+        <div className="mb-4">
+          <MarketIntelligenceCard />
+        </div>
 
         <div className="card-header-custom text-white d-flex justify-content-between align-items-center mb-0">
           <span>Banking Cost Ranking (Annual)</span>
@@ -104,6 +110,11 @@ const App = () => {
       <Route path="/trade" element={
         <ProtectedRoute>
           <DashboardLayout><TradePage /></DashboardLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/real-estate" element={
+        <ProtectedRoute>
+          <DashboardLayout><RealEstatePage /></DashboardLayout>
         </ProtectedRoute>
       } />
       <Route path="/home" element={

@@ -326,7 +326,7 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                             </div>
 
                             {/* Row 2: Macro Trends */}
-                            <div className="row g-3">
+                            <div className="row g-3 mt-1">
                                 <div className="col-md-6">
                                     {renderLineCard('US CPI', '🇺🇸', cpiCfg, 'text-danger')}
                                 </div>

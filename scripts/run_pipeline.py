@@ -170,9 +170,32 @@ def run_step_4_macro():
         eth_df = fetch_buda_series('eth-clp')
         xrp_df = fetch_buda_series('xrp-clp') # Mocked
         sol_df = fetch_buda_series('sol-clp') # Mocked
-        
+        # 5. Local FX / Indicators (UF, USD/CLP)
+        print("Adding UF and USD/CLP from local canonical sources...")
+        uf_df = pd.DataFrame(columns=['date', 'value', 'series_id', 'source'])
+        usd_df = pd.DataFrame(columns=['date', 'value', 'series_id', 'source'])
+        try:
+            raw_uf = pd.read_parquet('data/canon/uf.parquet')
+            uf_df = pd.DataFrame({
+                'date': raw_uf['fecha'],
+                'value': raw_uf['valor'],
+                'series_id': 'UF',
+                'source': raw_uf['fuente']
+            })
+            
+            # Using same mocked USD logic as step 3 for consistency
+            dates = pd.date_range(start='2024-01-01', end='2025-12-31', freq='D')
+            usd_df = pd.DataFrame({
+                'date': dates,
+                'value': [950.0] * len(dates),
+                'series_id': 'USDCLP',
+                'source': 'Mocked BDE'
+            })
+        except Exception as e:
+            print(f"Warning: Could not attach UF/USDCLP: {e}")
+
         # Combine
-        macro_df = pd.concat([cpi_df, yield_df, gold_df, copper_df, oil_df, silver_df, btc_df, eth_df, xrp_df, sol_df], ignore_index=True)
+        macro_df = pd.concat([cpi_df, yield_df, gold_df, copper_df, oil_df, silver_df, btc_df, eth_df, xrp_df, sol_df, uf_df, usd_df], ignore_index=True)
         
         # Save
         macro_path = os.path.join('data', "market", "macro_indicators.parquet")

@@ -130,8 +130,9 @@ def get_market_history():
     if df is None:
          return jsonify({'error': 'No market data'}), 404
          
-    # Filter
+    # Filter, Sort temporally, and Drop duplicates to prevent Lightweight Charts crash
     df_filtered = df[df['series_id'] == sid].copy()
+    df_filtered = df_filtered.sort_values('date').drop_duplicates(subset=['date'])
     
     # Format
     df_filtered['date'] = df_filtered['date'].dt.strftime('%Y-%m-%d')

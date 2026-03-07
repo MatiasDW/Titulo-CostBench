@@ -114,6 +114,22 @@ SCLODA_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "get_markov_predictions",
+            "description": "Obtiene las probabilidades estadísticas actuales del mercado mediante la Cadena de Markov calculada. Entrega una matriz empírica que dice, por ejemplo, si el Cobre bajó ayer, cuál es la probabilidad real de que el Dólar o el IPSA suban hoy.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "target": {
+                        "type": "string",
+                        "description": "Opcional. El activo que queremos predecir (ej. 'USD-CLP', 'HG=F'). Si no se indica, devuelve las matrices más significativas."
+                    }
+                }
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "explain_indicator",
             "description": "Explica qué es un indicador financiero y cómo afecta a la economía chilena.",
             "parameters": {
@@ -217,6 +233,8 @@ def execute_tool(tool_name: str, arguments: dict) -> dict[str, Any]:
             return _get_model_info(arguments["asset"])
         elif tool_name == "get_market_summary":
             return _get_market_summary()
+        elif tool_name == "get_markov_predictions":
+            return _get_markov_predictions(arguments.get("target"))
         elif tool_name == "explain_indicator":
             return _explain_indicator(arguments["indicator"])
         else:
@@ -420,3 +438,42 @@ def _explain_indicator(indicator: str) -> dict:
     if not explanation:
         return {"error": f"Unknown indicator: {indicator}"}
     return explanation
+
+
+def _get_markov_predictions(target: str = None) -> dict:
+    """Read the latest statistical Markov transition matrices from the database."""
+    try:
+        from app.models.ml import MarkovCombination
+        from app.extensiones import db
+        from sqlalchemy import desc
+
+        query = MarkovCombination.query.order_by(desc(MarkovCombination.run_date), desc(MarkovCombination.id))
+        
+        if target:
+            # Simple soft match (handles 'USD-CLP' vs 'USDCLP=X')
+            query = query.filter(MarkovCombination.target.ilike(f"%{target[:3]}%"))
+            
+        results = query.limit(3).all()
+        
+        if not results:
+            return {"error": "No Markov transition matrices found in the database. Call get_market_summary instead."}
+
+        insights = []
+        for res in results:
+            insights.append({
+                "predictor": res.predictor,
+                "predicts_target": res.target,
+                "statistical_significance_p_value": float(res.p_value),
+                "lag_correlation": float(res.lag1_correlation),
+                "transition_matrix_probabilities": res.transition_matrix,
+                "calculated_on": str(res.run_date)
+            })
+            
+        return {
+            "concept": "Markov Chain empirical probabilities based on Granger causality (P-Value < 0.05).",
+            "interpretation_guide": "The matrix shows P(Target_State_Today | Predictor_State_Yesterday). 'Bull'=Up, 'Bear'=Down, 'Sideways'=Flat.",
+            "top_predictive_relationships": insights
+        }
+    except Exception as e:
+        return {"error": str(e), "tool": "get_markov_predictions"}
+
