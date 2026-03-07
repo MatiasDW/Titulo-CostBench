@@ -22,6 +22,41 @@ services:
       retries: 3
       start_period: 40s
 
+  scheduler:
+    build: .
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/costbench
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    restart: unless-stopped
+    entrypoint: >
+      bash -lc "while true; do
+        echo \"[scheduler] running data pipeline at $(date -Iseconds)\";
+        python scripts/run_pipeline.py || true;
+        echo \"[scheduler] sleep 24h\"; sleep 86400;
+      done"
+
+  trading-worker:
+    build: .
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/costbench
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    restart: unless-stopped
+    entrypoint: >
+      bash -lc "echo '[trading-worker] started'; python scripts/monitor_positions.py"
   db:
     image: postgres:15-alpine
     environment:

@@ -12,11 +12,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
 // ── Module-level singletons (shared across all hook instances) ──
-const _cache = new Map();   // key → insight string
-const _inflight = new Map();   // key → Promise<string|null>
+let _version = 'v1';          // bumps whenever data changes to bust caches
+const _cache = new Map();     // key → insight string
+const _inflight = new Map();  // key → Promise<string|null>
 
 const CACHE_TTL = 12 * 60 * 60 * 1000; // 12 h
-const LS_PREFIX = 'scloda_insight_v4_';
+const LS_PREFIX = 'scloda_insight_v5_';
 
 // ── Asset chart configs (single source of truth) ──
 export const ASSET_CHARTS = [
@@ -56,23 +57,37 @@ function writeLS(key, insight) {
     } catch { /* quota */ }
 }
 
+// Derive a version string from latest dates to invalidate caches when data updates
+function deriveVersion(macro) {
+    if (!macro || Object.keys(macro).length === 0) return _version;
+    const maxDate = Object.values(macro)
+        .flat()
+        .map(d => d.date || d.observation_date)
+        .filter(Boolean)
+        .map(d => new Date(d).getTime())
+        .reduce((a, b) => Math.max(a, b), 0);
+    return maxDate ? `v${maxDate}` : _version;
+}
+
 /**
  * Fetch a single insight, deduplicating in-flight requests.
  * Returns the insight string or null.
  */
 async function fetchOne(assetKey, data) {
+    const cacheKey = `${_version}:${assetKey}`;
+
     // 1. Memory cache
-    if (_cache.has(assetKey)) return _cache.get(assetKey);
+    if (_cache.has(cacheKey)) return _cache.get(cacheKey);
 
     // 2. localStorage
-    const lsHit = readLS(assetKey);
+    const lsHit = readLS(cacheKey);
     if (lsHit) {
-        _cache.set(assetKey, lsHit);
+        _cache.set(cacheKey, lsHit);
         return lsHit;
     }
 
     // 3. Deduplicate: if a request is already in-flight, piggyback on it
-    if (_inflight.has(assetKey)) return _inflight.get(assetKey);
+    if (_inflight.has(cacheKey)) return _inflight.get(cacheKey);
 
     // 4. Fire the real HTTP call
     const { percent, trend } = getTrend(data);
@@ -92,8 +107,8 @@ async function fetchOne(assetKey, data) {
         .then(json => {
             const text = json?.insight || null;
             if (text) {
-                _cache.set(assetKey, text);
-                writeLS(assetKey, text);
+                _cache.set(cacheKey, text);
+                writeLS(cacheKey, text);
             }
             return text;
         })
@@ -102,10 +117,10 @@ async function fetchOne(assetKey, data) {
             return null;
         })
         .finally(() => {
-            _inflight.delete(assetKey);
+            _inflight.delete(cacheKey);
         });
 
-    _inflight.set(assetKey, promise);
+    _inflight.set(cacheKey, promise);
     return promise;
 }
 
@@ -120,6 +135,20 @@ export default function useSclodaInsights(macro) {
     const [loading, setLoading] = useState(true);
 
     const fetchAll = useCallback(async () => {
+        const nextVersion = deriveVersion(macro);
+        if (nextVersion !== _version) {
+            // Data changed → clear caches to force fresh insights
+            _version = nextVersion;
+            _cache.clear();
+            _inflight.clear();
+            // Purge localStorage entries from previous versions
+            try {
+                Object.keys(localStorage)
+                    .filter(k => k.startsWith(LS_PREFIX))
+                    .forEach(k => localStorage.removeItem(k));
+            } catch { /* ignore */ }
+        }
+
         if (!macro || Object.keys(macro).length === 0) {
             setLoading(false);
             return;

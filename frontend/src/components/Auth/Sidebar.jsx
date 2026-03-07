@@ -74,8 +74,9 @@ const Sidebar = ({ collapsed, onToggle }) => {
                         transition={{ duration: 0.25, ease: 'easeInOut' }}
                     >
                         {/* Brand */}
-                        <div className="sidebar-brand">
+                        <div className="sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <img src="/img/costbench_logo.svg" alt="CostBench" className="sidebar-logo" />
+                            <span style={{ fontSize: '1.2rem' }}>🇨🇱</span>
                         </div>
 
                         {/* Clickable User Profile */}

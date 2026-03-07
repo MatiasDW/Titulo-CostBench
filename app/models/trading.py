@@ -65,6 +65,8 @@ class Position(db.Model):
     quantity = db.Column(db.Numeric(16, 8), nullable=False)
     entry_price = db.Column(db.Numeric(16, 4), nullable=False)
     invested_amount = db.Column(db.Numeric(16, 2), nullable=False)  # CLP spent
+    take_profit_price = db.Column(db.Numeric(16, 4), nullable=True)
+    stop_loss_price = db.Column(db.Numeric(16, 4), nullable=True)
     opened_at = db.Column(
         db.DateTime(timezone=True), nullable=False, default=datetime.utcnow
     )
@@ -79,6 +81,8 @@ class Position(db.Model):
             "quantity": qty,
             "entry_price": entry,
             "invested_amount": float(self.invested_amount),
+            "take_profit_price": float(self.take_profit_price) if self.take_profit_price is not None else None,
+            "stop_loss_price": float(self.stop_loss_price) if self.stop_loss_price is not None else None,
             "opened_at": self.opened_at.isoformat() if self.opened_at else None,
         }
         if current_price is not None:

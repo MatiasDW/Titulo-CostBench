@@ -25,6 +25,33 @@ from app.ml.logging_utils import get_logger
 logger = get_logger("trading.api")
 
 trading_bp = Blueprint("trading", __name__, url_prefix="/api/v1/trading")
+_columns_checked = False
+
+
+def _ensure_schema():
+    """Add optional columns if they don't exist (idempotent)."""
+    global _columns_checked
+    if _columns_checked:
+        return
+    _columns_checked = True
+    try:
+        from sqlalchemy import text
+        with db.engine.begin() as con:
+            con.execute(text(
+                "ALTER TABLE positions "
+                "ADD COLUMN IF NOT EXISTS take_profit_price numeric(16,4);"
+            ))
+            con.execute(text(
+                "ALTER TABLE positions "
+                "ADD COLUMN IF NOT EXISTS stop_loss_price numeric(16,4);"
+            ))
+    except Exception as e:
+        logger.error("schema_check_failed", error=str(e))
+
+
+@trading_bp.before_app_request
+def _before_any_request():
+    _ensure_schema()
 
 
 # ------------------------------------------------------------------
@@ -111,6 +138,8 @@ def _open_position(data: dict, direction: str):
     asset = (data.get("asset") or "").lower().strip()
     amount_clp = data.get("amount")  # CLP amount to invest
     price = data.get("price")        # Current market price
+    tp = data.get("take_profit_price")
+    sl = data.get("stop_loss_price")
 
     # Validation
     if asset not in TRADEABLE_ASSETS:
@@ -121,6 +150,8 @@ def _open_position(data: dict, direction: str):
     try:
         amount_clp = Decimal(str(amount_clp))
         price = Decimal(str(price))
+        tp_val = Decimal(str(tp)) if tp not in (None, "") else None
+        sl_val = Decimal(str(sl)) if sl not in (None, "") else None
     except (TypeError, ValueError, ArithmeticError):
         return jsonify({"error": "Invalid amount or price."}), 400
 
@@ -139,6 +170,12 @@ def _open_position(data: dict, direction: str):
     # Calculate quantity
     quantity = amount_clp / price
 
+    # Validate TP/SL
+    if tp_val is not None and tp_val <= 0:
+        return jsonify({"error": "take_profit_price must be positive."}), 400
+    if sl_val is not None and sl_val <= 0:
+        return jsonify({"error": "stop_loss_price must be positive."}), 400
+
     # Create position
     position = Position(
         wallet_id=wallet.id,
@@ -147,6 +184,8 @@ def _open_position(data: dict, direction: str):
         quantity=quantity,
         entry_price=price,
         invested_amount=amount_clp,
+        take_profit_price=tp_val,
+        stop_loss_price=sl_val,
     )
 
     # Deduct from wallet
@@ -163,6 +202,8 @@ def _open_position(data: dict, direction: str):
         amount=float(amount_clp),
         price=float(price),
         quantity=float(quantity),
+        take_profit=float(tp_val) if tp_val is not None else None,
+        stop_loss=float(sl_val) if sl_val is not None else None,
     )
 
     return jsonify({

@@ -36,11 +36,25 @@ const MarketDashboard = ({ items, macro, analytics }) => {
     const commonOptions = {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 1500, easing: 'easeOutQuart' },
+        animation: { duration: 1200, easing: 'easeOutQuart' },
         plugins: { legend: { display: false } },
+        elements: { point: { radius: 0 } },
         scales: {
-            x: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
-            y: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } }
+            x: {
+                grid: { color: '#2a2f38' },
+                ticks: {
+                    color: '#8b949e',
+                    maxTicksLimit: 6,
+                    autoSkip: true,
+                    callback: (v, i, ticks) => {
+                        const label = ticks[i]?.label || '';
+                        // shorten YYYY-MM-DD -> YYYY or MMM YY when possible
+                        if (label.length >= 10) return label.slice(2, 7); // YY-MM
+                        return label;
+                    }
+                }
+            },
+            y: { grid: { color: '#2a2f38' }, ticks: { color: '#8b949e', maxTicksLimit: 6 } }
         }
     };
 
@@ -54,8 +68,8 @@ const MarketDashboard = ({ items, macro, analytics }) => {
     };
 
     // Data Processing
-    const { top5Cheap, top5Expensive, distribution } = useMemo(() => {
-        if (!items || items.length === 0) return { top5Cheap: [], top5Expensive: [], distribution: {} };
+    const { top5Cheap, top5Expensive, distribution, summary } = useMemo(() => {
+        if (!items || items.length === 0) return { top5Cheap: [], top5Expensive: [], distribution: {}, summary: {} };
 
         // Sort by cost
         const sorted = [...items].sort((a, b) => a.cost - b.cost);
@@ -63,13 +77,29 @@ const MarketDashboard = ({ items, macro, analytics }) => {
         const top5Expensive = [...sorted].reverse().slice(0, 5); // Descending for Chart
 
         // Stats
-        const costs = items.map(i => i.cost);
-        const min = Math.min(...costs);
-        const max = Math.max(...costs);
+        const costs = sorted.map(i => i.cost);
+        const min = costs[0];
+        const max = costs[costs.length - 1];
         const avg = costs.reduce((a, b) => a + b, 0) / costs.length;
+        const median = costs[Math.floor(costs.length / 2)];
+        const savings = max - min;
 
-        return { top5Cheap, top5Expensive, distribution: { min, avg, max, savings: max - min } };
-    }, [items]);
+        const leader = top5Cheap[0];
+        const laggard = top5Expensive[0];
+
+        return {
+            top5Cheap,
+            top5Expensive,
+            distribution: { min, avg, max, savings, median },
+            summary: {
+                leaderLabel: leader ? `${leader.product} (${leader.institution})` : '—',
+                laggardLabel: laggard ? `${laggard.institution}` : '—',
+                savings,
+                median,
+                count: items.length,
+            }
+        };
+    }, [items, macro]);
 
     // Chart Data Configs
     const cheapData = {
@@ -119,18 +149,86 @@ const MarketDashboard = ({ items, macro, analytics }) => {
         }]
     };
 
-    const yieldData = {
-        labels: macro?.yields?.map(d => new Date(d.date).toLocaleDateString()) || [],
-        datasets: [{
-            label: '10Y Yield',
-            data: macro?.yields?.map(d => d.value) || [],
-            borderColor: '#58a6ff',
-            backgroundColor: 'rgba(88, 166, 255, 0.1)',
-            fill: true,
-            tension: 0.4,
-            pointRadius: 0
-        }]
+    const fmtClp = (n) => n != null ? `$${Math.round(n).toLocaleString('es-CL')}` : '—';
+    const fmtNum = (n, unit) => {
+        if (unit === '%') return `${n?.toFixed(2)}%`;
+        if (unit?.includes('USD') || unit === 'CLP/USD')
+            return `$${(n ?? 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+        if (unit === 'Index') return (n ?? 0).toLocaleString('en-US', { maximumFractionDigits: 1 });
+        return (n ?? 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
     };
+
+    // Build line chart config with moving average overlay & gradient fill
+    const buildLineConfig = (series = [], color = '#58a6ff', label = '', unit = '') => {
+        const data = series.slice(-260); // keep recent points to unclutter
+        const labels = data.map(d => new Date(d.date).toLocaleDateString());
+        const values = data.map(d => d.value);
+        // simple moving average window 7
+        const ma = values.map((v, i, arr) => {
+            const start = Math.max(0, i - 6);
+            const slice = arr.slice(start, i + 1);
+            return slice.reduce((a, b) => a + b, 0) / slice.length;
+        });
+        const last = values.at(-1);
+        const prev = values.at(-2) ?? last;
+        const change = prev ? ((last - prev) / prev) * 100 : 0;
+        return {
+            chart: {
+                labels,
+                datasets: [
+                    {
+                        label,
+                        data: values,
+                        borderColor: color,
+                        backgroundColor: `${color}20`,
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2,
+                    },
+                    {
+                        label: `${label} (MA7)`,
+                        data: ma,
+                        borderColor: '#9ca3af',
+                        borderDash: [6, 4],
+                        fill: false,
+                        tension: 0.2,
+                        borderWidth: 1,
+                    }
+                ]
+            },
+            last,
+            change,
+            unit
+        };
+    };
+
+    // Prebuilt line configs
+    const cpiCfg = buildLineConfig(macro?.cpi, '#f78166', 'CPI', 'Index');
+    const yieldCfg = buildLineConfig(macro?.yields, '#58a6ff', '10Y Yield', '%');
+    const goldCfg = buildLineConfig(macro?.gold, '#bf8700', 'Gold', 'USD/oz');
+    const copperCfg = buildLineConfig(macro?.copper, '#da3633', 'Copper', 'USD/lb');
+    const oilCfg = buildLineConfig(macro?.oil, '#c9d1d9', 'Oil WTI', 'USD/bbl');
+    const btcCfg = buildLineConfig(macro?.btc, '#f2a900', 'Bitcoin', 'CLP');
+    const ethCfg = buildLineConfig(macro?.eth, '#627eea', 'Ethereum', 'CLP');
+
+    const renderLineCard = (title, flag, cfg, colorClass = 'text-light') => (
+        <div className="card card-custom h-100 p-3 animate-in">
+            <div className="d-flex justify-content-between align-items-center mb-1">
+                <h6 className="mb-0" style={{ color: '#e6edf3' }}>{flag} {title}</h6>
+                <div className="badge bg-dark border border-secondary">
+                    {fmtNum(cfg.last, cfg.unit)} ({cfg.change >= 0 ? '▲' : '▼'} {Math.abs(cfg.change).toFixed(2)}%)
+                </div>
+            </div>
+            <div style={{ height: '220px' }}>
+                <Line data={cfg.chart} options={commonOptions} />
+            </div>
+            <AIInsight
+                insight={insights[title.toLowerCase()] || null}
+                text={`Último valor: ${fmtNum(cfg.last, cfg.unit)} • Δ ${cfg.change.toFixed(2)}% vs dato previo`}
+                colorClass={colorClass}
+            />
+        </div>
+    );
 
     return (
         <div className="modal fade" id="chartsModal" tabIndex="-1" aria-hidden="true">
@@ -143,6 +241,38 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                     <div className="modal-body bg-dark">
                         <div className="container-fluid">
 
+                            {/* Row 0: Quick badges */}
+                            <div className="row g-3 mb-3">
+                                <div className="col-md-3">
+                                    <div className="card card-custom p-3 h-100 d-flex justify-content-center" style={{ borderColor: '#2ea04355' }}>
+                                        <div className="text-light small">Leader</div>
+                                        <div className="fw-bold text-success" style={{ fontSize: '0.95rem' }}>{summary.leaderLabel || '—'}</div>
+                                        <div className="text-white-50" style={{ fontSize: '0.85rem' }}>{fmtClp(distribution.min)} / año</div>
+                                    </div>
+                                </div>
+                                <div className="col-md-3">
+                                    <div className="card card-custom p-3 h-100 d-flex justify-content-center" style={{ borderColor: '#a40e2655' }}>
+                                        <div className="text-light small">Laggard</div>
+                                        <div className="fw-bold text-danger" style={{ fontSize: '0.95rem' }}>{summary.laggardLabel || '—'}</div>
+                                        <div className="text-white-50" style={{ fontSize: '0.85rem' }}>{fmtClp(distribution.max)} / año</div>
+                                    </div>
+                                </div>
+                                <div className="col-md-3">
+                                    <div className="card card-custom p-3 h-100 d-flex justify-content-center" style={{ borderColor: '#d2992255' }}>
+                                        <div className="text-light small">Median</div>
+                                        <div className="fw-bold text-warning" style={{ fontSize: '1rem' }}>{fmtClp(distribution.median)}</div>
+                                        <div className="text-white-50" style={{ fontSize: '0.85rem' }}>Across {summary.count || 0} products</div>
+                                    </div>
+                                </div>
+                                <div className="col-md-3">
+                                    <div className="card card-custom p-3 h-100 d-flex justify-content-center" style={{ borderColor: '#58a6ff55' }}>
+                                        <div className="text-light small">Gap (max - min)</div>
+                                        <div className="fw-bold text-primary" style={{ fontSize: '1rem' }}>{fmtClp(distribution.savings)}</div>
+                                        <div className="text-white-50" style={{ fontSize: '0.85rem' }}>Potential annual ahorro</div>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Row 1: Ranking Analysis */}
                             <div className="row g-3 mb-4">
                                 <div className="col-md-4">
@@ -152,7 +282,11 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                                             <Bar data={cheapData} options={horizontalOptions} />
                                         </div>
                                         <AIInsight
-                                            insight={analytics?.insight_cheap || macro?.insight_cheap || "Analyzing local efficiency..."}
+                                            insight={
+                                                insights['cheap'] ||
+                                                analytics?.insight_cheap ||
+                                                `Más barato: ${summary.leaderLabel || '—'} (${fmtClp(distribution.min)}).`
+                                            }
                                             colorClass="text-success"
                                         />
                                     </div>
@@ -164,7 +298,11 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                                             <Bar data={expensiveData} options={horizontalOptions} />
                                         </div>
                                         <AIInsight
-                                            insight={analytics?.insight_expensive || macro?.insight_expensive || "Analyzing cost overruns..."}
+                                            insight={
+                                                insights['expensive'] ||
+                                                analytics?.insight_expensive ||
+                                                `Más caro: ${summary.laggardLabel || '—'} (${fmtClp(distribution.max)}).`
+                                            }
                                             colorClass="text-danger"
                                         />
                                     </div>
@@ -176,7 +314,11 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                                             <Bar data={distData} options={commonOptions} />
                                         </div>
                                         <AIInsight
-                                            insight={analytics?.insight_distribution || macro?.insight_distribution || "Analyzing market dispersion..."}
+                                            insight={
+                                                insights['distribution'] ||
+                                                analytics?.insight_distribution ||
+                                                `Rango anual: ${fmtClp(distribution.min)} a ${fmtClp(distribution.max)} (gap ${fmtClp(distribution.savings)}).`
+                                            }
                                             colorClass="text-info"
                                         />
                                     </div>
@@ -186,151 +328,33 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                             {/* Row 2: Macro Trends */}
                             <div className="row g-3">
                                 <div className="col-md-6">
-                                    <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.4s' }}>
-                                        <h6>🇺🇸 US CPI Trend (Inflation)</h6>
-                                        <div style={{ height: '250px' }}>
-                                            <Line data={cpiData} options={commonOptions} />
-                                        </div>
-                                        <AIInsight
-                                            insight={insights['cpi'] || macro?.insight_cpi || "Tracking inflationary impact..."}
-                                            colorClass="text-danger"
-                                        />
-                                    </div>
+                                    {renderLineCard('US CPI', '🇺🇸', cpiCfg, 'text-danger')}
                                 </div>
                                 <div className="col-md-6">
-                                    <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.5s' }}>
-                                        <h6>🇺🇸 Treasury Bonds 10Y</h6>
-                                        <div style={{ height: '250px' }}>
-                                            <Line data={yieldData} options={commonOptions} />
-                                        </div>
-                                        <AIInsight
-                                            insight={insights['yields'] || macro?.insight_10y || "Monitoring risk-free rate..."}
-                                            colorClass="text-primary"
-                                        />
-                                    </div>
+                                    {renderLineCard('10Y Bonds', '🇺🇸', yieldCfg, 'text-primary')}
                                 </div>
                             </div>
 
                             {/* Row 3: Commodities */}
                             <div className="row g-3 mt-3">
                                 <div className="col-md-4">
-                                    <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.6s' }}>
-                                        <h6 className="text-warning">🥇 Gold Price</h6>
-                                        <div style={{ height: '200px' }}>
-                                            <Line data={{
-                                                labels: macro?.gold?.map(d => new Date(d.date).toLocaleDateString()) || [],
-                                                datasets: [{
-                                                    label: 'Gold (USD)',
-                                                    data: macro?.gold?.map(d => d.value) || [],
-                                                    borderColor: '#bf8700',
-                                                    backgroundColor: 'rgba(191, 135, 0, 0.1)',
-                                                    fill: true,
-                                                    tension: 0.4,
-                                                    pointRadius: 0
-                                                }]
-                                            }} options={commonOptions} />
-                                        </div>
-                                        <AIInsight
-                                            insight={insights['gold'] || macro?.insight_gold || "Evaluating safe-haven status..."}
-                                            colorClass="text-warning"
-                                        />
-                                    </div>
+                                    {renderLineCard('Gold', '🥇', goldCfg, 'text-warning')}
                                 </div>
                                 <div className="col-md-4">
-                                    <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.7s' }}>
-                                        <h6 className="text-danger">⛏️ Copper</h6>
-                                        <div style={{ height: '200px' }}>
-                                            <Line data={{
-                                                labels: macro?.copper?.map(d => new Date(d.date).toLocaleDateString()) || [],
-                                                datasets: [{
-                                                    label: 'Copper (USD)',
-                                                    data: macro?.copper?.map(d => d.value) || [],
-                                                    borderColor: '#da3633',
-                                                    backgroundColor: 'rgba(218, 54, 51, 0.1)',
-                                                    fill: true,
-                                                    tension: 0.4,
-                                                    pointRadius: 0
-                                                }]
-                                            }} options={commonOptions} />
-                                        </div>
-                                        <AIInsight
-                                            insight={insights['copper'] || macro?.insight_copper || "Evaluating export revenue..."}
-                                            colorClass="text-danger"
-                                        />
-                                    </div>
+                                    {renderLineCard('Copper', '⛏️', copperCfg, 'text-danger')}
                                 </div>
                                 <div className="col-md-4">
-                                    <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.8s' }}>
-                                        <h6 className="text-light">🛢️ Oil WTI</h6>
-                                        <div style={{ height: '200px' }}>
-                                            <Line data={{
-                                                labels: macro?.oil?.map(d => new Date(d.date).toLocaleDateString()) || [],
-                                                datasets: [{
-                                                    label: 'Oil WTI (USD)',
-                                                    data: macro?.oil?.map(d => d.value) || [],
-                                                    borderColor: '#c9d1d9',
-                                                    backgroundColor: 'rgba(201, 209, 217, 0.1)',
-                                                    fill: true,
-                                                    tension: 0.4,
-                                                    pointRadius: 0
-                                                }]
-                                            }} options={commonOptions} />
-                                        </div>
-                                        <AIInsight
-                                            insight={insights['oil'] || macro?.insight_oil || "Verifying energy costs..."}
-                                            colorClass="text-light"
-                                        />
-                                    </div>
+                                    {renderLineCard('Oil WTI', '🛢️', oilCfg, 'text-light')}
                                 </div>
                             </div>
 
-                            {/* Row 4: Crypto (Separated) */}
+                            {/* Row 4: Crypto */}
                             <div className="row g-3 mt-3">
                                 <div className="col-md-6">
-                                    <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '0.9s' }}>
-                                        <h6 className="text-warning">🪙 Bitcoin (CLP)</h6>
-                                        <div style={{ height: '200px' }}>
-                                            <Line data={{
-                                                labels: macro?.btc?.map(d => new Date(d.date).toLocaleDateString()) || [],
-                                                datasets: [{
-                                                    label: 'BTC (CLP)',
-                                                    data: macro?.btc?.map(d => d.value) || [],
-                                                    borderColor: '#f2a900',
-                                                    backgroundColor: 'rgba(242, 169, 0, 0.1)',
-                                                    fill: true,
-                                                    tension: 0.4,
-                                                    pointRadius: 0
-                                                }]
-                                            }} options={commonOptions} />
-                                        </div>
-                                        <AIInsight
-                                            insight={insights['btc'] || macro?.insight_crypto || "Scanning digital liquidity..."}
-                                            colorClass="text-warning"
-                                        />
-                                    </div>
+                                    {renderLineCard('Bitcoin', '🪙', btcCfg, 'text-warning')}
                                 </div>
                                 <div className="col-md-6">
-                                    <div className="card card-custom h-100 p-3 animate-in" style={{ animationDelay: '1.0s' }}>
-                                        <h6 className="text-primary">💠 Ethereum (CLP)</h6>
-                                        <div style={{ height: '200px' }}>
-                                            <Line data={{
-                                                labels: macro?.eth?.map(d => new Date(d.date).toLocaleDateString()) || [],
-                                                datasets: [{
-                                                    label: 'ETH (CLP)',
-                                                    data: macro?.eth?.map(d => d.value) || [],
-                                                    borderColor: '#627eea',
-                                                    backgroundColor: 'rgba(98, 126, 234, 0.1)',
-                                                    fill: true,
-                                                    tension: 0.4,
-                                                    pointRadius: 0
-                                                }]
-                                            }} options={commonOptions} />
-                                        </div>
-                                        <AIInsight
-                                            insight={insights['eth'] || macro?.insight_crypto || "Scanning digital liquidity..."}
-                                            colorClass="text-primary"
-                                        />
-                                    </div>
+                                    {renderLineCard('Ethereum', '💠', ethCfg, 'text-primary')}
                                 </div>
                             </div>
 

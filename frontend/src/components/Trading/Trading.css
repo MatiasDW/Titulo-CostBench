@@ -8,6 +8,221 @@
     position: relative;
 }
 
+.trade-top-bar {
+    max-width: 1200px;
+    margin: 0 auto 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.trade-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+}
+.trade-grid.wide {
+    max-width: 1400px;
+    grid-template-columns: 2.2fr 1fr;
+}
+
+.trade-chart-card {
+    background: rgba(12, 16, 24, 0.85);
+    border: 1px solid #1f2937;
+    border-radius: 12px;
+    padding: 1rem;
+    backdrop-filter: blur(12px);
+    min-height: 430px;
+}
+
+.chart-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.chart-asset {
+    color: #e6edf3;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.chart-price {
+    color: #f8fafc;
+    font-weight: 800;
+    font-size: 1.4rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.chart-price .unit {
+    color: #94a3b8;
+    font-size: 0.8rem;
+    margin-left: 6px;
+}
+
+.chart-change {
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.chart-change.pos { color: #22c55e; }
+.chart-change.neg { color: #ef4444; }
+
+.timeframe-tabs {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.tf-btn {
+    background: rgba(17, 24, 39, 0.8);
+    border: 1px solid #30363d;
+    color: #cbd5e1;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    gap: 0.3rem;
+    align-items: center;
+}
+
+.tf-btn.active {
+    border-color: #60a5fa;
+    color: #fff;
+    background: rgba(96, 165, 250, 0.12);
+}
+
+.chart-container {
+    background: #0b1220;
+    border: 1px solid #1f2937;
+    border-radius: 10px;
+    position: relative;
+    height: 340px;
+    overflow: hidden;
+}
+
+.lw-chart {
+    width: 100%;
+    height: 100%;
+}
+
+.chart-loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+.chart-hints {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.35rem;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.coach-inline-btn {
+    margin-left: auto;
+    background: rgba(17,24,39,0.9);
+    border: 1px solid #30363d;
+    color: #cbd5e1;
+    padding: 0.3rem 0.55rem;
+    border-radius: 8px;
+    display: inline-flex;
+    gap: 0.3rem;
+    align-items: center;
+    cursor: pointer;
+}
+
+.chart-coach-toggle {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    z-index: 6;
+}
+
+@media (max-width: 960px) {
+    .trade-grid {
+        grid-template-columns: 1fr;
+    }
+    .chart-container {
+        height: 280px;
+    }
+}
+
+/* Coach */
+.coach-toggle {
+    position: fixed;
+    bottom: 18px;
+    right: 18px;
+    z-index: 8;
+}
+
+.coach-btn {
+    background: #111827;
+    border: 1px solid #30363d;
+    color: #cbd5e1;
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+}
+
+.coach-card {
+    position: fixed;
+    bottom: 90px;
+    right: 18px;
+    width: min(320px, 90vw);
+    background: rgba(17, 24, 39, 0.95);
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 0.85rem;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    z-index: 6;
+}
+
+.coach-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #e6edf3;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.coach-header button {
+    background: none;
+    border: none;
+    color: #8b949e;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.coach-body {
+    color: #cbd5e1;
+    margin: 0.5rem 0 0.75rem;
+    font-size: 0.9rem;
+    line-height: 1.35;
+}
+
+.coach-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
 .trading-container {
     position: relative;
     z-index: 1;
@@ -177,6 +392,21 @@
 
 .trade-field.full-width {
     grid-column: 1 / -1;
+}
+
+.risk-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.risk-grid small {
+    color: #8b949e;
+}
+
+.hint {
+    color: #94a3b8;
+    font-size: 0.78rem;
 }
 
 .trade-field label {

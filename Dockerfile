@@ -20,8 +20,11 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
 # Install OpenMP library required by scikit-learn/PyCaret
+# curl is needed because docker-compose healthcheck uses it.
+# libgomp1 required by scikit-learn/PyCaret.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
