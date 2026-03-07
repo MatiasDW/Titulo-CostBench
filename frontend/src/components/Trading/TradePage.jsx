@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FaArrowLeft, FaExchangeAlt, FaCheck,
@@ -117,18 +117,25 @@ const TradePage = () => {
         try {
             const res = await marketApi.get('/history', { params: { series_id: seriesId } });
             const obs = res.data.observations || [];
-            const limitDays = TIMEFRAMES[timeframe];
-            const sliced = limitDays ? obs.slice(-limitDays) : obs;
+
+            // To allow scrolling back in time, we load up to 10 years of data (approx 3650 days)
+            // instead of just the selected timeframe.
+            const sliced = obs.slice(-3650);
 
             const candlesData = [];
             let prevClose = null;
-            sliced.forEach((d, idx) => {
+            sliced.forEach((d) => {
                 const close = Number(d.value);
                 const open = prevClose ?? close;
                 const high = Math.max(open, close);
                 const low = Math.min(open, close);
+                const dt = new Date(d.date);
+                const yr = dt.getUTCFullYear();
+                const mo = String(dt.getUTCMonth() + 1).padStart(2, '0');
+                const da = String(dt.getUTCDate()).padStart(2, '0');
+
                 candlesData.push({
-                    time: Math.floor(new Date(d.date).getTime() / 1000),
+                    time: `${yr}-${mo}-${da}`,
                     open,
                     high,
                     low,
@@ -143,7 +150,7 @@ const TradePage = () => {
         } finally {
             setChartLoading(false);
         }
-    }, [selectedAsset, timeframe]);
+    }, [selectedAsset]); // Removed 'timeframe' from deps so we don't refetch on tab change
 
     useEffect(() => { fetchPrice(); fetchWallet(); fetchHistory(); }, [fetchPrice, fetchWallet, fetchHistory]);
 
@@ -210,16 +217,15 @@ const TradePage = () => {
         });
         series.setData(candles);
 
-        // Autoscale view to current candles
-        const first = candles[0]?.time;
-        const last = candles[candles.length - 1]?.time;
-        if (first && last) {
-            if (candles.length === 1) {
-                const day = 24 * 60 * 60;
-                chartInstance.current.timeScale().setVisibleRange({ from: first - day, to: last + day });
-            } else {
-                chartInstance.current.timeScale().setVisibleRange({ from: first, to: last });
-            }
+        // Autoscale view to selected timeframe window (allowing user to pan back later)
+        const lastCandle = candles[candles.length - 1];
+        if (lastCandle) {
+            const limitDays = TIMEFRAMES[timeframe] || 30; // Default to 1M if not found
+            // Convert calendar days to approximate trading days (since weekends are now skipped)
+            const tradeDays = Math.ceil(limitDays * (5 / 7));
+            const firstCandle = candles[Math.max(0, candles.length - tradeDays)];
+
+            chartInstance.current.timeScale().setVisibleRange({ from: firstCandle.time, to: lastCandle.time });
         } else {
             chartInstance.current.timeScale().fitContent();
         }
@@ -240,7 +246,7 @@ const TradePage = () => {
         return () => {
             chartInstance.current?.removeSeries(series);
         };
-    }, [candles, livePrice]);
+    }, [candles, livePrice, timeframe]);
 
     useEffect(() => () => {
         resizeObserver.current?.disconnect();
