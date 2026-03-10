@@ -2,6 +2,7 @@
 Banco Central de Chile (BCCh) Service
 Fetches daily and expected macroeconomic metrics from the SIETE API for Real Estate simulations.
 """
+
 import os
 import requests
 import pandas as pd
@@ -16,12 +17,13 @@ logger = get_logger("services.bcch")
 SERIES_IDS = {
     "UF": "F073.UFF.PRE.Z.D",
     # Tasa de Interés Promedio para Mutuos Hipotecarios (Endógenos)
-    "MORTGAGE_RATE": "F033.TMM.11.1.2.U.D", 
+    "MORTGAGE_RATE": "F033.TMM.11.1.2.U.D",
     # EEE: Expectativa TPM a 11 meses
     "EXP_TPM_11M": "F019.EEE.TPM.11.M",
-    # EEE: Expectativa Inflacion a 11 meses 
-    "EXP_INFL_11M": "F019.EEE.INF.11.M"
+    # EEE: Expectativa Inflacion a 11 meses
+    "EXP_INFL_11M": "F019.EEE.INF.11.M",
 }
+
 
 class BCChService:
     def __init__(self):
@@ -35,29 +37,29 @@ class BCChService:
         if not self.user or not self.password:
             logger.warning("Mocking BCCh data (no credentials found)")
             return fallback_value
-            
+
         params = {
             "user": self.user,
             "pass": self.password,
             "timeseries": series_id,
-            "function": "GetSeries"
+            "function": "GetSeries",
         }
-        
+
         try:
             response = requests.get(self.base_url, params=params, timeout=self.timeout)
             response.raise_for_status()
             data = response.json()
-            
+
             if "Series" in data and data["Series"]:
                 obs = data["Series"][0].get("Obs", [])
                 if obs:
                     # Return the chronologically last observation available
                     latest_val = obs[-1].get("value")
                     return float(latest_val)
-                    
+
             logger.warning(f"No observations found for {series_id}")
             return fallback_value
-            
+
         except Exception as e:
             logger.error(f"Error fetching BCCh Series {series_id}: {e}")
             return fallback_value
@@ -77,8 +79,5 @@ class BCChService:
         """
         tpm = self._fetch_last_value(SERIES_IDS["EXP_TPM_11M"], fallback_value=5.5)
         infl = self._fetch_last_value(SERIES_IDS["EXP_INFL_11M"], fallback_value=3.2)
-        
-        return {
-            "expected_tpm_11m": tpm,
-            "expected_inflation_11m": infl
-        }
+
+        return {"expected_tpm_11m": tpm, "expected_inflation_11m": infl}

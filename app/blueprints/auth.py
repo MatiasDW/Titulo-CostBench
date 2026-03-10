@@ -8,6 +8,7 @@ Endpoints:
   GET  /me         – return current user from cookie
   PUT  /profile    – update risk_profile
 """
+
 from functools import wraps
 
 from flask import Blueprint, g, jsonify, request, make_response, current_app
@@ -33,6 +34,7 @@ TOKEN_COOKIE = "access_token"
 # ------------------------------------------------------------------
 # Decorator: require_auth
 # ------------------------------------------------------------------
+
 
 def require_auth(fn):
     """Extract JWT from HttpOnly cookie and inject ``g.current_user``."""
@@ -62,6 +64,7 @@ def require_auth(fn):
 # Decorator: require_admin (must be used AFTER require_auth)
 # ------------------------------------------------------------------
 
+
 def require_admin(fn):
     """Reject non-admin users with 403."""
 
@@ -78,6 +81,7 @@ def require_admin(fn):
 # ------------------------------------------------------------------
 # Helper: set JWT cookie on response
 # ------------------------------------------------------------------
+
 
 def _set_token_cookie(response, user_id: int):
     """Attach an HttpOnly JWT cookie to *response*."""
@@ -100,6 +104,7 @@ def _set_token_cookie(response, user_id: int):
 # ------------------------------------------------------------------
 # Endpoints
 # ------------------------------------------------------------------
+
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
@@ -161,9 +166,17 @@ def profile():
 
     # Personal info + KYC fields (all optional, trimmed strings)
     STRING_FIELDS = (
-        "first_name", "last_name", "phone", "bio",
-        "rut", "nationality", "address", "city",
-        "occupation", "income_range", "investment_experience",
+        "first_name",
+        "last_name",
+        "phone",
+        "bio",
+        "rut",
+        "nationality",
+        "address",
+        "city",
+        "occupation",
+        "income_range",
+        "investment_experience",
     )
     for field in STRING_FIELDS:
         if field in data:
@@ -176,9 +189,13 @@ def profile():
         if dob:
             try:
                 from datetime import date
+
                 user.date_of_birth = date.fromisoformat(dob)
             except (ValueError, TypeError):
-                return jsonify({"error": "Invalid date_of_birth format. Use YYYY-MM-DD."}), 400
+                return (
+                    jsonify({"error": "Invalid date_of_birth format. Use YYYY-MM-DD."}),
+                    400,
+                )
         else:
             user.date_of_birth = None
 
@@ -186,7 +203,14 @@ def profile():
     risk = data.get("risk_profile")
     if risk is not None:
         if risk and risk not in VALID_RISK_PROFILES:
-            return jsonify({"error": f"Invalid risk profile. Options: {', '.join(VALID_RISK_PROFILES)}"}), 400
+            return (
+                jsonify(
+                    {
+                        "error": f"Invalid risk profile. Options: {', '.join(VALID_RISK_PROFILES)}"
+                    }
+                ),
+                400,
+            )
         user.risk_profile = risk or None
 
     # Interests (optional, must be list)

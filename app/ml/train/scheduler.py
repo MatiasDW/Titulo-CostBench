@@ -2,6 +2,7 @@
 Scheduled Training Jobs
 APScheduler-based quincenal retraining for production.
 """
+
 import os
 from datetime import datetime
 from pathlib import Path
@@ -16,6 +17,7 @@ APSCHEDULER_AVAILABLE = False
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
     from apscheduler.triggers.cron import CronTrigger
+
     APSCHEDULER_AVAILABLE = True
 except ImportError:
     # APScheduler not installed - scheduler features disabled
@@ -30,88 +32,82 @@ _scheduler: Optional["BackgroundScheduler"] = None
 def get_scheduler() -> "BackgroundScheduler":
     """Get or create the global scheduler."""
     global _scheduler
-    
+
     if not APSCHEDULER_AVAILABLE:
         raise ImportError("APScheduler required")
-    
+
     if _scheduler is None:
         _scheduler = BackgroundScheduler(timezone="America/Santiago")
-    
+
     return _scheduler
 
 
 def schedule_quincenal_training():
     """Schedule quincenal (day 1 and 15) ARIMA training at 3am."""
     scheduler = get_scheduler()
-    
-    trigger = CronTrigger(
-        day="1,15",
-        hour=3,
-        minute=0,
-        timezone="America/Santiago"
-    )
-    
+
+    trigger = CronTrigger(day="1,15", hour=3, minute=0, timezone="America/Santiago")
+
     scheduler.add_job(
         func=trigger_training_now,
         trigger=trigger,
         id="quincenal_arima_training",
         name="Quincenal ARIMA Training",
-        replace_existing=True
+        replace_existing=True,
     )
-    
+
     logger.info("quincenal_job_scheduled")
 
 
 def schedule_weekly_markov():
     """Schedule weekly (Sunday 4am) Markov Combination update."""
     scheduler = get_scheduler()
-    
+
     trigger = CronTrigger(
-        day_of_week="sun",
-        hour=4,
-        minute=0,
-        timezone="America/Santiago"
+        day_of_week="sun", hour=4, minute=0, timezone="America/Santiago"
     )
-    
+
     scheduler.add_job(
         func=trigger_markov_now,
         trigger=trigger,
         id="weekly_markov_update",
         name="Weekly Markov Update",
-        replace_existing=True
+        replace_existing=True,
     )
-    
+
     logger.info("weekly_markov_scheduled")
 
 
 def trigger_training_now() -> dict:
     """
     Manually trigger the ARIMA training job for all assets.
-    
+
     Returns dict with results per asset.
     """
     logger.info("training_job_started")
-    
+
     results = {}
-    
+
     try:
         # Check BDE credentials
         bde_user = os.getenv("BDE_USER")
         bde_pass = os.getenv("BDE_PASS")
-        
+
         if not bde_user or not bde_pass:
-            logger.warning("bde_creds_missing", 
-                          message="BDE_USER and BDE_PASS not set, skipping BDE assets")
-        
+            logger.warning(
+                "bde_creds_missing",
+                message="BDE_USER and BDE_PASS not set, skipping BDE assets",
+            )
+
         # Load from existing parquet for assets we have
         from app.ml.train.arima_trainer import train_asset_model
         import pandas as pd
-        
+
         parquet_path = Path("data/market/macro_indicators.parquet")
-        
+
         if parquet_path.exists():
             df_all = pd.read_parquet(parquet_path)
-            
+
             # Assets to train from parquet
             asset_mapping = {
                 "GOLD": "GOLDAMGBD228NLBM",
@@ -119,22 +115,28 @@ def trigger_training_now() -> dict:
                 "OIL": "DCOILWTICO",
                 "USDCLP": "USD-CLP",  # If exists
             }
-            
+
             for asset, series_id in asset_mapping.items():
-                df_asset = df_all[df_all["series_id"] == series_id][["date", "value"]].copy()
-                
+                df_asset = df_all[df_all["series_id"] == series_id][
+                    ["date", "value"]
+                ].copy()
+
                 if not df_asset.empty:
                     df_asset = df_asset.sort_values("date").dropna()
                     result = train_asset_model(asset, df_asset)
                     results[asset] = result
-                    
+
                     if result["status"] == "ok":
-                        logger.info("asset_trained", asset=asset, 
-                                   model=result["best_model"],
-                                   mae=result["metrics"]["mae"])
+                        logger.info(
+                            "asset_trained",
+                            asset=asset,
+                            model=result["best_model"],
+                            mae=result["metrics"]["mae"],
+                        )
                     else:
-                        logger.warning("asset_failed", asset=asset, 
-                                      error=result["error"])
+                        logger.warning(
+                            "asset_failed", asset=asset, error=result["error"]
+                        )
                 else:
                     results[asset] = {
                         "status": "error",
@@ -142,53 +144,53 @@ def trigger_training_now() -> dict:
                         "best_model": None,
                         "metrics": {},
                         "model_path": None,
-                        "error": f"series_id {series_id} not found in parquet"
+                        "error": f"series_id {series_id} not found in parquet",
                     }
-        
+
         # Try BDE if credentials exist
         if bde_user and bde_pass:
             try:
                 from app.ml.ingest.bde_client import fetch_usdclp, fetch_uf
-                
+
                 # USD/CLP
                 df_usd = fetch_usdclp(aggregate_monthly=True)
                 if len(df_usd) >= 24:
                     result = train_asset_model("USDCLP_BDE", df_usd)
                     results["USDCLP_BDE"] = result
-                
+
                 # UF
                 df_uf = fetch_uf(aggregate_monthly=True)
                 if len(df_uf) >= 24:
                     result = train_asset_model("UF", df_uf)
                     results["UF"] = result
-                    
+
             except Exception as e:
                 logger.error("bde_fetch_failed", error=str(e))
                 results["BDE_ERROR"] = {"status": "error", "error": str(e)}
-        
+
         logger.info("training_job_complete", assets_trained=len(results))
-        
+
     except Exception as e:
         logger.error("training_job_failed", error=str(e))
         results["_error"] = str(e)
-    
+
     return results
 
 
 def trigger_markov_now() -> dict:
     """
     Manually trigger the Markov combination study and append it to the database.
-    
+
     Returns dict with summary of added records.
     """
     logger.info("markov_job_started")
     results = {"added_records": 0}
-    
+
     try:
         from scripts.markov.find_best_pairs import run_all_combinations
         from app.models.ml import MarkovCombination
         import sys
-        
+
         # Needed to use Flask-SQLAlchemy outside app context if triggered purely by APScheduler in background
         from flask import current_app
         from app.extensiones import db
@@ -197,30 +199,32 @@ def trigger_markov_now() -> dict:
         if not stats:
             logger.warning("markov_job_empty", message="No significant pairs found.")
             return results
-        
+
         # We need an app context to interact with DB
         if current_app:
             with current_app.app_context():
-                for res in stats: # Save all significant combinations
+                for res in stats:  # Save all significant combinations
                     new_markov = MarkovCombination(
-                        predictor=res['Ticker_Pred'],
-                        target=res['Ticker_Targ'],
-                        p_value=float(res['Min_P_Value']),
-                        lag1_correlation=float(res['Lag1_Correlation']),
-                        transition_matrix=res['transition_matrix_json']
+                        predictor=res["Ticker_Pred"],
+                        target=res["Ticker_Targ"],
+                        p_value=float(res["Min_P_Value"]),
+                        lag1_correlation=float(res["Lag1_Correlation"]),
+                        transition_matrix=res["transition_matrix_json"],
                     )
                     db.session.add(new_markov)
                 db.session.commit()
                 results["added_records"] = len(stats)
         else:
-            logger.error("markov_job_failed", error="No Flask application context available.")
-            
+            logger.error(
+                "markov_job_failed", error="No Flask application context available."
+            )
+
         logger.info("markov_job_complete", added=results["added_records"])
-        
+
     except Exception as e:
         logger.error("markov_job_failed", error=str(e))
         results["_error"] = str(e)
-        
+
     return results
 
 
@@ -229,22 +233,21 @@ def start_scheduler():
     if not APSCHEDULER_AVAILABLE:
         logger.error("cannot_start_scheduler", reason="APScheduler not installed")
         return False
-    
+
     scheduler = get_scheduler()
     schedule_quincenal_training()
     schedule_weekly_markov()
-    
+
     if not scheduler.running:
         scheduler.start()
         logger.info("scheduler_started")
-    
+
     return True
 
 
 def stop_scheduler():
     """Stop the scheduler."""
-    global _scheduler
-    
+
     if _scheduler is not None and _scheduler.running:
         _scheduler.shutdown()
         logger.info("scheduler_stopped")

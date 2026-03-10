@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createChart } from 'lightweight-charts';
 import { FaArrowUp, FaArrowDown, FaPlay, FaSpinner, FaUserTie, FaInfoCircle, FaBuilding } from 'react-icons/fa';
+import santiagoNight from '../../assets/santiago_night.png';
 
 const RealEstatePage = () => {
     // ---- STATE ----
@@ -180,7 +181,15 @@ const RealEstatePage = () => {
     }
 
     return (
-        <div className="container-fluid p-4" style={{ backgroundColor: '#0d1117', minHeight: '100vh', color: '#c9d1d9' }}>
+        <div className="container-fluid p-4" style={{
+            backgroundColor: '#0d1117',
+            backgroundImage: `linear-gradient(rgba(13, 17, 23, 0.65), rgba(13, 17, 23, 0.85)), url(${santiagoNight})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed',
+            minHeight: '100vh',
+            color: '#c9d1d9'
+        }}>
             <div className="d-flex align-items-center mb-4 pb-2" style={{ borderBottom: '1px solid #30363d' }}>
                 <div className="d-flex align-items-center justify-content-center me-3 flex-shrink-0" style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(56, 139, 253, 0.1)', color: '#388bfd', marginLeft: '20px' }}>
                     <FaBuilding size={18} />
@@ -332,7 +341,7 @@ const RealEstatePage = () => {
                 </div>
 
                 {/* RIGHT COL: ARIMAX SIMULATOR & RAG */}
-                <div className="col-lg-5 d-flex align-items-stretch">
+                <div className="col-lg-5 d-flex align-items-start">
                     <div className="card w-100 border-secondary d-flex flex-column" style={{ backgroundColor: '#161b22' }}>
                         <div className="card-header border-secondary d-flex justify-content-between align-items-center" style={{ backgroundColor: '#21262d' }}>
                             <h5 className="mb-0 text-light fw-bold">ARIMAX Simulator</h5>
@@ -432,7 +441,7 @@ const RealEstatePage = () => {
                                     )}
                                 </div>
                             ) : (
-                                <div className="d-flex flex-column justify-content-center align-items-center text-center p-4 rounded border border-secondary mb-4" style={{ height: '300px', backgroundColor: '#0d1117' }}>
+                                <div className="d-flex flex-column justify-content-center align-items-center text-center py-5 mb-0" style={{ backgroundColor: 'transparent' }}>
                                     <FaUserTie className="text-secondary mb-3" size={40} opacity={0.5} />
                                     <h6 className="text-light fw-bold">No Simulation Running</h6>
                                     <p className="text-muted small w-75 mb-0">

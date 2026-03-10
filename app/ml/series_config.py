@@ -14,17 +14,16 @@ TRAINABLE_SERIES = {
         "model_candidates": ["auto_arima", "theta", "naive"],
         "confidence_default": "good",
         "description": "USD/CLP exchange rate (Banco Central)",
-        "trainable": True
+        "trainable": True,
     },
     "GBPCLP": {
-        "source": "BDE", 
+        "source": "BDE",
         "frequency": "daily",
         "model_candidates": ["auto_arima", "theta"],
         "confidence_default": "good",
         "description": "GBP/CLP exchange rate",
-        "trainable": True
+        "trainable": True,
     },
-    
     # Indexed series (semi-deterministic)
     "UF": {
         "source": "BDE",
@@ -35,9 +34,8 @@ TRAINABLE_SERIES = {
         "rule_note": "UF is indexed to inflation. Forecasts are short-term statistical approximations, not inflation predictions.",
         "academic_note": "Although UF is derived from inflation, its daily path can still be statistically modeled for short horizons. Results are compared against a rule-based baseline.",
         "description": "Unidad de Fomento (inflation-indexed)",
-        "trainable": True
+        "trainable": True,
     },
-    
     # Commodities
     "GOLD": {
         "source": "FRED/Market",
@@ -45,15 +43,15 @@ TRAINABLE_SERIES = {
         "model_candidates": ["auto_arima", "theta", "naive"],
         "confidence_default": "good",
         "description": "Gold price (USD/oz)",
-        "trainable": True
+        "trainable": True,
     },
     "COPPER": {
         "source": "FRED/Market",
-        "frequency": "daily", 
+        "frequency": "daily",
         "model_candidates": ["theta", "auto_arima", "naive"],
         "confidence_default": "good",
         "description": "Copper price (USD/ton)",
-        "trainable": True
+        "trainable": True,
     },
     "OIL": {
         "source": "FRED/Market",
@@ -61,9 +59,8 @@ TRAINABLE_SERIES = {
         "model_candidates": ["naive", "auto_arima"],
         "confidence_default": "good",
         "description": "WTI Crude Oil (USD/barrel)",
-        "trainable": True
+        "trainable": True,
     },
-    
     # Crypto (high volatility warning)
     "BTC": {
         "source": "Exchange",
@@ -73,7 +70,7 @@ TRAINABLE_SERIES = {
         "is_high_volatility": True,
         "volatility_note": "High volatility asset. Forecast accuracy is structurally limited due to regime changes and exogenous shocks.",
         "description": "Bitcoin (USD)",
-        "trainable": True
+        "trainable": True,
     },
     "ETH": {
         "source": "Exchange",
@@ -83,8 +80,8 @@ TRAINABLE_SERIES = {
         "is_high_volatility": True,
         "volatility_note": "High volatility asset. Forecast accuracy is structurally limited due to regime changes and exogenous shocks.",
         "description": "Ethereum (USD)",
-        "trainable": True
-    }
+        "trainable": True,
+    },
 }
 
 
@@ -99,7 +96,7 @@ CONTEXT_SERIES = {
         "description": "Consumer Price Index - All Urban Consumers",
         "use": "Global inflation context",
         "trainable": False,
-        "license_note": "Used for contextual analysis only. Not trained due to licensing restrictions."
+        "license_note": "Used for contextual analysis only. Not trained due to licensing restrictions.",
     },
     "UST_10Y": {
         "source": "Treasury",
@@ -107,8 +104,8 @@ CONTEXT_SERIES = {
         "description": "10-Year Treasury Yield",
         "use": "Interest rate context",
         "trainable": False,
-        "license_note": "Contextual macro indicator. No forecast endpoint available."
-    }
+        "license_note": "Contextual macro indicator. No forecast endpoint available.",
+    },
 }
 
 
@@ -121,29 +118,29 @@ CONFIDENCE_LEVELS = {
         "color": "#38a169",  # Green
         "emoji": "🟢",
         "mape_threshold": 2.0,
-        "description": "Predictions typically within 2% of actual values"
+        "description": "Predictions typically within 2% of actual values",
     },
     "good": {
-        "label": "Good", 
+        "label": "Good",
         "color": "#ecc94b",  # Yellow
         "emoji": "🟡",
         "mape_threshold": 5.0,
-        "description": "Predictions typically within 5% of actual values"
+        "description": "Predictions typically within 5% of actual values",
     },
     "volatile": {
         "label": "Volatile",
         "color": "#ed8936",  # Orange
         "emoji": "🟠",
         "mape_threshold": 10.0,
-        "description": "Higher variability expected due to market conditions"
+        "description": "Higher variability expected due to market conditions",
     },
     "experimental": {
         "label": "Experimental",
         "color": "#e53e3e",  # Red
         "emoji": "🔴",
         "mape_threshold": float("inf"),
-        "description": "Limited predictability - use with caution"
-    }
+        "description": "Limited predictability - use with caution",
+    },
 }
 
 

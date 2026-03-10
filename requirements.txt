@@ -19,3 +19,7 @@ bcrypt
 yfinance
 statsmodels
 scipy
+flake8
+black
+pytest
+redis>=5.0.0

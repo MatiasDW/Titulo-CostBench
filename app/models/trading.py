@@ -1,7 +1,7 @@
 """Trading models: Wallet, Position, and TradeHistory for paper trading."""
+
 from datetime import datetime
 from app.extensiones import db
-
 
 INITIAL_BALANCE = 10_000_000  # CLP $10M starting balance
 TRADEABLE_ASSETS = ("gold", "copper", "oil", "btc", "eth", "usdclp", "uf")
@@ -57,9 +57,7 @@ class Position(db.Model):
     __tablename__ = "positions"
 
     id = db.Column(db.Integer, primary_key=True)
-    wallet_id = db.Column(
-        db.Integer, db.ForeignKey("wallets.id"), nullable=False
-    )
+    wallet_id = db.Column(db.Integer, db.ForeignKey("wallets.id"), nullable=False)
     asset = db.Column(db.String(20), nullable=False)
     direction = db.Column(db.String(10), nullable=False, default="long")  # long | short
     quantity = db.Column(db.Numeric(16, 8), nullable=False)
@@ -81,8 +79,16 @@ class Position(db.Model):
             "quantity": qty,
             "entry_price": entry,
             "invested_amount": float(self.invested_amount),
-            "take_profit_price": float(self.take_profit_price) if self.take_profit_price is not None else None,
-            "stop_loss_price": float(self.stop_loss_price) if self.stop_loss_price is not None else None,
+            "take_profit_price": (
+                float(self.take_profit_price)
+                if self.take_profit_price is not None
+                else None
+            ),
+            "stop_loss_price": (
+                float(self.stop_loss_price)
+                if self.stop_loss_price is not None
+                else None
+            ),
             "opened_at": self.opened_at.isoformat() if self.opened_at else None,
         }
         if current_price is not None:
@@ -92,9 +98,11 @@ class Position(db.Model):
                 pnl = (entry - current_price) * qty
             result["current_price"] = current_price
             result["unrealized_pnl"] = round(pnl, 2)
-            result["pnl_percent"] = round(
-                (pnl / float(self.invested_amount)) * 100, 2
-            ) if float(self.invested_amount) else 0
+            result["pnl_percent"] = (
+                round((pnl / float(self.invested_amount)) * 100, 2)
+                if float(self.invested_amount)
+                else 0
+            )
         return result
 
 
@@ -104,9 +112,7 @@ class TradeHistory(db.Model):
     __tablename__ = "trade_history"
 
     id = db.Column(db.Integer, primary_key=True)
-    wallet_id = db.Column(
-        db.Integer, db.ForeignKey("wallets.id"), nullable=False
-    )
+    wallet_id = db.Column(db.Integer, db.ForeignKey("wallets.id"), nullable=False)
     asset = db.Column(db.String(20), nullable=False)
     direction = db.Column(db.String(10), nullable=False)
     quantity = db.Column(db.Numeric(16, 8), nullable=False)

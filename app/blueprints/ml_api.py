@@ -2,142 +2,155 @@
 ML API Blueprint
 Read-only endpoints for model champion metadata and forecasts.
 """
+
 from flask import Blueprint, jsonify, request
 from datetime import datetime
 
-bp = Blueprint('ml_api', __name__, url_prefix='/api/v1')
+bp = Blueprint("ml_api", __name__, url_prefix="/api/v1")
 
 
 # BLS CPI Endpoint
-@bp.route('/market/bls/cpi', methods=['GET'])
+@bp.route("/market/bls/cpi", methods=["GET"])
 def get_bls_cpi():
     """
     Fetch CPI data from BLS API.
-    
+
     Query params:
         series: str = "CUUR0000SA0"
         years: int = 5
-        
+
     Returns:
         {observations: [{date, value, yoy_pct}], metadata: {source, fetched_at}}
     """
-    series = request.args.get('series', 'CUUR0000SA0')
-    years = int(request.args.get('years', 5))
-    
+    series = request.args.get("series", "CUUR0000SA0")
+    years = int(request.args.get("years", 5))
+
     try:
         from app.ml.ingest.bls_client import fetch_cpi_series
-        
+
         end_year = datetime.now().year
         start_year = end_year - years
-        
+
         df = fetch_cpi_series(
-            series_id=series,
-            start_year=start_year,
-            end_year=end_year
+            series_id=series, start_year=start_year, end_year=end_year
         )
-        
-        observations = df.to_dict(orient='records')
+
+        observations = df.to_dict(orient="records")
         # Convert dates to ISO format
         for obs in observations:
-            if 'date' in obs:
-                obs['date'] = obs['date'].isoformat() if hasattr(obs['date'], 'isoformat') else str(obs['date'])
-        
-        return jsonify({
-            'observations': observations,
-            'metadata': {
-                'source': 'BLS',
-                'series_id': series,
-                'fetched_at': datetime.now().isoformat()
+            if "date" in obs:
+                obs["date"] = (
+                    obs["date"].isoformat()
+                    if hasattr(obs["date"], "isoformat")
+                    else str(obs["date"])
+                )
+
+        return jsonify(
+            {
+                "observations": observations,
+                "metadata": {
+                    "source": "BLS",
+                    "series_id": series,
+                    "fetched_at": datetime.now().isoformat(),
+                },
             }
-        })
-        
+        )
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
 
-# Treasury Yields Endpoint  
-@bp.route('/market/treasury/yields', methods=['GET'])
+# Treasury Yields Endpoint
+@bp.route("/market/treasury/yields", methods=["GET"])
 def get_treasury_yields():
     """
     Fetch Treasury yields.
-    
+
     Query params:
         maturity: str = "10-Year"
         months: int = 60
-        
+
     Returns:
         {observations: [{date, yield_pct}], metadata: {...}}
     """
-    maturity = request.args.get('maturity', '10-Year')
-    months = int(request.args.get('months', 60))
-    
+    maturity = request.args.get("maturity", "10-Year")
+    months = int(request.args.get("months", 60))
+
     try:
         from app.ml.ingest.treasury_client import fetch_treasury_yields
-        
+
         df = fetch_treasury_yields(maturity=maturity, months=months)
-        
-        observations = df.to_dict(orient='records')
+
+        observations = df.to_dict(orient="records")
         for obs in observations:
-            if 'date' in obs:
-                obs['date'] = obs['date'].isoformat() if hasattr(obs['date'], 'isoformat') else str(obs['date'])
-        
-        return jsonify({
-            'observations': observations,
-            'metadata': {
-                'source': 'Treasury Fiscal Data',
-                'maturity': maturity,
-                'fetched_at': datetime.now().isoformat()
+            if "date" in obs:
+                obs["date"] = (
+                    obs["date"].isoformat()
+                    if hasattr(obs["date"], "isoformat")
+                    else str(obs["date"])
+                )
+
+        return jsonify(
+            {
+                "observations": observations,
+                "metadata": {
+                    "source": "Treasury Fiscal Data",
+                    "maturity": maturity,
+                    "fetched_at": datetime.now().isoformat(),
+                },
             }
-        })
-        
+        )
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 # Model Champion Endpoint
-@bp.route('/models/<asset>/best', methods=['GET'])
+@bp.route("/models/<asset>/best", methods=["GET"])
 def get_best_model(asset: str):
     """
     Get champion model metadata for an asset.
-    
+
     Returns:
         {
-            model_id, model_name, horizon, 
+            model_id, model_name, horizon,
             metrics: {mae, rmse, mape},
             trained_until, data_version
         }
     """
     try:
         from app.ml.registry.model_registry import get_latest_champion
-        
+
         entry = get_latest_champion(asset.upper())
-        
-        return jsonify({
-            'model_id': entry.id,
-            'asset': entry.asset,
-            'model_name': entry.model_name,
-            'horizon': entry.horizon,
-            'metrics': entry.metrics,
-            'trained_until': entry.trained_until,
-            'data_version': entry.data_version,
-            'library': entry.library,
-            'library_version': entry.library_version,
-            'created_at': entry.created_at
-        })
-        
+
+        return jsonify(
+            {
+                "model_id": entry.id,
+                "asset": entry.asset,
+                "model_name": entry.model_name,
+                "horizon": entry.horizon,
+                "metrics": entry.metrics,
+                "trained_until": entry.trained_until,
+                "data_version": entry.data_version,
+                "library": entry.library,
+                "library_version": entry.library_version,
+                "created_at": entry.created_at,
+            }
+        )
+
     except Exception as e:
-        return jsonify({'error': str(e), 'asset': asset}), 404
+        return jsonify({"error": str(e), "asset": asset}), 404
 
 
 # Forecast Endpoint
-@bp.route('/models/<asset>/forecast', methods=['GET'])
+@bp.route("/models/<asset>/forecast", methods=["GET"])
 def get_forecast(asset: str):
     """
     Get forecast from champion model.
-    
+
     Query params:
         h: int = 1 (forecast horizon, max 3)
-        
+
     Returns:
         {
             asset, horizon, model_id,
@@ -145,110 +158,115 @@ def get_forecast(asset: str):
             generated_at
         }
     """
-    h = min(int(request.args.get('h', 1)), 3)  # Max horizon = 3
-    
+    h = min(int(request.args.get("h", 1)), 3)  # Max horizon = 3
+
     try:
-        from app.ml.registry.model_registry import get_latest_champion, load_champion_model
-        
+        from app.ml.registry.model_registry import (
+            get_latest_champion,
+            load_champion_model,
+        )
+
         # Get champion
         entry = get_latest_champion(asset.upper())
-        
+
         # Load model
         model = load_champion_model(entry)
-        
+
         # Generate forecast
         # Note: In production, would use PyCaret's predict method
         # For now, return placeholder
         forecasts = []
         base_date = datetime.now()
         for i in range(h):
-            forecasts.append({
-                'date': (base_date.replace(day=1)).isoformat(),
-                'predicted_price': None,  # Would be actual prediction
-                'month_offset': i + 1
-            })
-        
-        return jsonify({
-            'asset': entry.asset,
-            'horizon': h,
-            'model_id': entry.id,
-            'model_name': entry.model_name,
-            'forecasts': forecasts,
-            'generated_at': datetime.now().isoformat(),
-            'note': 'Forecast generation requires trained model. This is metadata only.'
-        })
-        
+            forecasts.append(
+                {
+                    "date": (base_date.replace(day=1)).isoformat(),
+                    "predicted_price": None,  # Would be actual prediction
+                    "month_offset": i + 1,
+                }
+            )
+
+        return jsonify(
+            {
+                "asset": entry.asset,
+                "horizon": h,
+                "model_id": entry.id,
+                "model_name": entry.model_name,
+                "forecasts": forecasts,
+                "generated_at": datetime.now().isoformat(),
+                "note": "Forecast generation requires trained model. This is metadata only.",
+            }
+        )
+
     except Exception as e:
-        return jsonify({'error': str(e), 'asset': asset}), 404
+        return jsonify({"error": str(e), "asset": asset}), 404
 
 
 # List Models Endpoint
-@bp.route('/models', methods=['GET'])
+@bp.route("/models", methods=["GET"])
 def list_models():
     """
     List all models in registry.
-    
+
     Query params:
         asset: str = None (filter by asset)
-        
+
     Returns:
         {models: [...]}
     """
-    asset = request.args.get('asset')
-    
+    asset = request.args.get("asset")
+
     try:
         from app.ml.registry.model_registry import list_models
-        
+
         entries = list_models(asset=asset.upper() if asset else None)
-        
-        return jsonify({
-            'models': [e.to_dict() for e in entries],
-            'count': len(entries)
-        })
-        
+
+        return jsonify(
+            {"models": [e.to_dict() for e in entries], "count": len(entries)}
+        )
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 # Health check for ML module
-@bp.route('/ml/health', methods=['GET'])
+@bp.route("/ml/health", methods=["GET"])
 def ml_health():
     """ML module health check."""
-    health = {
-        'status': 'ok',
-        'timestamp': datetime.now().isoformat(),
-        'components': {}
-    }
-    
+    health = {"status": "ok", "timestamp": datetime.now().isoformat(), "components": {}}
+
     # Check PyCaret availability
     try:
         import pycaret
-        health['components']['pycaret'] = {
-            'status': 'available',
-            'version': pycaret.__version__
+
+        health["components"]["pycaret"] = {
+            "status": "available",
+            "version": pycaret.__version__,
         }
     except ImportError:
-        health['components']['pycaret'] = {
-            'status': 'unavailable',
-            'message': 'Install with: pip install pycaret[time_series]'
+        health["components"]["pycaret"] = {
+            "status": "unavailable",
+            "message": "Install with: pip install pycaret[time_series]",
         }
-    
+
     # Check models directory
     from pathlib import Path
-    models_dir = Path('models')
-    health['components']['models_dir'] = {
-        'status': 'exists' if models_dir.exists() else 'missing',
-        'path': str(models_dir.absolute())
+
+    models_dir = Path("models")
+    health["components"]["models_dir"] = {
+        "status": "exists" if models_dir.exists() else "missing",
+        "path": str(models_dir.absolute()),
     }
-    
+
     return jsonify(health)
 
+
 # Markov Insights Endpoint
-@bp.route('/market/markov-insights', methods=['GET'])
+@bp.route("/market/markov-insights", methods=["GET"])
 def get_markov_insights():
     """
     Fetch the latest statistically significant Markov predictions.
-    
+
     Returns:
         {insights: [{predictor, target, p_value, split_matrix}], run_date}
     """
@@ -258,31 +276,42 @@ def get_markov_insights():
         from sqlalchemy import desc
 
         # Get the latest run_date available
-        latest_record = MarkovCombination.query.order_by(desc(MarkovCombination.run_date)).first()
-        
-        if not latest_record:
-            return jsonify({'insights': [], 'message': 'No Markov data computed yet.'})
-            
-        # Get all records from that exact run_date
-        records = MarkovCombination.query.filter_by(
-            run_date=latest_record.run_date
-        ).order_by(MarkovCombination.p_value).all()
-        
-        # Ensure HG=F to USDCLP=X (Copper to CLP) is ALWAYS included as the foundational metric
-        has_copper = any(r.predictor == 'HG=F' and r.target == 'USDCLP=X' for r in records)
-        if not has_copper:
-            copper_record = MarkovCombination.query.filter_by(
-                predictor='HG=F', 
-                target='USDCLP=X'
-            ).order_by(desc(MarkovCombination.run_date)).first()
-            
-            if copper_record:
-                records.insert(0, copper_record) # Put it at the top so it doesn't get paginated out if we ever slice arrays
+        latest_record = MarkovCombination.query.order_by(
+            desc(MarkovCombination.run_date)
+        ).first()
 
-        return jsonify({
-            'run_date': latest_record.run_date.isoformat(),
-            'insights': [r.to_dict() for r in records]
-        })
-        
+        if not latest_record:
+            return jsonify({"insights": [], "message": "No Markov data computed yet."})
+
+        # Get all records from that exact run_date
+        records = (
+            MarkovCombination.query.filter_by(run_date=latest_record.run_date)
+            .order_by(MarkovCombination.p_value)
+            .all()
+        )
+
+        # Ensure HG=F to USDCLP=X (Copper to CLP) is ALWAYS included as the foundational metric
+        has_copper = any(
+            r.predictor == "HG=F" and r.target == "USDCLP=X" for r in records
+        )
+        if not has_copper:
+            copper_record = (
+                MarkovCombination.query.filter_by(predictor="HG=F", target="USDCLP=X")
+                .order_by(desc(MarkovCombination.run_date))
+                .first()
+            )
+
+            if copper_record:
+                records.insert(
+                    0, copper_record
+                )  # Put it at the top so it doesn't get paginated out if we ever slice arrays
+
+        return jsonify(
+            {
+                "run_date": latest_record.run_date.isoformat(),
+                "insights": [r.to_dict() for r in records],
+            }
+        )
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500

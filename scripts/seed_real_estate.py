@@ -5,7 +5,7 @@ from io import StringIO
 from datetime import datetime
 
 # Add the root directory to sys.path to run the script inside Docker context
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app import create_app
 from app.extensiones import db
@@ -31,6 +31,7 @@ Puente Alto,Casas,63.4,0.055,0.044,0.06,27
 San Bernardo,Casas,58.2,0.052,0.040,0.06,31
 Lampa,Casas,48.8,0.058,0.046,0.04,13"""
 
+
 def seed_db():
     app = create_app()
     with app.app_context():
@@ -38,32 +39,33 @@ def seed_db():
         # We delete these exact communes from today to avoid duplicates if run multiple times
         print("Creating tables if not exists...")
         db.create_all()
-        
+
         print("Clearing existing metrics...")
         db.session.query(RealEstateMetrics).delete()
         db.session.commit()
-        
+
         print("Parsing seed data...")
         df = pd.read_csv(StringIO(csv_data))
-        
+
         objects_to_add = []
         for _, row in df.iterrows():
             metric = RealEstateMetrics(
-                comuna=row['comuna'],
-                segment_type=row['segment_type'],
-                uf_m2=row['uf_m2'],
-                gross_cap_rate=row['gross_cap_rate'],
-                net_cap_rate=row['net_cap_rate'],
-                vacancy_rate=row['vacancy_rate'],
-                days_on_market=row['days_on_market']
+                comuna=row["comuna"],
+                segment_type=row["segment_type"],
+                uf_m2=row["uf_m2"],
+                gross_cap_rate=row["gross_cap_rate"],
+                net_cap_rate=row["net_cap_rate"],
+                vacancy_rate=row["vacancy_rate"],
+                days_on_market=row["days_on_market"],
                 # run_date defaults to utcnow
             )
             objects_to_add.append(metric)
-        
+
         print(f"Adding {len(objects_to_add)} historical commune records...")
         db.session.bulk_save_objects(objects_to_add)
         db.session.commit()
         print("✅ Database Seeded Successfully.")
+
 
 if __name__ == "__main__":
     seed_db()

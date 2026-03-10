@@ -10,8 +10,10 @@ services:
     environment:
       - FLASK_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/costbench
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       - db
+      - redis
     volumes:
       - .:/app
     restart: unless-stopped
@@ -29,11 +31,13 @@ services:
     environment:
       - FLASK_ENV=production
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/costbench
+      - REDIS_URL=redis://redis:6379/0
       - PYTHONPATH=/app
     volumes:
       - .:/app
     depends_on:
       - db
+      - redis
     restart: unless-stopped
     entrypoint: >
       bash -lc "while true; do
@@ -49,14 +53,30 @@ services:
     environment:
       - FLASK_ENV=production
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/costbench
+      - REDIS_URL=redis://redis:6379/0
       - PYTHONPATH=/app
     volumes:
       - .:/app
     depends_on:
       - db
+      - redis
     restart: unless-stopped
     entrypoint: >
       bash -lc "echo '[trading-worker] started'; python scripts/monitor_positions.py"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   db:
     image: postgres:15-alpine
     environment:
@@ -68,3 +88,6 @@ services:
     volumes:
       - ./db/data:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d
+
+volumes:
+  redis_data:

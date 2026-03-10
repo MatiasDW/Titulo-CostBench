@@ -1,6 +1,8 @@
 """Machine Learning models for database storage."""
+
 from datetime import datetime
 from app.extensiones import db
+
 
 class MarkovCombination(db.Model):
     """Stores purely statistical Granger causality and transition matrices for analytical history."""
@@ -23,7 +25,11 @@ class MarkovCombination(db.Model):
             "predictor": self.predictor,
             "target": self.target,
             "p_value": float(self.p_value) if self.p_value is not None else None,
-            "lag1_correlation": float(self.lag1_correlation) if self.lag1_correlation is not None else None,
+            "lag1_correlation": (
+                float(self.lag1_correlation)
+                if self.lag1_correlation is not None
+                else None
+            ),
             "transition_matrix": self.transition_matrix,
             "run_date": self.run_date.isoformat() if self.run_date else None,
         }

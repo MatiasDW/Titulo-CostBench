@@ -1,6 +1,7 @@
 """Background monitor to enforce Stop Loss / Take Profit for paper trading.
 Runs inside the docker compose service `trading-worker`.
 """
+
 import time
 from decimal import Decimal
 import pandas as pd
@@ -40,12 +41,16 @@ def load_latest_prices():
 def ensure_schema():
     try:
         with db.engine.begin() as con:
-            con.execute(text(
-                "ALTER TABLE positions ADD COLUMN IF NOT EXISTS take_profit_price numeric(16,4);"
-            ))
-            con.execute(text(
-                "ALTER TABLE positions ADD COLUMN IF NOT EXISTS stop_loss_price numeric(16,4);"
-            ))
+            con.execute(
+                text(
+                    "ALTER TABLE positions ADD COLUMN IF NOT EXISTS take_profit_price numeric(16,4);"
+                )
+            )
+            con.execute(
+                text(
+                    "ALTER TABLE positions ADD COLUMN IF NOT EXISTS stop_loss_price numeric(16,4);"
+                )
+            )
     except Exception as e:
         print("schema check failed", e)
 
@@ -87,7 +92,10 @@ def check_positions(app):
             # Fetch positions for this asset with TP/SL
             positions = (
                 Position.query.filter_by(asset=asset)
-                .filter((Position.take_profit_price.isnot(None)) | (Position.stop_loss_price.isnot(None)))
+                .filter(
+                    (Position.take_profit_price.isnot(None))
+                    | (Position.stop_loss_price.isnot(None))
+                )
                 .all()
             )
             for pos in positions:
@@ -109,11 +117,14 @@ def check_positions(app):
                     wallet = Wallet.query.filter_by(id=pos.wallet_id).first()
                     if wallet:
                         close_position(pos, px, wallet)
-                        app.logger.info("auto_close", extra={
-                            "asset": asset,
-                            "price": float(px),
-                            "position_id": pos.id,
-                        })
+                        app.logger.info(
+                            "auto_close",
+                            extra={
+                                "asset": asset,
+                                "price": float(px),
+                                "position_id": pos.id,
+                            },
+                        )
         db.session.commit()
 
 
