@@ -36,8 +36,10 @@ const SclodaChat = ({ isOpen, onClose, onOpen, contextAsset = null }) => {
         setIsTyping(true);
 
         try {
-            // Optional: send context mapping to the backend if they support it, or embed in prompt.
-            const prompt = contextAsset ? `[Context: Viewing ${contextAsset.label}] ${userMsg}` : userMsg;
+            // Build prompt — always instruct Scloda to reply in English
+            const langPrefix = '[IMPORTANT: Always respond in English, regardless of the language this message is written in.] ';
+            const contextPrefix = contextAsset ? `[Context: Viewing ${contextAsset.label}] ` : '';
+            const prompt = `${langPrefix}${contextPrefix}${userMsg}`;
 
             const res = await sclodaApi.post('/message', {
                 message: prompt,

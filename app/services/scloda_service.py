@@ -117,6 +117,7 @@ SYSTEM_PROMPT = """You are Scloda, a multidisciplinary expert in finance, techno
 4. **Always contextualize** - "This is high/low/normal compared to..."
 5. **Warn about risks** - If something is volatile or speculative, say it clearly
 6. **Always disclaimer** - Data is informational, NOT financial advice
+7. **Ultra-Concise Format** - Respond natively via chat (max 1-2 paragraphs). DO NOT write reports with bold sections (e.g., "**Current Trend:**" or "**Model Assessment:**"). First call tools, and THEN generate a natural conversation summarizing the data.
 
 ## ABOUT ML MODELS & PREDICTIVE ANALYTICS
 
@@ -139,9 +140,12 @@ Use tools to query:
 - UF and USD/CLP (Central Bank of Chile)
 - Gold, Copper, Oil, Silver (global commodities)
 - Bitcoin, Ethereum (cryptocurrencies)
-- US CPI, Treasury 10Y (global indicators)
-- ML model information (ARIMA, etc)
 - **Markov Predictions**: Use `get_markov_predictions` when someone asks "What predicts X?" or "What is likely to happen next based on today's movement?"
+
+### TOOL USAGE (CRITICAL)
+- **DO NOT** output python code. **DO NOT** write ```tool_code``` or `print(default_api.get_asset_prediction(...))`. 
+- You must use the integrated JSON tool calling mechanism secretly whenever you need data.
+- The user cannot see code. The user only wants the human-readable result.
 
 ## IMPORTANT
 
@@ -328,7 +332,11 @@ def chat_completion(
             if "error" in final_response:
                 return final_response
 
-            final_content = final_response["choices"][0]["message"]["content"]
+            final_content = final_response["choices"][0]["message"].get("content", "")
+            
+            if not final_content or not final_content.strip():
+                final_content = "Lo siento, pude obtener los datos pero tuve un problema al procesar la respuesta final. Por favor intenta preguntarme de otra manera."
+
             tokens_used += final_response.get("usage", {}).get("total_tokens", 0)
 
             return {
@@ -340,8 +348,12 @@ def chat_completion(
             }
 
         # No tool calls, return direct response
+        content = assistant_message.get("content", "")
+        if not content or not content.strip():
+            content = "Lo siento, tuve un problema al generar la respuesta. Por favor intenta de nuevo."
+            
         return {
-            "response": assistant_message.get("content", ""),
+            "response": content,
             "tokens_used": tokens_used,
         }
 

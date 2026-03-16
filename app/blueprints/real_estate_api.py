@@ -137,7 +137,14 @@ Current market data for this commune:
 
 The user will provide a down payment of {pie_uf} UF. Their projected monthly mortgage is {dividendo_mensual_uf:.2f} UF/month and expected monthly rent is {monthly_rent_uf:.2f} UF/month.
 
-Generate a 2-paragraph financial analysis IN ENGLISH indicating whether the investment is viable strictly for Cash Flow (Yield) or if it's better suited as a Capital Haven / Appreciation play. Mention how the Central Bank variables (TPM/Inflation) influence this advice.
+Generate a financial analysis IN ENGLISH indicating whether the investment is viable strictly for Cash Flow (Yield) or if it's better suited as a Capital Haven / Appreciation play. 
+
+**Format Requirements**:
+- Must be a highly readable bulleted list.
+- Keep the language completely accessible and easy to understand for beginners.
+- Mention how the Central Bank variables (TPM/Inflation) influence this advice.
+- Start with a clear "Yes", "No", or "Wait" regarding immediate cash flow viability.
+- Maximum 4 short bullet points in total.
         """
         scloda_result = chat_completion(user_message=scloda_prompt)
         scloda_advice = scloda_result.get(

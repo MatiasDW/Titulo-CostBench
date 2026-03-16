@@ -224,7 +224,7 @@ const MarketDashboard = ({ items, macro, analytics }) => {
             </div>
             <AIInsight
                 insight={insights[title.toLowerCase()] || null}
-                text={`Último valor: ${fmtNum(cfg.last, cfg.unit)} • Δ ${cfg.change.toFixed(2)}% vs dato previo`}
+                text={`Latest value: ${fmtNum(cfg.last, cfg.unit)} • Δ ${cfg.change.toFixed(2)}% vs prev.`}
                 colorClass={colorClass}
             />
         </div>
@@ -247,14 +247,14 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                                     <div className="card card-custom p-3 h-100 d-flex justify-content-center" style={{ borderColor: '#2ea04355' }}>
                                         <div className="text-light small">Leader</div>
                                         <div className="fw-bold text-success" style={{ fontSize: '0.95rem' }}>{summary.leaderLabel || '—'}</div>
-                                        <div className="text-white-50" style={{ fontSize: '0.85rem' }}>{fmtClp(distribution.min)} / año</div>
+                                        <div className="text-white-50" style={{ fontSize: '0.85rem' }}>{fmtClp(distribution.min)} / year</div>
                                     </div>
                                 </div>
                                 <div className="col-md-3">
                                     <div className="card card-custom p-3 h-100 d-flex justify-content-center" style={{ borderColor: '#a40e2655' }}>
                                         <div className="text-light small">Laggard</div>
                                         <div className="fw-bold text-danger" style={{ fontSize: '0.95rem' }}>{summary.laggardLabel || '—'}</div>
-                                        <div className="text-white-50" style={{ fontSize: '0.85rem' }}>{fmtClp(distribution.max)} / año</div>
+                                        <div className="text-white-50" style={{ fontSize: '0.85rem' }}>{fmtClp(distribution.max)} / year</div>
                                     </div>
                                 </div>
                                 <div className="col-md-3">
@@ -268,7 +268,7 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                                     <div className="card card-custom p-3 h-100 d-flex justify-content-center" style={{ borderColor: '#58a6ff55' }}>
                                         <div className="text-light small">Gap (max - min)</div>
                                         <div className="fw-bold text-primary" style={{ fontSize: '1rem' }}>{fmtClp(distribution.savings)}</div>
-                                        <div className="text-white-50" style={{ fontSize: '0.85rem' }}>Potential annual ahorro</div>
+                                        <div className="text-white-50" style={{ fontSize: '0.85rem' }}>Potential annual savings</div>
                                     </div>
                                 </div>
                             </div>
@@ -285,7 +285,7 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                                             insight={
                                                 insights['cheap'] ||
                                                 analytics?.insight_cheap ||
-                                                `Más barato: ${summary.leaderLabel || '—'} (${fmtClp(distribution.min)}).`
+                                                `Cheapest: ${summary.leaderLabel || '—'} (${fmtClp(distribution.min)}).`
                                             }
                                             colorClass="text-success"
                                         />
@@ -301,7 +301,7 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                                             insight={
                                                 insights['expensive'] ||
                                                 analytics?.insight_expensive ||
-                                                `Más caro: ${summary.laggardLabel || '—'} (${fmtClp(distribution.max)}).`
+                                                `Most expensive: ${summary.laggardLabel || '—'} (${fmtClp(distribution.max)}).`
                                             }
                                             colorClass="text-danger"
                                         />
@@ -317,7 +317,7 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                                             insight={
                                                 insights['distribution'] ||
                                                 analytics?.insight_distribution ||
-                                                `Rango anual: ${fmtClp(distribution.min)} a ${fmtClp(distribution.max)} (gap ${fmtClp(distribution.savings)}).`
+                                                `Annual range: ${fmtClp(distribution.min)} to ${fmtClp(distribution.max)} (gap ${fmtClp(distribution.savings)}).`
                                             }
                                             colorClass="text-info"
                                         />

@@ -86,58 +86,59 @@ def close_position(pos: Position, price: Decimal, wallet: Wallet):
 
 
 def check_positions(app):
-    with app.app_context():
-        latest = load_latest_prices()
-        for asset, px in latest.items():
-            # Fetch positions for this asset with TP/SL
-            positions = (
-                Position.query.filter_by(asset=asset)
-                .filter(
-                    (Position.take_profit_price.isnot(None))
-                    | (Position.stop_loss_price.isnot(None))
-                )
-                .all()
+    latest = load_latest_prices()
+    for asset, px in latest.items():
+        # Fetch positions for this asset with TP/SL
+        positions = (
+            Position.query.filter_by(asset=asset)
+            .filter(
+                (Position.take_profit_price.isnot(None))
+                | (Position.stop_loss_price.isnot(None))
             )
-            for pos in positions:
-                triggered = False
-                tp = pos.take_profit_price
-                sl = pos.stop_loss_price
-                if pos.direction == "long":
-                    if tp is not None and px >= tp:
-                        triggered = True
-                    if sl is not None and px <= sl:
-                        triggered = True
-                else:  # short
-                    if tp is not None and px <= tp:
-                        triggered = True
-                    if sl is not None and px >= sl:
-                        triggered = True
+            .all()
+        )
+        for pos in positions:
+            triggered = False
+            tp = pos.take_profit_price
+            sl = pos.stop_loss_price
+            if pos.direction == "long":
+                if tp is not None and px >= tp:
+                    triggered = True
+                if sl is not None and px <= sl:
+                    triggered = True
+            else:  # short
+                if tp is not None and px <= tp:
+                    triggered = True
+                if sl is not None and px >= sl:
+                    triggered = True
 
-                if triggered:
-                    wallet = Wallet.query.filter_by(id=pos.wallet_id).first()
-                    if wallet:
-                        close_position(pos, px, wallet)
-                        app.logger.info(
-                            "auto_close",
-                            extra={
-                                "asset": asset,
-                                "price": float(px),
-                                "position_id": pos.id,
-                            },
-                        )
-        db.session.commit()
+            if triggered:
+                wallet = Wallet.query.filter_by(id=pos.wallet_id).first()
+                if wallet:
+                    close_position(pos, px, wallet)
+                    app.logger.info(
+                        "auto_close",
+                        extra={
+                            "asset": asset,
+                            "price": float(px),
+                            "position_id": pos.id,
+                        },
+                    )
+    db.session.commit()
 
 
 def main():
     app = create_app()
-    ensure_schema()
+    with app.app_context():
+        ensure_schema()
     app.logger.info("trading-worker started")
     while True:
-        try:
-            check_positions(app)
-        except Exception as e:
-            app.logger.error("trading-worker-error", extra={"error": str(e)})
-            db.session.rollback()
+        with app.app_context():
+            try:
+                check_positions(app)
+            except Exception as e:
+                app.logger.error("trading-worker-error", extra={"error": str(e)})
+                db.session.rollback()
         time.sleep(SLEEP_SECONDS)
 
 
