@@ -267,13 +267,15 @@ def _get_uf_data(days: int = 30) -> dict:
 
         latest = df.iloc[-1]
         first = df.iloc[0]
-        change_pct = ((latest["value"] - first["value"]) / first["value"]) * 100
+        latest_val = float(latest["value"])
+        first_val = float(first["value"])
+        change_pct = ((latest_val - first_val) / first_val) * 100
 
         return {
             "indicator": "UF",
-            "current_value": round(latest["value"], 2),
+            "current_value": round(latest_val, 2),
             "current_date": str(latest["date"]),
-            "change_percent": round(change_pct, 2),
+            "change_percent": round(float(change_pct), 2),
             "period_days": days,
             "trend": "up" if change_pct > 0 else "down",
             "source": "Banco Central de Chile",
@@ -296,13 +298,15 @@ def _get_usdclp_data(days: int = 30) -> dict:
 
         latest = df.iloc[-1]
         first = df.iloc[0]
-        change_pct = ((latest["value"] - first["value"]) / first["value"]) * 100
+        latest_val = float(latest["value"])
+        first_val = float(first["value"])
+        change_pct = ((latest_val - first_val) / first_val) * 100
 
         return {
             "indicator": "USD/CLP",
-            "current_value": round(latest["value"], 2),
+            "current_value": round(latest_val, 2),
             "current_date": str(latest["date"]),
-            "change_percent": round(change_pct, 2),
+            "change_percent": round(float(change_pct), 2),
             "period_days": days,
             "trend": "up" if change_pct > 0 else "down",
             "source": "Banco Central de Chile",
@@ -322,33 +326,43 @@ def _get_commodity_data(commodity: str, days: int = 30) -> dict:
     }
 
     commodity_names = {
-        "gold": "Oro (USD/oz)",
-        "copper": "Cobre (USD/lb)",
-        "oil": "Petróleo WTI (USD/bbl)",
-        "silver": "Plata (USD/oz)",
+        "gold": "Gold (USD/oz)",
+        "copper": "Copper (USD/lb)",
+        "oil": "Oil WTI (USD/bbl)",
+        "silver": "Silver (USD/oz)",
     }
 
     try:
-        from app.services.fred import get_fred_series
+        from app.services.fred import fetch_fred_series
+        import pandas as pd
 
         series_id = series_map.get(commodity)
         if not series_id:
             return {"error": f"Unknown commodity: {commodity}"}
 
-        df = get_fred_series(series_id, days=days)
+        df = fetch_fred_series(series_id)
 
         if df.empty:
             return {"error": "No data available", "commodity": commodity}
 
+        # Filter to the requested time window
+        cutoff = datetime.now() - timedelta(days=days)
+        df = df[df["date"] >= pd.Timestamp(cutoff)]
+
+        if df.empty:
+            return {"error": "No data available for the requested period", "commodity": commodity}
+
         latest = df.iloc[-1]
         first = df.iloc[0]
-        change_pct = ((latest["value"] - first["value"]) / first["value"]) * 100
+        latest_val = float(latest["value"])
+        first_val = float(first["value"])
+        change_pct = ((latest_val - first_val) / first_val) * 100
 
         return {
             "commodity": commodity_names.get(commodity, commodity),
-            "current_value": round(latest["value"], 2),
+            "current_value": round(latest_val, 2),
             "current_date": str(latest["date"]),
-            "change_percent": round(change_pct, 2),
+            "change_percent": round(float(change_pct), 2),
             "period_days": days,
             "trend": "up" if change_pct > 0 else "down",
             "source": "FRED (Federal Reserve)",

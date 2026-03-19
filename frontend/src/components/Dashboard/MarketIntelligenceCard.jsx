@@ -66,7 +66,7 @@ const MarketIntelligenceCard = () => {
 
     if (error || insights.length === 0) {
         return (
-            <div className="card card-custom p-4 mt-4 animate-in" style={{ borderLeft: '4px solid #58a6ff' }}>
+            <div className="card card-custom p-4 animate-in" style={{ borderLeft: '4px solid #58a6ff' }}>
                 <div className="d-flex align-items-center mb-3">
                     <FaProjectDiagram className="text-primary me-2 fs-4" />
                     <h5 className="mb-0 text-white">Scloda Quant Intelligence</h5>
@@ -95,7 +95,7 @@ const MarketIntelligenceCard = () => {
     }
 
     return (
-        <div className="card card-custom p-3 mt-4 animate-in" style={{ borderLeft: '4px solid #58a6ff' }}>
+        <div className="card card-custom p-3 animate-in" style={{ borderLeft: '4px solid #58a6ff' }}>
             <div className="d-flex align-items-center mb-3">
                 <FaProjectDiagram className="text-primary me-2 fs-4" />
                 <h5 className="mb-0 text-white">Scloda Quant Intelligence</h5>

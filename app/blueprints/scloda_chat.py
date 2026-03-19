@@ -94,7 +94,7 @@ def send_message():
             jsonify(
                 {
                     "error": "Internal server error",
-                    "response": "😅 Algo salió mal. Intenta de nuevo.",
+                    "response": "😅 Something went wrong. Please try again.",
                 }
             ),
             500,
@@ -177,8 +177,8 @@ def get_model_analysis():
         return (
             jsonify(
                 {
-                    "selection_reason": "Análisis no disponible.",
-                    "confidence_note": "Consulte métricas estándar.",
+                    "selection_reason": "Analysis unavailable.",
+                    "confidence_note": "Please refer to standard metrics.",
                 }
             ),
             500,

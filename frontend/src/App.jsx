@@ -56,6 +56,10 @@ const App = () => {
       </div>
 
       <div className="container py-3">
+        <div className="mb-4">
+          <MarketIntelligenceCard />
+        </div>
+
         <Filters
           limit={limit}
           onLimitChange={setLimit}
@@ -63,10 +67,6 @@ const App = () => {
           onCurrencyChange={setCurrency}
           onUpdate={handleUpdate}
         />
-
-        <div className="mb-4">
-          <MarketIntelligenceCard />
-        </div>
 
         <div className="card-header-custom text-white d-flex justify-content-between align-items-center mb-0">
           <span>Banking Cost Ranking (Annual)</span>

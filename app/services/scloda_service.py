@@ -31,8 +31,8 @@ LLM_TIMEOUT_SECONDS = int(os.getenv("SCLODA_TIMEOUT", "12"))
 
 # Pre-baked Scloda message shown on any LLM failure.
 _FRIENDLY_ERROR = (
-    "⏳ Las redes están un poco saturadas en este momento y no pude "
-    "procesar tu consulta. ¿Puedes intentarlo de nuevo en unos segundos?"
+    "⏳ The networks are a bit congested right now and I couldn't "
+    "process your request. Can you try again in a few seconds?"
 )
 
 
@@ -49,7 +49,7 @@ def _load_system_prompt() -> str:
 
 {content}
 
-Remember: Always use the available tools to get real data. Never invent numbers. Respond in the user's language."""
+Remember: Always use the available tools to get real data. Never invent numbers. ALWAYS respond in English, regardless of the language the user writes in."""
         except Exception as e:
             logger.warning("prompt_file_load_failed", error=str(e))
 
@@ -70,7 +70,7 @@ RULES:
 4. Clearly warn about risks
 5. Always: "This is informational, NOT financial advice"
 
-Respond in the user's language. Use the available tools to get real data."""
+ALWAYS respond in English, regardless of the language the user writes in. Use the available tools to get real data."""
 
 
 # System prompt for Scloda
@@ -146,13 +146,14 @@ Use tools to query:
 - **DO NOT** output python code. **DO NOT** write ```tool_code``` or `print(default_api.get_asset_prediction(...))`. 
 - You must use the integrated JSON tool calling mechanism secretly whenever you need data.
 - The user cannot see code. The user only wants the human-readable result.
+- **NEVER** mention internal tool or function names (like get_commodity_data, get_crypto_data, get_uf_data, get_markov_predictions, etc.) in your responses. These are internal and invisible to the user.
 
 ## IMPORTANT
 
 - If you don't have updated data, say so honestly
 - NEVER make up numbers or statistics
 - If the question is outside your knowledge, recommend consulting a professional
-- Respond in the language the user uses (Spanish or English)
+- ALWAYS respond in English, regardless of the language the user writes in
 
 Respond concisely but completely. Use emojis sparingly (📊💡⚠️) to make conversation friendlier."""
 
@@ -272,7 +273,7 @@ def chat_completion(
     """
     if not OPENROUTER_API_KEY:
         return {
-            "response": "⚠️ API no configurada. Agrega OPENROUTER_API_KEY al archivo .env",
+            "response": "⚠️ API not configured. Add OPENROUTER_API_KEY to the .env file",
             "tokens_used": 0,
             "error": "no_api_key",
         }
@@ -335,7 +336,7 @@ def chat_completion(
             final_content = final_response["choices"][0]["message"].get("content", "")
             
             if not final_content or not final_content.strip():
-                final_content = "Lo siento, pude obtener los datos pero tuve un problema al procesar la respuesta final. Por favor intenta preguntarme de otra manera."
+                final_content = "I'm sorry, I was able to retrieve the data but had a problem processing the final response. Please try asking in a different way."
 
             tokens_used += final_response.get("usage", {}).get("total_tokens", 0)
 
@@ -350,7 +351,7 @@ def chat_completion(
         # No tool calls, return direct response
         content = assistant_message.get("content", "")
         if not content or not content.strip():
-            content = "Lo siento, tuve un problema al generar la respuesta. Por favor intenta de nuevo."
+            content = "I'm sorry, I had a problem generating the response. Please try again."
             
         return {
             "response": content,

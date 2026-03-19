@@ -64,7 +64,7 @@ const WalletPage = () => {
         setInsight(null);
         try {
             // Construct a prompt based on available wallet and positions data
-            const prompt = `Can you briefly analyze my current paper trading portfolio? Total cash available: ${wallet.available_cash}, Invested: ${wallet.total_invested}, Total P&L: ${wallet.total_equity - wallet.wallet.initial_balance}. Open positions: ${JSON.stringify(positions.map(p => p.asset))}. Recent closed trades count: ${trades.length}. Please keep it entertaining, constructive and to the point. Give 2 practical trading hints based on my status. Answer in English as Scloda.`;
+            const prompt = `Can you briefly analyze my current paper trading portfolio? Total cash available: ${wallet.available_cash}, Invested: ${wallet.total_invested}, Total P&L: ${wallet.total_equity - wallet.wallet.initial_balance}. Open positions: ${JSON.stringify(positions.map(p => p.asset))}. Recent closed trades count: ${trades.length}. Please keep it entertaining, constructive and to the point. Give 2 practical trading hints based on my status. Answer in English as Scloda. IMPORTANT: Do NOT mention any internal tool or function names (like get_commodity_data, get_crypto_data, etc.) in your response — the user should never see those.`;
             const res = await sclodaApi.post('/message', { message: prompt });
             setInsight(res.data.response);
         } catch (err) {
