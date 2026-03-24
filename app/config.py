@@ -41,6 +41,9 @@ class Config:
     BDE_USER = os.getenv("BDE_USER", "")
     BDE_PASS = os.getenv("BDE_PASS", "")
 
+    # GNews API
+    GNEWS_API_KEY = os.getenv("GNEWS_API_KEY", "")
+
     # HTTP settings
     REQUEST_TIMEOUT = 30
     USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"

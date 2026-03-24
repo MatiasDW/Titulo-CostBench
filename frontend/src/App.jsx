@@ -8,6 +8,7 @@ import ProfilePage from './components/Auth/ProfilePage';
 import WalletPage from './components/Trading/WalletPage';
 import TradePage from './components/Trading/TradePage';
 import RealEstatePage from './components/RealEstate/RealEstatePage';
+import NewsPage from './components/News/NewsPage';
 import DashboardLayout from './components/Auth/DashboardLayout';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import useDashboardData from './hooks/useDashboardData';
@@ -115,6 +116,11 @@ const App = () => {
       <Route path="/real-estate" element={
         <ProtectedRoute>
           <DashboardLayout><RealEstatePage /></DashboardLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/news" element={
+        <ProtectedRoute>
+          <DashboardLayout><NewsPage /></DashboardLayout>
         </ProtectedRoute>
       } />
       <Route path="/home" element={
