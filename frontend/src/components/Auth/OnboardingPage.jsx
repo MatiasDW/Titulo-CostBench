@@ -63,7 +63,7 @@ const OnboardingPage = () => {
     const [selectedInterests, setSelectedInterests] = useState([]);
     const [selectedRisk, setSelectedRisk] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { playSelect, playDeselect, playClick, playNav, playSuccess } = useSounds();
+    const { playSelect, playDeselect, playSuccess } = useSounds();
 
     const toggleInterest = (id) => {
         const isSelected = selectedInterests.includes(id);

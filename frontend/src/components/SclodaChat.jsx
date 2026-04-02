@@ -18,7 +18,7 @@ const SclodaChat = () => {
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
-    const { playChatOpen, playChatClose, playSend, playReceive, playClick } = useSounds();
+    const { playChatOpen, playChatClose, playSend, playReceive } = useSounds();
 
     // Scroll to bottom when messages change
     useEffect(() => {

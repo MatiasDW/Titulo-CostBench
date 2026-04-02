@@ -76,7 +76,7 @@ const WalletPage = () => {
             playTrade();
             showToast('Wallet reset to $10,000,000 CLP');
             fetchData();
-        } catch (err) {
+        } catch {
             showToast('Error resetting wallet', 'error');
         }
     };

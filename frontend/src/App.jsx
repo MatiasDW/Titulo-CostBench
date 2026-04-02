@@ -50,7 +50,7 @@ const App = () => {
         <Ticker />
 
         <div className="container-fluid px-4 pt-4">
-          <Header onOpenDashboard={() => { }} />
+          <Header />
         </div>
 
         <div className="container-fluid px-4 mb-4">
