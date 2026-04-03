@@ -172,22 +172,22 @@ const CHILE_REAL_ESTATE_SPOTS = [
 ];
 
 const CHILE_MAP_POINTS = [
-    { city: 'Arica y Parinacota', capital: 'Arica', focus: 'Border commerce and logistics gateway.', width: 62, offset: 18 },
-    { city: 'Tarapaca', capital: 'Iquique', focus: 'Free-zone momentum and port-linked activity.', width: 56, offset: 22 },
-    { city: 'Antofagasta', capital: 'Antofagasta', focus: 'Mining services with executive rental demand.', width: 58, offset: 20 },
-    { city: 'Atacama', capital: 'Copiapo', focus: 'Energy corridors and strategic land optionality.', width: 54, offset: 23 },
-    { city: 'Coquimbo', capital: 'La Serena', focus: 'Coastal second-home demand and tourism flow.', width: 60, offset: 19 },
-    { city: 'Valparaiso', capital: 'Valparaiso', focus: 'Short-stay coastal cash flow and liquidity.', width: 56, offset: 21 },
-    { city: 'Metropolitana', capital: 'Santiago', focus: 'Highest liquidity and absorption depth.', width: 59, offset: 20 },
-    { city: "O'Higgins", capital: 'Rancagua', focus: 'Industrial spillover and suburban growth.', width: 55, offset: 22 },
-    { city: 'Maule', capital: 'Talca', focus: 'Affordable entry points with agro logistics.', width: 54, offset: 23 },
-    { city: 'Nuble', capital: 'Chillan', focus: 'Regional densification near major routes.', width: 52, offset: 24 },
-    { city: 'Biobio', capital: 'Concepcion', focus: 'University and industrial rental profile.', width: 53, offset: 24 },
-    { city: 'La Araucania', capital: 'Temuco', focus: 'Lifestyle migration and land thesis.', width: 50, offset: 25 },
-    { city: 'Los Rios', capital: 'Valdivia', focus: 'Amenity-driven housing demand.', width: 48, offset: 26 },
-    { city: 'Los Lagos', capital: 'Puerto Montt', focus: 'Lake district premium valuation.', width: 47, offset: 26 },
-    { city: 'Aysen', capital: 'Coyhaique', focus: 'Frontier positioning with low density upside.', width: 45, offset: 27 },
-    { city: 'Magallanes', capital: 'Punta Arenas', focus: 'Long-horizon strategic land play.', width: 43, offset: 28 },
+    { city: 'Arica y Parinacota', capital: 'Arica', focus: 'Border commerce and logistics gateway.', top: '7%', left: '57%' },
+    { city: 'Tarapaca', capital: 'Iquique', focus: 'Free-zone momentum and port-linked activity.', top: '12%', left: '56%' },
+    { city: 'Antofagasta', capital: 'Antofagasta', focus: 'Mining services with executive rental demand.', top: '17%', left: '56%' },
+    { city: 'Atacama', capital: 'Copiapo', focus: 'Energy corridors and strategic land optionality.', top: '23%', left: '55%' },
+    { city: 'Coquimbo', capital: 'La Serena', focus: 'Coastal second-home demand and tourism flow.', top: '29%', left: '54%' },
+    { city: 'Valparaiso', capital: 'Valparaiso', focus: 'Short-stay coastal cash flow and liquidity.', top: '34%', left: '51%' },
+    { city: 'Metropolitana', capital: 'Santiago', focus: 'Highest liquidity and absorption depth.', top: '39%', left: '54%' },
+    { city: "O'Higgins", capital: 'Rancagua', focus: 'Industrial spillover and suburban growth.', top: '44%', left: '53%' },
+    { city: 'Maule', capital: 'Talca', focus: 'Affordable entry points with agro logistics.', top: '49%', left: '52%' },
+    { city: 'Nuble', capital: 'Chillan', focus: 'Regional densification near major routes.', top: '54%', left: '51%' },
+    { city: 'Biobio', capital: 'Concepcion', focus: 'University and industrial rental profile.', top: '59%', left: '51%' },
+    { city: 'La Araucania', capital: 'Temuco', focus: 'Lifestyle migration and land thesis.', top: '65%', left: '50%' },
+    { city: 'Los Rios', capital: 'Valdivia', focus: 'Amenity-driven housing demand.', top: '70%', left: '50%' },
+    { city: 'Los Lagos', capital: 'Puerto Montt', focus: 'Lake district premium valuation.', top: '76%', left: '50%' },
+    { city: 'Aysen', capital: 'Coyhaique', focus: 'Frontier positioning with low density upside.', top: '85%', left: '49%' },
+    { city: 'Magallanes', capital: 'Punta Arenas', focus: 'Long-horizon strategic land play.', top: '94%', left: '48%' },
 ];
 
 const container = {
@@ -303,41 +303,54 @@ const LandingPage = () => {
                         </div>
                     </div>
 
-                    <motion.aside className="landing-control-room" variants={stagger} initial="hidden" animate="show">
-                        <div className="control-room-shell">
-                            <motion.article className="control-room-map-box" variants={fadeCard}>
-                                <div className="control-room-map-head">
-                                    <strong>Chile Regions Monitor</strong>
-                                    <span>16 regions tracked</span>
-                                </div>
-                                <div className="control-room-map-layout">
-                                    <div className="control-room-map-stage">
-                                        <div className="control-room-region-stack">
-                                            {CHILE_MAP_POINTS.map((region) => (
-                                                <button
-                                                    key={region.city}
-                                                    type="button"
-                                                    className={`control-room-region-segment ${activeRegion.city === region.city ? 'active' : ''}`}
-                                                    style={{ width: `${region.width}%`, marginLeft: `${region.offset}%` }}
-                                                    onMouseEnter={() => setHoveredRegion(region)}
-                                                    onMouseLeave={() => setHoveredRegion(null)}
-                                                    onFocus={() => setHoveredRegion(region)}
-                                                    onBlur={() => setHoveredRegion(null)}
-                                                    aria-label={region.city}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <article className="control-room-region-advice">
-                                        <span className="region-active-label">Region active</span>
-                                        <h4>{activeRegion.city}</h4>
-                                        <p className="region-capital">{activeRegion.capital}</p>
-                                        <p>{activeRegion.focus}</p>
-                                        <small>Hover or click regions to explore local signals.</small>
-                                    </article>
-                                </div>
-                            </motion.article>
+                    <div className="landing-hero-side">
+                        <motion.article className="landing-map-card" variants={fadeCard} initial="hidden" animate="show">
+                            <div className="landing-map-head">
+                                <strong>Chile Regions Monitor</strong>
+                                <span>16 regions tracked</span>
+                            </div>
+                            <div className="landing-map-body">
+                                <div className="landing-map-stage">
+                                    <svg className="chile-map-svg" viewBox="0 0 180 620" aria-hidden="true">
+                                        <path
+                                            className="chile-map-outline"
+                                            d="M100 10
+                                               L111 26 L107 45 L114 66 L109 88 L116 110 L111 133 L118 155 L112 178
+                                               L120 200 L113 224 L121 249 L113 272 L122 296 L114 321 L123 348 L114 375
+                                               L123 402 L113 430 L122 458 L111 486 L119 515 L106 545 L112 575 L97 604
+                                               L82 614 L72 602 L75 578 L66 548 L74 523 L65 492 L73 462 L64 430 L73 401
+                                               L63 372 L72 343 L64 316 L73 289 L64 262 L74 236 L66 210 L76 184 L68 158
+                                               L79 135 L71 111 L83 88 L75 64 L87 43 L80 24 Z"
+                                        />
+                                    </svg>
 
+                                    {CHILE_MAP_POINTS.map((region) => (
+                                        <button
+                                            key={region.city}
+                                            type="button"
+                                            className={`chile-map-pin ${activeRegion.city === region.city ? 'active' : ''}`}
+                                            style={{ top: region.top, left: region.left }}
+                                            onMouseEnter={() => setHoveredRegion(region)}
+                                            onMouseLeave={() => setHoveredRegion(null)}
+                                            onFocus={() => setHoveredRegion(region)}
+                                            onBlur={() => setHoveredRegion(null)}
+                                            aria-label={region.city}
+                                        >
+                                            <span />
+                                        </button>
+                                    ))}
+                                </div>
+                                <article className="control-room-region-advice">
+                                    <span className="region-active-label">Region active</span>
+                                    <h4>{activeRegion.city}</h4>
+                                    <p className="region-capital">{activeRegion.capital}</p>
+                                    <p>{activeRegion.focus}</p>
+                                    <small>Hover regions to explore local signals.</small>
+                                </article>
+                            </div>
+                        </motion.article>
+
+                        <motion.aside className="landing-control-room" variants={stagger} initial="hidden" animate="show">
                             <div className="control-room-main">
                                 <div className="control-room-header">
                                     <span>Control Room</span>
@@ -382,8 +395,8 @@ const LandingPage = () => {
                                     </div>
                                 </article>
                             </div>
-                        </div>
-                    </motion.aside>
+                        </motion.aside>
+                    </div>
                 </motion.section>
 
                 <motion.section
