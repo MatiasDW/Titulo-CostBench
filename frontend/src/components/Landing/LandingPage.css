@@ -295,7 +295,7 @@
 
 .control-room-shell {
     display: grid;
-    grid-template-columns: minmax(180px, 0.86fr) minmax(260px, 1.14fr);
+    grid-template-columns: minmax(300px, 1.2fr) minmax(260px, 1fr);
     gap: 0.75rem;
     align-items: stretch;
 }
@@ -305,8 +305,8 @@
     border: 1px solid rgba(88, 166, 255, 0.25);
     background: linear-gradient(165deg, rgba(12, 20, 30, 0.95), rgba(9, 14, 20, 0.92));
     padding: 0.58rem;
-    display: grid;
-    grid-template-rows: auto 1fr auto;
+    display: flex;
+    flex-direction: column;
     min-height: 456px;
 }
 
@@ -335,73 +335,94 @@
         radial-gradient(circle at 78% 20%, rgba(46, 160, 67, 0.2), transparent 45%),
         linear-gradient(165deg, rgba(7, 13, 20, 0.96), rgba(10, 18, 27, 0.94));
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem;
 }
 
-.control-room-map-shape {
-    position: absolute;
-    left: 18%;
-    top: 4%;
-    height: 92%;
-    width: auto;
-    filter: drop-shadow(0 6px 18px rgba(46, 160, 67, 0.25));
+.control-room-map-layout {
+    display: grid;
+    grid-template-columns: minmax(124px, 0.9fr) minmax(170px, 1.1fr);
+    gap: 0.55rem;
+    min-height: 390px;
 }
 
-.control-room-map-shape path {
-    fill: rgba(35, 134, 54, 0.42);
-    stroke: rgba(152, 249, 177, 0.75);
-    stroke-width: 1.6;
+.control-room-region-stack {
+    width: 100%;
+    max-width: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 0.32rem 0;
 }
 
-.control-room-region-pin {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    background: transparent;
-    border: none;
-    padding: 0;
+.control-room-region-segment {
+    height: 14px;
+    border-radius: 4px;
+    border: 1px solid rgba(91, 194, 214, 0.8);
+    background: rgba(51, 100, 117, 0.66);
     cursor: pointer;
+    transition: 0.18s ease;
 }
 
-.control-room-region-pin .dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 999px;
-    background: #58a6ff;
-    box-shadow: 0 0 0 5px rgba(88, 166, 255, 0.16);
-    transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+.control-room-region-segment:hover,
+.control-room-region-segment.active,
+.control-room-region-segment:focus-visible {
+    border-color: rgba(146, 255, 180, 0.92);
+    background: rgba(92, 174, 124, 0.86);
+    transform: translateX(1px);
 }
 
-.control-room-region-pin:hover .dot,
-.control-room-region-pin.active .dot,
-.control-room-region-pin:focus-visible .dot {
-    transform: scale(1.18);
-    background: #7bc2ff;
-    box-shadow: 0 0 0 8px rgba(88, 166, 255, 0.22);
-}
-
-.control-room-region-pin:focus-visible {
+.control-room-region-segment:focus-visible {
     outline: none;
 }
 
-.control-room-region-info {
-    margin-top: 0.5rem;
+.control-room-region-advice {
     border-radius: 10px;
-    border: 1px solid rgba(88, 166, 255, 0.26);
-    background: rgba(12, 20, 31, 0.88);
-    padding: 0.52rem 0.55rem;
-    min-height: 72px;
+    border: 1px solid rgba(88, 166, 255, 0.34);
+    background: rgba(6, 16, 32, 0.92);
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
-.control-room-region-info strong {
-    display: block;
-    font-size: 0.78rem;
-    color: #e7f2ff;
+.region-active-label {
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.11em;
+    color: #69d9f5;
+    margin-bottom: 0.35rem;
+    display: inline-flex;
 }
 
-.control-room-region-info p {
-    margin: 0.25rem 0 0;
-    color: #9fb8d1;
-    font-size: 0.72rem;
+.control-room-region-advice h4 {
+    margin: 0;
+    color: #edf7ff;
+    font-size: 0.96rem;
+    font-family: var(--landing-title);
+}
+
+.control-room-region-advice .region-capital {
+    margin: 0.25rem 0 0.45rem;
+    color: #88ddff;
+    font-size: 0.86rem;
+}
+
+.control-room-region-advice p {
+    margin: 0;
+    color: #c7d7e7;
+    font-size: 0.84rem;
+    line-height: 1.48;
+}
+
+.control-room-region-advice small {
+    margin-top: 0.55rem;
+    color: #8ea7bf;
+    font-size: 0.74rem;
     line-height: 1.35;
+    display: block;
 }
 
 .control-room-main {
@@ -1034,6 +1055,10 @@
         min-height: 250px;
     }
 
+    .control-room-map-layout {
+        min-height: 330px;
+    }
+
     .landing-control-room {
         margin-top: 0.3rem;
     }
@@ -1085,20 +1110,29 @@
         min-height: 220px;
     }
 
-    .control-room-map-shape {
-        left: 23%;
+    .control-room-map-layout {
+        grid-template-columns: 1fr;
+        min-height: 0;
     }
 
-    .control-room-region-info p {
-        font-size: 0.68rem;
+    .control-room-map-stage {
+        min-height: 200px;
+    }
+
+    .control-room-region-stack {
+        max-width: 126px;
+    }
+
+    .control-room-region-advice p {
+        font-size: 0.78rem;
+    }
+
+    .control-room-region-advice small {
+        font-size: 0.7rem;
     }
 
     .control-room-photo-card img {
-        height: 120px;
-    }
-
-    .control-room-photo-overlay p {
-        font-size: 0.66rem;
+        height: 116px;
     }
 
     .landing-step {

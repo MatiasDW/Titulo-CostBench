@@ -172,22 +172,22 @@ const CHILE_REAL_ESTATE_SPOTS = [
 ];
 
 const CHILE_MAP_POINTS = [
-    { city: 'Arica y Parinacota', focus: 'Border commerce and logistics gateway', top: '6%', left: '57%' },
-    { city: 'Tarapaca', focus: 'Free-zone and logistics momentum', top: '11%', left: '56%' },
-    { city: 'Antofagasta', focus: 'Mining services and executive rentals', top: '16%', left: '56%' },
-    { city: 'Atacama', focus: 'Energy corridor and land optionality', top: '21%', left: '55%' },
-    { city: 'Coquimbo', focus: 'Second-home coastal demand', top: '27%', left: '54%' },
-    { city: 'Valparaiso', focus: 'Tourism-driven coastal cash flow', top: '33%', left: '51%' },
-    { city: 'Metropolitana de Santiago', focus: 'Highest liquidity and absorption depth', top: '38%', left: '55%' },
-    { city: "O'Higgins", focus: 'Industrial spillover and suburban growth', top: '43%', left: '53%' },
-    { city: 'Maule', focus: 'Agro-logistics and affordable entry points', top: '48%', left: '52%' },
-    { city: 'Nuble', focus: 'Regional densification near core routes', top: '53%', left: '51%' },
-    { city: 'Biobio', focus: 'University + industrial rental profile', top: '58%', left: '51%' },
-    { city: 'La Araucania', focus: 'Lifestyle migration and land thesis', top: '64%', left: '50%' },
-    { city: 'Los Rios', focus: 'High amenity housing demand', top: '70%', left: '49%' },
-    { city: 'Los Lagos', focus: 'Premium lake district valuation', top: '75%', left: '50%' },
-    { city: 'Aysen', focus: 'Low-density frontier opportunities', top: '84%', left: '48%' },
-    { city: 'Magallanes', focus: 'Strategic long-horizon land play', top: '93%', left: '47%' },
+    { city: 'Arica y Parinacota', capital: 'Arica', focus: 'Border commerce and logistics gateway.', width: 62, offset: 18 },
+    { city: 'Tarapaca', capital: 'Iquique', focus: 'Free-zone momentum and port-linked activity.', width: 56, offset: 22 },
+    { city: 'Antofagasta', capital: 'Antofagasta', focus: 'Mining services with executive rental demand.', width: 58, offset: 20 },
+    { city: 'Atacama', capital: 'Copiapo', focus: 'Energy corridors and strategic land optionality.', width: 54, offset: 23 },
+    { city: 'Coquimbo', capital: 'La Serena', focus: 'Coastal second-home demand and tourism flow.', width: 60, offset: 19 },
+    { city: 'Valparaiso', capital: 'Valparaiso', focus: 'Short-stay coastal cash flow and liquidity.', width: 56, offset: 21 },
+    { city: 'Metropolitana', capital: 'Santiago', focus: 'Highest liquidity and absorption depth.', width: 59, offset: 20 },
+    { city: "O'Higgins", capital: 'Rancagua', focus: 'Industrial spillover and suburban growth.', width: 55, offset: 22 },
+    { city: 'Maule', capital: 'Talca', focus: 'Affordable entry points with agro logistics.', width: 54, offset: 23 },
+    { city: 'Nuble', capital: 'Chillan', focus: 'Regional densification near major routes.', width: 52, offset: 24 },
+    { city: 'Biobio', capital: 'Concepcion', focus: 'University and industrial rental profile.', width: 53, offset: 24 },
+    { city: 'La Araucania', capital: 'Temuco', focus: 'Lifestyle migration and land thesis.', width: 50, offset: 25 },
+    { city: 'Los Rios', capital: 'Valdivia', focus: 'Amenity-driven housing demand.', width: 48, offset: 26 },
+    { city: 'Los Lagos', capital: 'Puerto Montt', focus: 'Lake district premium valuation.', width: 47, offset: 26 },
+    { city: 'Aysen', capital: 'Coyhaique', focus: 'Frontier positioning with low density upside.', width: 45, offset: 27 },
+    { city: 'Magallanes', capital: 'Punta Arenas', focus: 'Long-horizon strategic land play.', width: 43, offset: 28 },
 ];
 
 const container = {
@@ -310,29 +310,31 @@ const LandingPage = () => {
                                     <strong>Chile Regions Monitor</strong>
                                     <span>16 regions tracked</span>
                                 </div>
-                                <div className="control-room-map-stage">
-                                    <svg className="landing-chile-shape control-room-map-shape" viewBox="0 0 220 520" role="img" aria-label="Chile map">
-                                        <path d="M 151.3 70.2 L 156.5 88.6 L 166.1 86.8 L 167.8 90.1 L 163.2 104.0 L 148.7 110.6 L 149.1 132.8 L 146.3 137.1 L 150.3 142.3 L 140.9 150.6 L 132.1 163.1 L 127.4 175.3 L 128.6 188.2 L 120.4 201.9 L 126.5 225.0 L 130.0 227.4 L 130.0 239.7 L 122.4 252.7 L 122.7 263.8 L 112.6 272.5 L 112.6 284.8 L 116.7 297.8 L 108.7 302.7 L 105.1 314.6 L 102.0 328.2 L 104.2 344.5 L 98.9 347.2 L 102.0 362.6 L 108.0 367.7 L 103.6 373.3 L 109.8 375.9 L 111.2 381.0 L 105.4 383.5 L 106.8 391.3 L 102.0 409.0 L 94.9 420.4 L 96.4 427.1 L 92.2 435.6 L 82.0 441.5 L 83.1 455.6 L 87.8 460.4 L 96.7 459.6 L 96.5 469.6 L 102.0 477.4 L 134.2 479.1 L 146.6 481.2 L 134.7 481.1 L 128.3 484.4 L 116.3 489.2 L 114.1 501.7 L 108.5 502.0 L 93.4 497.7 L 78.1 488.4 L 61.5 480.7 L 57.4 472.3 L 61.1 464.5 L 54.4 455.6 L 52.7 432.9 L 58.4 420.0 L 72.5 409.7 L 52.2 405.8 L 64.9 394.0 L 69.5 371.9 L 84.3 376.6 L 91.3 348.9 L 82.3 345.4 L 78.2 362.0 L 69.7 360.2 L 73.9 341.1 L 78.5 316.4 L 84.6 307.2 L 80.8 294.2 L 79.7 279.2 L 85.3 278.8 L 93.5 257.2 L 102.7 235.9 L 108.4 216.0 L 105.3 196.0 L 109.3 185.0 L 107.7 168.5 L 115.5 152.2 L 117.9 126.4 L 122.2 98.7 L 126.3 68.9 L 125.3 47.0 L 122.6 28.2 L 129.4 24.8 L 133.0 18.0 L 139.5 27.1 L 141.3 36.7 L 148.3 42.3 L 144.1 55.3 L 151.3 70.2 Z" />
-                                    </svg>
-                                    {CHILE_MAP_POINTS.map((region) => (
-                                        <button
-                                            key={region.city}
-                                            type="button"
-                                            className={`control-room-region-pin ${activeRegion.city === region.city ? 'active' : ''}`}
-                                            style={{ top: region.top, left: region.left }}
-                                            onMouseEnter={() => setHoveredRegion(region)}
-                                            onMouseLeave={() => setHoveredRegion(null)}
-                                            onFocus={() => setHoveredRegion(region)}
-                                            onBlur={() => setHoveredRegion(null)}
-                                            aria-label={region.city}
-                                        >
-                                            <span className="dot" />
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="control-room-region-info">
-                                    <strong>{activeRegion.city}</strong>
-                                    <p>{activeRegion.focus}</p>
+                                <div className="control-room-map-layout">
+                                    <div className="control-room-map-stage">
+                                        <div className="control-room-region-stack">
+                                            {CHILE_MAP_POINTS.map((region) => (
+                                                <button
+                                                    key={region.city}
+                                                    type="button"
+                                                    className={`control-room-region-segment ${activeRegion.city === region.city ? 'active' : ''}`}
+                                                    style={{ width: `${region.width}%`, marginLeft: `${region.offset}%` }}
+                                                    onMouseEnter={() => setHoveredRegion(region)}
+                                                    onMouseLeave={() => setHoveredRegion(null)}
+                                                    onFocus={() => setHoveredRegion(region)}
+                                                    onBlur={() => setHoveredRegion(null)}
+                                                    aria-label={region.city}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <article className="control-room-region-advice">
+                                        <span className="region-active-label">Region active</span>
+                                        <h4>{activeRegion.city}</h4>
+                                        <p className="region-capital">{activeRegion.capital}</p>
+                                        <p>{activeRegion.focus}</p>
+                                        <small>Hover or click regions to explore local signals.</small>
+                                    </article>
                                 </div>
                             </motion.article>
 
@@ -376,7 +378,7 @@ const LandingPage = () => {
                                     <img src={chileAraucariaVolcano} alt="Chilean biodiversity landscape" loading="lazy" />
                                     <div className="control-room-photo-overlay">
                                         <h4>Flora & fauna signal</h4>
-                                        <p>Quality-of-place context complements raw financial metrics.</p>
+                                        <p>Context layer for long-horizon desirability in Chile.</p>
                                     </div>
                                 </article>
                             </div>
