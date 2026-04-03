@@ -16,8 +16,10 @@ import {
     FaHome,
     FaMapMarkedAlt,
     FaMoneyBillWave,
+    FaPaw,
     FaPassport,
     FaPlayCircle,
+    FaLeaf,
     FaSearchDollar,
     FaShieldAlt,
     FaSlidersH,
@@ -31,6 +33,7 @@ import chileValparaisoHills from '../../assets/landing/chile-valparaiso-hills.jp
 import chilePatagoniaLake from '../../assets/landing/chile-patagonia-lake.jpg';
 import chilePuertoVaras from '../../assets/landing/chile-puerto-varas.jpg';
 import chileLasCondesSanhattan from '../../assets/landing/chile-las-condes-sanhattan.jpg';
+import chileAraucariaVolcano from '../../assets/landing/chile-araucaria-volcano.jpg';
 import santiagoNight from '../../assets/santiago_night.png';
 import './LandingPage.css';
 
@@ -168,6 +171,20 @@ const CHILE_REAL_ESTATE_SPOTS = [
         subtitle: 'Urban density, transport access, and rental absorption',
         image: santiagoNight,
     },
+];
+
+const CHILE_MAP_POINTS = [
+    { city: 'Antofagasta', focus: 'Mining logistics', top: '18%', left: '59%' },
+    { city: 'Santiago', focus: 'Liquidity core', top: '45%', left: '53%' },
+    { city: 'Valparaiso', focus: 'Coastal rentals', top: '49%', left: '45%' },
+    { city: 'Concepcion', focus: 'Regional growth', top: '60%', left: '50%' },
+    { city: 'Puerto Varas', focus: 'Premium lifestyle', top: '74%', left: '54%' },
+];
+
+const CHILE_BIODIVERSITY_TAGS = [
+    { label: 'Araucaria forests', icon: <FaLeaf size={11} /> },
+    { label: 'Andean condor corridor', icon: <FaPaw size={11} /> },
+    { label: 'Patagonian lake belts', icon: <FaMapMarkedAlt size={11} /> },
 ];
 
 const container = {
@@ -409,6 +426,49 @@ const LandingPage = () => {
                     <p className="landing-photo-credit">
                         Real photography source: Pexels (used for visual context in this prototype).
                     </p>
+                    <div className="landing-chile-context">
+                        <article className="landing-chile-map-card">
+                            <div className="landing-map-head">
+                                <h3>Chile investment map</h3>
+                                <span>Macro + Real Estate Nodes</span>
+                            </div>
+                            <div className="landing-map-stage">
+                                <svg className="landing-chile-shape" viewBox="0 0 220 520" role="img" aria-label="Stylized map of Chile">
+                                    <path d="M120 10 L150 35 L142 75 L160 115 L150 160 L170 205 L145 250 L165 300 L150 345 L170 395 L140 450 L155 500 L120 510 L95 495 L108 450 L85 395 L102 345 L82 300 L96 250 L78 205 L95 160 L82 115 L98 75 L90 35 Z" />
+                                </svg>
+                                {CHILE_MAP_POINTS.map((point) => (
+                                    <div
+                                        key={point.city}
+                                        className="landing-map-pin"
+                                        style={{ top: point.top, left: point.left }}
+                                    >
+                                        <span className="dot" />
+                                        <div>
+                                            <strong>{point.city}</strong>
+                                            <small>{point.focus}</small>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </article>
+                        <article className="landing-bio-card">
+                            <img src={chileAraucariaVolcano} alt="Chilean volcano and native forest landscape" loading="lazy" />
+                            <div className="landing-bio-overlay">
+                                <h3>Minimal biodiversity context</h3>
+                                <p>
+                                    We combine hard numbers with place quality signals to evaluate long-term
+                                    desirability of Chilean real estate zones.
+                                </p>
+                                <div className="landing-bio-tags">
+                                    {CHILE_BIODIVERSITY_TAGS.map((tag) => (
+                                        <span key={tag.label}>
+                                            {tag.icon} {tag.label}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </article>
+                    </div>
                 </motion.section>
 
                 <motion.section
