@@ -16,10 +16,8 @@ import {
     FaHome,
     FaMapMarkedAlt,
     FaMoneyBillWave,
-    FaPaw,
     FaPassport,
     FaPlayCircle,
-    FaLeaf,
     FaSearchDollar,
     FaShieldAlt,
     FaSlidersH,
@@ -174,17 +172,22 @@ const CHILE_REAL_ESTATE_SPOTS = [
 ];
 
 const CHILE_MAP_POINTS = [
-    { city: 'Antofagasta', focus: 'Mining logistics', top: '18%', left: '59%' },
-    { city: 'Santiago', focus: 'Liquidity core', top: '45%', left: '53%' },
-    { city: 'Valparaiso', focus: 'Coastal rentals', top: '49%', left: '45%' },
-    { city: 'Concepcion', focus: 'Regional growth', top: '60%', left: '50%' },
-    { city: 'Puerto Varas', focus: 'Premium lifestyle', top: '74%', left: '54%' },
-];
-
-const CHILE_BIODIVERSITY_TAGS = [
-    { label: 'Araucaria forests', icon: <FaLeaf size={11} /> },
-    { label: 'Andean condor corridor', icon: <FaPaw size={11} /> },
-    { label: 'Patagonian lake belts', icon: <FaMapMarkedAlt size={11} /> },
+    { city: 'Arica y Parinacota', focus: 'Border commerce and logistics gateway', top: '6%', left: '57%' },
+    { city: 'Tarapaca', focus: 'Free-zone and logistics momentum', top: '11%', left: '56%' },
+    { city: 'Antofagasta', focus: 'Mining services and executive rentals', top: '16%', left: '56%' },
+    { city: 'Atacama', focus: 'Energy corridor and land optionality', top: '21%', left: '55%' },
+    { city: 'Coquimbo', focus: 'Second-home coastal demand', top: '27%', left: '54%' },
+    { city: 'Valparaiso', focus: 'Tourism-driven coastal cash flow', top: '33%', left: '51%' },
+    { city: 'Metropolitana de Santiago', focus: 'Highest liquidity and absorption depth', top: '38%', left: '55%' },
+    { city: "O'Higgins", focus: 'Industrial spillover and suburban growth', top: '43%', left: '53%' },
+    { city: 'Maule', focus: 'Agro-logistics and affordable entry points', top: '48%', left: '52%' },
+    { city: 'Nuble', focus: 'Regional densification near core routes', top: '53%', left: '51%' },
+    { city: 'Biobio', focus: 'University + industrial rental profile', top: '58%', left: '51%' },
+    { city: 'La Araucania', focus: 'Lifestyle migration and land thesis', top: '64%', left: '50%' },
+    { city: 'Los Rios', focus: 'High amenity housing demand', top: '70%', left: '49%' },
+    { city: 'Los Lagos', focus: 'Premium lake district valuation', top: '75%', left: '50%' },
+    { city: 'Aysen', focus: 'Low-density frontier opportunities', top: '84%', left: '48%' },
+    { city: 'Magallanes', focus: 'Strategic long-horizon land play', top: '93%', left: '47%' },
 ];
 
 const container = {
@@ -228,6 +231,8 @@ const shimmerMotion = {
 
 const LandingPage = () => {
     const [showSignUp, setShowSignUp] = useState(false);
+    const [hoveredRegion, setHoveredRegion] = useState(null);
+    const activeRegion = hoveredRegion || CHILE_MAP_POINTS[6];
 
     return (
         <div className="landing-page">
@@ -299,41 +304,83 @@ const LandingPage = () => {
                     </div>
 
                     <motion.aside className="landing-control-room" variants={stagger} initial="hidden" animate="show">
-                        <div className="control-room-header">
-                            <span>Control Room</span>
-                            <motion.span className="control-room-pill" {...shimmerMotion}>
-                                Live Strategy
-                            </motion.span>
+                        <div className="control-room-shell">
+                            <motion.article className="control-room-map-box" variants={fadeCard}>
+                                <div className="control-room-map-head">
+                                    <strong>Chile Regions Monitor</strong>
+                                    <span>16 regions tracked</span>
+                                </div>
+                                <div className="control-room-map-stage">
+                                    <svg className="landing-chile-shape control-room-map-shape" viewBox="0 0 220 520" role="img" aria-label="Chile map">
+                                        <path d="M 151.3 70.2 L 156.5 88.6 L 166.1 86.8 L 167.8 90.1 L 163.2 104.0 L 148.7 110.6 L 149.1 132.8 L 146.3 137.1 L 150.3 142.3 L 140.9 150.6 L 132.1 163.1 L 127.4 175.3 L 128.6 188.2 L 120.4 201.9 L 126.5 225.0 L 130.0 227.4 L 130.0 239.7 L 122.4 252.7 L 122.7 263.8 L 112.6 272.5 L 112.6 284.8 L 116.7 297.8 L 108.7 302.7 L 105.1 314.6 L 102.0 328.2 L 104.2 344.5 L 98.9 347.2 L 102.0 362.6 L 108.0 367.7 L 103.6 373.3 L 109.8 375.9 L 111.2 381.0 L 105.4 383.5 L 106.8 391.3 L 102.0 409.0 L 94.9 420.4 L 96.4 427.1 L 92.2 435.6 L 82.0 441.5 L 83.1 455.6 L 87.8 460.4 L 96.7 459.6 L 96.5 469.6 L 102.0 477.4 L 134.2 479.1 L 146.6 481.2 L 134.7 481.1 L 128.3 484.4 L 116.3 489.2 L 114.1 501.7 L 108.5 502.0 L 93.4 497.7 L 78.1 488.4 L 61.5 480.7 L 57.4 472.3 L 61.1 464.5 L 54.4 455.6 L 52.7 432.9 L 58.4 420.0 L 72.5 409.7 L 52.2 405.8 L 64.9 394.0 L 69.5 371.9 L 84.3 376.6 L 91.3 348.9 L 82.3 345.4 L 78.2 362.0 L 69.7 360.2 L 73.9 341.1 L 78.5 316.4 L 84.6 307.2 L 80.8 294.2 L 79.7 279.2 L 85.3 278.8 L 93.5 257.2 L 102.7 235.9 L 108.4 216.0 L 105.3 196.0 L 109.3 185.0 L 107.7 168.5 L 115.5 152.2 L 117.9 126.4 L 122.2 98.7 L 126.3 68.9 L 125.3 47.0 L 122.6 28.2 L 129.4 24.8 L 133.0 18.0 L 139.5 27.1 L 141.3 36.7 L 148.3 42.3 L 144.1 55.3 L 151.3 70.2 Z" />
+                                    </svg>
+                                    {CHILE_MAP_POINTS.map((region) => (
+                                        <button
+                                            key={region.city}
+                                            type="button"
+                                            className={`control-room-region-pin ${activeRegion.city === region.city ? 'active' : ''}`}
+                                            style={{ top: region.top, left: region.left }}
+                                            onMouseEnter={() => setHoveredRegion(region)}
+                                            onMouseLeave={() => setHoveredRegion(null)}
+                                            onFocus={() => setHoveredRegion(region)}
+                                            onBlur={() => setHoveredRegion(null)}
+                                            aria-label={region.city}
+                                        >
+                                            <span className="dot" />
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="control-room-region-info">
+                                    <strong>{activeRegion.city}</strong>
+                                    <p>{activeRegion.focus}</p>
+                                </div>
+                            </motion.article>
+
+                            <div className="control-room-main">
+                                <div className="control-room-header">
+                                    <span>Control Room</span>
+                                    <motion.span className="control-room-pill" {...shimmerMotion}>
+                                        Live Strategy
+                                    </motion.span>
+                                </div>
+                                <div className="control-room-grid">
+                                    {HERO_STATS.map((stat) => (
+                                        <motion.article
+                                            className="control-room-card"
+                                            key={stat.label}
+                                            variants={fadeCard}
+                                            whileHover={{ y: -4, scale: 1.02, rotateX: 6 }}
+                                            transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+                                        >
+                                            <small>{stat.label}</small>
+                                            <strong>{stat.value}</strong>
+                                            <span>{stat.meta}</span>
+                                        </motion.article>
+                                    ))}
+                                </div>
+                                <motion.div className="control-room-line" variants={fadeCard}>
+                                    <div />
+                                </motion.div>
+                                <motion.ul className="control-room-checks" variants={fadeCard}>
+                                    <li>
+                                        <FaHome size={12} /> Prioritized real estate pipeline
+                                    </li>
+                                    <li>
+                                        <FaGlobeAmericas size={12} /> Structured non-resident flow
+                                    </li>
+                                    <li>
+                                        <FaMapMarkedAlt size={12} /> Macro + land signal alignment
+                                    </li>
+                                </motion.ul>
+                                <article className="control-room-photo-card">
+                                    <img src={chileAraucariaVolcano} alt="Chilean biodiversity landscape" loading="lazy" />
+                                    <div className="control-room-photo-overlay">
+                                        <h4>Flora & fauna signal</h4>
+                                        <p>Quality-of-place context complements raw financial metrics.</p>
+                                    </div>
+                                </article>
+                            </div>
                         </div>
-                        <div className="control-room-grid">
-                            {HERO_STATS.map((stat) => (
-                                <motion.article
-                                    className="control-room-card"
-                                    key={stat.label}
-                                    variants={fadeCard}
-                                    whileHover={{ y: -4, scale: 1.02, rotateX: 6 }}
-                                    transition={{ type: 'spring', stiffness: 280, damping: 20 }}
-                                >
-                                    <small>{stat.label}</small>
-                                    <strong>{stat.value}</strong>
-                                    <span>{stat.meta}</span>
-                                </motion.article>
-                            ))}
-                        </div>
-                        <motion.div className="control-room-line" variants={fadeCard}>
-                            <div />
-                        </motion.div>
-                        <motion.ul className="control-room-checks" variants={fadeCard}>
-                            <li>
-                                <FaHome size={12} /> Prioritized real estate pipeline
-                            </li>
-                            <li>
-                                <FaGlobeAmericas size={12} /> Structured non-resident flow
-                            </li>
-                            <li>
-                                <FaMapMarkedAlt size={12} /> Macro + land signal alignment
-                            </li>
-                        </motion.ul>
                     </motion.aside>
                 </motion.section>
 
@@ -426,49 +473,6 @@ const LandingPage = () => {
                     <p className="landing-photo-credit">
                         Real photography source: Pexels (used for visual context in this prototype).
                     </p>
-                    <div className="landing-chile-context">
-                        <article className="landing-chile-map-card">
-                            <div className="landing-map-head">
-                                <h3>Chile investment map</h3>
-                                <span>Macro + Real Estate Nodes</span>
-                            </div>
-                            <div className="landing-map-stage">
-                                <svg className="landing-chile-shape" viewBox="0 0 220 520" role="img" aria-label="Stylized map of Chile">
-                                    <path d="M 151.3 70.2 L 156.5 88.6 L 166.1 86.8 L 167.8 90.1 L 163.2 104.0 L 148.7 110.6 L 149.1 132.8 L 146.3 137.1 L 150.3 142.3 L 140.9 150.6 L 132.1 163.1 L 127.4 175.3 L 128.6 188.2 L 120.4 201.9 L 126.5 225.0 L 130.0 227.4 L 130.0 239.7 L 122.4 252.7 L 122.7 263.8 L 112.6 272.5 L 112.6 284.8 L 116.7 297.8 L 108.7 302.7 L 105.1 314.6 L 102.0 328.2 L 104.2 344.5 L 98.9 347.2 L 102.0 362.6 L 108.0 367.7 L 103.6 373.3 L 109.8 375.9 L 111.2 381.0 L 105.4 383.5 L 106.8 391.3 L 102.0 409.0 L 94.9 420.4 L 96.4 427.1 L 92.2 435.6 L 82.0 441.5 L 83.1 455.6 L 87.8 460.4 L 96.7 459.6 L 96.5 469.6 L 102.0 477.4 L 134.2 479.1 L 146.6 481.2 L 134.7 481.1 L 128.3 484.4 L 116.3 489.2 L 114.1 501.7 L 108.5 502.0 L 93.4 497.7 L 78.1 488.4 L 61.5 480.7 L 57.4 472.3 L 61.1 464.5 L 54.4 455.6 L 52.7 432.9 L 58.4 420.0 L 72.5 409.7 L 52.2 405.8 L 64.9 394.0 L 69.5 371.9 L 84.3 376.6 L 91.3 348.9 L 82.3 345.4 L 78.2 362.0 L 69.7 360.2 L 73.9 341.1 L 78.5 316.4 L 84.6 307.2 L 80.8 294.2 L 79.7 279.2 L 85.3 278.8 L 93.5 257.2 L 102.7 235.9 L 108.4 216.0 L 105.3 196.0 L 109.3 185.0 L 107.7 168.5 L 115.5 152.2 L 117.9 126.4 L 122.2 98.7 L 126.3 68.9 L 125.3 47.0 L 122.6 28.2 L 129.4 24.8 L 133.0 18.0 L 139.5 27.1 L 141.3 36.7 L 148.3 42.3 L 144.1 55.3 L 151.3 70.2 Z" />
-                                </svg>
-                                {CHILE_MAP_POINTS.map((point) => (
-                                    <div
-                                        key={point.city}
-                                        className="landing-map-pin"
-                                        style={{ top: point.top, left: point.left }}
-                                    >
-                                        <span className="dot" />
-                                        <div>
-                                            <strong>{point.city}</strong>
-                                            <small>{point.focus}</small>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </article>
-                        <article className="landing-bio-card">
-                            <img src={chileAraucariaVolcano} alt="Chilean volcano and native forest landscape" loading="lazy" />
-                            <div className="landing-bio-overlay">
-                                <h3>Minimal biodiversity context</h3>
-                                <p>
-                                    We combine hard numbers with place quality signals to evaluate long-term
-                                    desirability of Chilean real estate zones.
-                                </p>
-                                <div className="landing-bio-tags">
-                                    {CHILE_BIODIVERSITY_TAGS.map((tag) => (
-                                        <span key={tag.label}>
-                                            {tag.icon} {tag.label}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        </article>
-                    </div>
                 </motion.section>
 
                 <motion.section

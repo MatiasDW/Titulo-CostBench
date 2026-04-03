@@ -287,10 +287,130 @@
     border: 1px solid rgba(88, 166, 255, 0.28);
     background: linear-gradient(150deg, rgba(9, 19, 30, 0.95), rgba(15, 23, 34, 0.8));
     border-radius: 18px;
-    padding: 1rem;
+    padding: 0.9rem;
     box-shadow:
         inset 0 1px 0 rgba(143, 196, 255, 0.15),
         0 14px 34px rgba(0, 0, 0, 0.35);
+}
+
+.control-room-shell {
+    display: grid;
+    grid-template-columns: minmax(180px, 0.86fr) minmax(260px, 1.14fr);
+    gap: 0.75rem;
+    align-items: stretch;
+}
+
+.control-room-map-box {
+    border-radius: 12px;
+    border: 1px solid rgba(88, 166, 255, 0.25);
+    background: linear-gradient(165deg, rgba(12, 20, 30, 0.95), rgba(9, 14, 20, 0.92));
+    padding: 0.58rem;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 456px;
+}
+
+.control-room-map-head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-bottom: 0.45rem;
+}
+
+.control-room-map-head strong {
+    font-size: 0.82rem;
+    color: #d9e8f7;
+}
+
+.control-room-map-head span {
+    font-size: 0.68rem;
+    color: #89a9c8;
+}
+
+.control-room-map-stage {
+    position: relative;
+    border-radius: 10px;
+    border: 1px solid rgba(60, 77, 94, 0.88);
+    background:
+        radial-gradient(circle at 78% 20%, rgba(46, 160, 67, 0.2), transparent 45%),
+        linear-gradient(165deg, rgba(7, 13, 20, 0.96), rgba(10, 18, 27, 0.94));
+    overflow: hidden;
+}
+
+.control-room-map-shape {
+    position: absolute;
+    left: 18%;
+    top: 4%;
+    height: 92%;
+    width: auto;
+    filter: drop-shadow(0 6px 18px rgba(46, 160, 67, 0.25));
+}
+
+.control-room-map-shape path {
+    fill: rgba(35, 134, 54, 0.42);
+    stroke: rgba(152, 249, 177, 0.75);
+    stroke-width: 1.6;
+}
+
+.control-room-region-pin {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.control-room-region-pin .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #58a6ff;
+    box-shadow: 0 0 0 5px rgba(88, 166, 255, 0.16);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+.control-room-region-pin:hover .dot,
+.control-room-region-pin.active .dot,
+.control-room-region-pin:focus-visible .dot {
+    transform: scale(1.18);
+    background: #7bc2ff;
+    box-shadow: 0 0 0 8px rgba(88, 166, 255, 0.22);
+}
+
+.control-room-region-pin:focus-visible {
+    outline: none;
+}
+
+.control-room-region-info {
+    margin-top: 0.5rem;
+    border-radius: 10px;
+    border: 1px solid rgba(88, 166, 255, 0.26);
+    background: rgba(12, 20, 31, 0.88);
+    padding: 0.52rem 0.55rem;
+    min-height: 72px;
+}
+
+.control-room-region-info strong {
+    display: block;
+    font-size: 0.78rem;
+    color: #e7f2ff;
+}
+
+.control-room-region-info p {
+    margin: 0.25rem 0 0;
+    color: #9fb8d1;
+    font-size: 0.72rem;
+    line-height: 1.35;
+}
+
+.control-room-main {
+    border-radius: 12px;
+    border: 1px solid rgba(88, 166, 255, 0.24);
+    background: linear-gradient(160deg, rgba(9, 19, 30, 0.84), rgba(15, 23, 34, 0.68));
+    padding: 0.7rem;
+    display: flex;
+    flex-direction: column;
 }
 
 .control-room-header {
@@ -378,6 +498,42 @@
     display: inline-flex;
     gap: 0.38rem;
     align-items: center;
+}
+
+.control-room-photo-card {
+    margin-top: auto;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(88, 166, 255, 0.28);
+    position: relative;
+    min-height: 138px;
+}
+
+.control-room-photo-card img {
+    width: 100%;
+    height: 138px;
+    object-fit: cover;
+    display: block;
+}
+
+.control-room-photo-overlay {
+    position: absolute;
+    inset: auto 0 0 0;
+    padding: 0.45rem 0.55rem;
+    background: linear-gradient(180deg, rgba(8, 11, 16, 0.05), rgba(8, 11, 16, 0.88));
+}
+
+.control-room-photo-overlay h4 {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #edf6ff;
+}
+
+.control-room-photo-overlay p {
+    margin: 0.2rem 0 0;
+    font-size: 0.7rem;
+    color: #bfd0df;
+    line-height: 1.35;
 }
 
 .landing-section {
@@ -535,154 +691,6 @@
     margin-top: 0.62rem;
     color: #8ea7be;
     font-size: 0.77rem;
-}
-
-.landing-chile-context {
-    margin-top: 1rem;
-    display: grid;
-    gap: 0.9rem;
-    grid-template-columns: 1fr 1fr;
-    align-items: start;
-}
-
-.landing-chile-map-card {
-    border-radius: 14px;
-    border: 1px solid rgba(88, 166, 255, 0.28);
-    background:
-        radial-gradient(circle at 75% 18%, rgba(88, 166, 255, 0.18), transparent 52%),
-        radial-gradient(circle at 12% 80%, rgba(46, 160, 67, 0.12), transparent 46%),
-        linear-gradient(160deg, rgba(12, 20, 30, 0.92), rgba(10, 14, 20, 0.92));
-    padding: 0.9rem;
-    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
-}
-
-.landing-map-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 0.8rem;
-}
-
-.landing-map-head h3 {
-    margin: 0;
-    font-family: var(--landing-title);
-    font-size: 1rem;
-}
-
-.landing-map-head span {
-    color: #8fb0cf;
-    font-size: 0.72rem;
-}
-
-.landing-map-stage {
-    margin-top: 0.6rem;
-    position: relative;
-    min-height: 390px;
-    border-radius: 12px;
-    border: 1px solid rgba(52, 64, 77, 0.9);
-    background:
-        radial-gradient(circle at 80% 30%, rgba(46, 160, 67, 0.18), transparent 42%),
-        linear-gradient(160deg, rgba(9, 14, 20, 0.95), rgba(15, 22, 32, 0.95));
-    overflow: hidden;
-}
-
-.landing-chile-shape {
-    position: absolute;
-    left: 28%;
-    top: 4%;
-    height: 93%;
-    width: auto;
-    filter: drop-shadow(0 6px 18px rgba(46, 160, 67, 0.25));
-}
-
-.landing-chile-shape path {
-    fill: rgba(46, 160, 67, 0.38);
-    stroke: rgba(143, 252, 164, 0.7);
-    stroke-width: 2;
-}
-
-.landing-map-pin {
-    position: absolute;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.38rem;
-    transform: translate(-50%, -50%);
-    color: #d9e9f8;
-}
-
-.landing-map-pin .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #58a6ff;
-    box-shadow: 0 0 0 6px rgba(88, 166, 255, 0.16);
-}
-
-.landing-map-pin strong {
-    display: block;
-    font-size: 0.72rem;
-    line-height: 1.1;
-}
-
-.landing-map-pin small {
-    display: block;
-    font-size: 0.66rem;
-    color: #94aeca;
-}
-
-.landing-bio-card {
-    position: relative;
-    height: 390px;
-    border-radius: 14px;
-    overflow: hidden;
-    border: 1px solid rgba(88, 166, 255, 0.3);
-    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
-}
-
-.landing-bio-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.landing-bio-overlay {
-    position: absolute;
-    inset: auto 0 0 0;
-    padding: 0.92rem;
-    background: linear-gradient(180deg, rgba(8, 11, 16, 0.02), rgba(8, 11, 16, 0.88) 42%, rgba(8, 11, 16, 0.97));
-}
-
-.landing-bio-overlay h3 {
-    margin: 0;
-    font-family: var(--landing-title);
-    font-size: 1rem;
-}
-
-.landing-bio-overlay p {
-    margin: 0.4rem 0 0;
-    color: #bfd0df;
-    font-size: 0.84rem;
-    line-height: 1.45;
-}
-
-.landing-bio-tags {
-    margin-top: 0.58rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.42rem;
-}
-
-.landing-bio-tags span {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    border-radius: 999px;
-    padding: 0.26rem 0.52rem;
-    border: 1px solid rgba(88, 166, 255, 0.34);
-    background: rgba(10, 22, 35, 0.66);
-    color: #cee3f5;
-    font-size: 0.73rem;
 }
 
 .landing-card {
@@ -1014,8 +1022,16 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .landing-chile-context {
+    .control-room-shell {
         grid-template-columns: 1fr;
+    }
+
+    .control-room-map-box {
+        min-height: 360px;
+    }
+
+    .control-room-map-stage {
+        min-height: 250px;
     }
 
     .landing-control-room {
@@ -1061,16 +1077,28 @@
         grid-template-columns: 1fr;
     }
 
-    .landing-map-stage {
-        min-height: 310px;
+    .control-room-map-box {
+        min-height: 320px;
     }
 
-    .landing-map-pin strong {
+    .control-room-map-stage {
+        min-height: 220px;
+    }
+
+    .control-room-map-shape {
+        left: 23%;
+    }
+
+    .control-room-region-info p {
         font-size: 0.68rem;
     }
 
-    .landing-map-pin small {
-        display: none;
+    .control-room-photo-card img {
+        height: 120px;
+    }
+
+    .control-room-photo-overlay p {
+        font-size: 0.66rem;
     }
 
     .landing-step {
