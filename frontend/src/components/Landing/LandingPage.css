@@ -542,13 +542,18 @@
     display: grid;
     gap: 0.9rem;
     grid-template-columns: 1fr 1fr;
+    align-items: start;
 }
 
 .landing-chile-map-card {
     border-radius: 14px;
     border: 1px solid rgba(88, 166, 255, 0.28);
-    background: linear-gradient(160deg, rgba(12, 20, 30, 0.92), rgba(10, 14, 20, 0.92));
+    background:
+        radial-gradient(circle at 75% 18%, rgba(88, 166, 255, 0.18), transparent 52%),
+        radial-gradient(circle at 12% 80%, rgba(46, 160, 67, 0.12), transparent 46%),
+        linear-gradient(160deg, rgba(12, 20, 30, 0.92), rgba(10, 14, 20, 0.92));
     padding: 0.9rem;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
 }
 
 .landing-map-head {
@@ -572,7 +577,7 @@
 .landing-map-stage {
     margin-top: 0.6rem;
     position: relative;
-    min-height: 320px;
+    min-height: 390px;
     border-radius: 12px;
     border: 1px solid rgba(52, 64, 77, 0.9);
     background:
@@ -583,9 +588,9 @@
 
 .landing-chile-shape {
     position: absolute;
-    left: 34%;
-    top: 6%;
-    height: 88%;
+    left: 28%;
+    top: 4%;
+    height: 93%;
     width: auto;
     filter: drop-shadow(0 6px 18px rgba(46, 160, 67, 0.25));
 }
@@ -627,10 +632,11 @@
 
 .landing-bio-card {
     position: relative;
-    min-height: 320px;
+    height: 390px;
     border-radius: 14px;
     overflow: hidden;
     border: 1px solid rgba(88, 166, 255, 0.3);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
 }
 
 .landing-bio-card img {
@@ -1056,7 +1062,7 @@
     }
 
     .landing-map-stage {
-        min-height: 280px;
+        min-height: 310px;
     }
 
     .landing-map-pin strong {
