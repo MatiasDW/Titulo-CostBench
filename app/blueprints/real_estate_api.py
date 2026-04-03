@@ -5,12 +5,11 @@ Handles market data retrieval and Quant simulations for the Dashboard.
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import desc
-import pandas as pd
-import numpy as np
 
 from app.extensiones import db
 from app.models.real_estate import RealEstateMetrics
 from app.services.bcch_service import BCChService
+from app.services.real_estate_bootstrap import ensure_real_estate_ready
 from app.services.scloda_service import chat_completion
 
 real_estate_bp = Blueprint("real_estate_api", __name__)
@@ -24,6 +23,7 @@ def get_metrics():
     Cross-references historical metric records with today's live UF value.
     """
     try:
+        ensure_real_estate_ready()
         current_uf = bcch.get_uf()
 
         # Pull the latest run for each distinct commune in the dataset
@@ -44,11 +44,29 @@ def get_metrics():
                 latest_records.append(data)
 
         return jsonify(
-            {"status": "success", "current_uf": current_uf, "metrics": latest_records}
+            {
+                "status": "success",
+                "current_uf": current_uf,
+                "uf_source": bcch.last_source,
+                "metrics": latest_records,
+            }
         )
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        db.session.rollback()
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": (
+                        "Real Estate data is temporarily unavailable. "
+                        "Please refresh in a few seconds."
+                    ),
+                    "details": str(e),
+                }
+            ),
+            500,
+        )
 
 
 @real_estate_bp.route("/simulate", methods=["POST"])
@@ -58,6 +76,7 @@ def simulate_investment():
     and EEE Macro Expectations. Returns Scloda's RAG-based strategic advice.
     """
     try:
+        ensure_real_estate_ready()
         payload = request.get_json()
         comuna = payload.get("comuna")
         pie_uf = float(payload.get("pie_uf", 2000))
@@ -165,4 +184,17 @@ Generate a financial analysis IN ENGLISH indicating whether the investment is vi
         )
 
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        db.session.rollback()
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": (
+                        "Simulation service is temporarily unavailable. "
+                        "Please retry in a few seconds."
+                    ),
+                    "details": str(e),
+                }
+            ),
+            500,
+        )

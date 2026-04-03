@@ -20,6 +20,7 @@ const RealEstatePage = () => {
     // ---- STATE ----
     const [metrics, setMetrics] = useState([]);
     const [currentUf, setCurrentUf] = useState(null);
+    const [ufSource, setUfSource] = useState('fallback');
     const [loadingMetrics, setLoadingMetrics] = useState(true);
     const [error, setError] = useState(null);
 
@@ -60,6 +61,7 @@ const RealEstatePage = () => {
                     const sorted = data.metrics.sort((a, b) => b.uf_m2 - a.uf_m2);
                     setMetrics(sorted);
                     setCurrentUf(data.current_uf);
+                    setUfSource(data.uf_source || 'fallback');
                     if (sorted.length > 0) setSelectedComuna(sorted[0].comuna);
                 } else {
                     setError(data.message || 'Failed to fetch metrics');
@@ -230,6 +232,12 @@ const RealEstatePage = () => {
                 {error && (
                     <div className="alert alert-danger" style={{ backgroundColor: '#3d1619', borderColor: '#e5534b', color: '#ff7b72' }}>
                         {error}
+                    </div>
+                )}
+
+                {ufSource !== 'bcch_live' && (
+                    <div className="alert alert-warning py-2 mb-3" role="alert">
+                        Using fallback macro data. Configure <code>BDE_USER</code> and <code>BDE_PASS</code> in <code>.env</code> to use live BCCh values.
                     </div>
                 )}
 

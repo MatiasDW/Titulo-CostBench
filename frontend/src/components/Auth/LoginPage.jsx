@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -42,6 +42,11 @@ const LoginPage = () => {
     const [showWelcome, setShowWelcome] = useState(true);
     const [showSignUp, setShowSignUp] = useState(false);
     const { playLogin, playError, playClick } = useSounds();
+
+    const handleWelcomeCloseToLanding = () => {
+        setShowWelcome(false);
+        navigate('/landing', { replace: true });
+    };
 
     // Redirect only if user was ALREADY authenticated when visiting /login
     React.useEffect(() => {
@@ -120,7 +125,7 @@ const LoginPage = () => {
                             transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <button className="scloda-welcome-close" onClick={() => setShowWelcome(false)}>
+                            <button className="scloda-welcome-close" onClick={handleWelcomeCloseToLanding}>
                                 <FaTimes size={14} />
                             </button>
 
@@ -205,6 +210,11 @@ const LoginPage = () => {
                     <button className="auth-link-btn" onClick={() => setShowSignUp(true)}>
                         Register here
                     </button>
+                </motion.p>
+
+                <motion.p className="auth-footer-text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.75 }}>
+                    Want to explore without logging in first?{' '}
+                    <Link to="/preview">Open product preview</Link>
                 </motion.p>
             </motion.div>
 

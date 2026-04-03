@@ -46,7 +46,11 @@ const Sidebar = ({ collapsed, onToggle }) => {
 
     const handleToggle = () => {
         playToggle();
-        onToggle();
+        if (collapsed) {
+            onToggle();
+            return;
+        }
+        navigate('/landing', { replace: true });
     };
 
     const handleProfileToggle = () => {

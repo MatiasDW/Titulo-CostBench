@@ -21,7 +21,16 @@ logger = get_logger("scloda.service")
 
 # Configuration
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+def _is_configured_secret(value: str | None) -> bool:
+    if not value:
+        return False
+    normalized = value.strip().lower()
+    placeholder_markers = ("tu-", "example", "ejemplo", "aqui", "changeme")
+    return not any(marker in normalized for marker in placeholder_markers)
+
+
+_raw_openrouter_key = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_API_KEY = _raw_openrouter_key if _is_configured_secret(_raw_openrouter_key) else ""
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-001")
 
 # ── Fail-Fast config ──────────────────────────────────────────

@@ -11,7 +11,10 @@ import RealEstatePage from './components/RealEstate/RealEstatePage';
 import NewsPage from './components/News/NewsPage';
 import DashboardLayout from './components/Auth/DashboardLayout';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
+import { useAuth } from './context/AuthContext';
 import useDashboardData from './hooks/useDashboardData';
+import LandingPage from './components/Landing/LandingPage';
+import ProductPreviewPage from './components/Landing/ProductPreviewPage';
 import './index.css';
 
 import Header from './components/Header';
@@ -29,6 +32,7 @@ import MarketIntelligenceCard from './components/Dashboard/MarketIntelligenceCar
 
 
 const App = () => {
+  const { user, loading: authLoading } = useAuth();
   const [currency, setCurrency] = useState('CLP');
   const [limit, setLimit] = useState(10);
 
@@ -123,13 +127,30 @@ const App = () => {
           <DashboardLayout><NewsPage /></DashboardLayout>
         </ProtectedRoute>
       } />
+      <Route path="/landing" element={<LandingPage />} />
       <Route path="/home" element={
         <ProtectedRoute>
           <DashboardLayout>{dashboard}</DashboardLayout>
         </ProtectedRoute>
       } />
-      <Route path="/" element={<Navigate to="/home" replace />} />
-      <Route path="*" element={<Navigate to="/home" replace />} />
+      <Route
+        path="/"
+        element={
+          authLoading ? (
+            <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+              <div className="spinner-border text-light" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : user ? (
+            <Navigate to="/home" replace />
+          ) : (
+            <LandingPage />
+          )
+        }
+      />
+      <Route path="/preview" element={<ProductPreviewPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

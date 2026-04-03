@@ -5,8 +5,6 @@ Fetches daily and expected macroeconomic metrics from the SIETE API for Real Est
 
 import os
 import requests
-import pandas as pd
-from datetime import datetime
 from typing import Dict, Any
 
 from app.ml.logging_utils import get_logger
@@ -27,15 +25,27 @@ SERIES_IDS = {
 
 class BCChService:
     def __init__(self):
-        self.user = os.getenv("BDE_USER")
-        self.password = os.getenv("BDE_PASS")
+        raw_user = os.getenv("BDE_USER")
+        raw_password = os.getenv("BDE_PASS")
+        self.user = raw_user if self._is_configured_value(raw_user) else None
+        self.password = raw_password if self._is_configured_value(raw_password) else None
         self.base_url = "https://si3.bcentral.cl/SieteRestWS/SieteRestWS.ashx"
         self.timeout = 15
+        self.last_source = "fallback"
+
+    @staticmethod
+    def _is_configured_value(value: str | None) -> bool:
+        if not value:
+            return False
+        normalized = value.strip().lower()
+        placeholder_markers = ("tu-", "example", "ejemplo", "aqui", "changeme")
+        return not any(marker in normalized for marker in placeholder_markers)
 
     def _fetch_last_value(self, series_id: str, fallback_value: float) -> float:
         """Helper to fetch the latest available daily or monthly record."""
         if not self.user or not self.password:
             logger.warning("Mocking BCCh data (no credentials found)")
+            self.last_source = "fallback"
             return fallback_value
 
         params = {
@@ -55,13 +65,16 @@ class BCChService:
                 if obs:
                     # Return the chronologically last observation available
                     latest_val = obs[-1].get("value")
+                    self.last_source = "bcch_live"
                     return float(latest_val)
 
             logger.warning(f"No observations found for {series_id}")
+            self.last_source = "fallback"
             return fallback_value
 
         except Exception as e:
             logger.error(f"Error fetching BCCh Series {series_id}: {e}")
+            self.last_source = "fallback"
             return fallback_value
 
     def get_uf(self) -> float:

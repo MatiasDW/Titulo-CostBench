@@ -67,7 +67,12 @@ def create_app(config_name="default"):
     CORS(
         app,
         supports_credentials=True,
-        origins=["http://localhost:5173", "http://localhost:5000"],
+        origins=[
+            "http://localhost:5173",
+            "http://localhost:5175",
+            "http://localhost:5000",
+            "http://localhost:5001",
+        ],
     )
 
     # Initialize extensions (SQLAlchemy)
