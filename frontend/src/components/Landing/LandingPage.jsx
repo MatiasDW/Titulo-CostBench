@@ -172,22 +172,22 @@ const CHILE_REAL_ESTATE_SPOTS = [
 ];
 
 const CHILE_MAP_POINTS = [
-    { city: 'Arica y Parinacota', capital: 'Arica', focus: 'Border commerce and logistics gateway.', top: '7%', left: '57%' },
-    { city: 'Tarapaca', capital: 'Iquique', focus: 'Free-zone momentum and port-linked activity.', top: '12%', left: '56%' },
-    { city: 'Antofagasta', capital: 'Antofagasta', focus: 'Mining services with executive rental demand.', top: '17%', left: '56%' },
-    { city: 'Atacama', capital: 'Copiapo', focus: 'Energy corridors and strategic land optionality.', top: '23%', left: '55%' },
-    { city: 'Coquimbo', capital: 'La Serena', focus: 'Coastal second-home demand and tourism flow.', top: '29%', left: '54%' },
-    { city: 'Valparaiso', capital: 'Valparaiso', focus: 'Short-stay coastal cash flow and liquidity.', top: '34%', left: '51%' },
-    { city: 'Metropolitana', capital: 'Santiago', focus: 'Highest liquidity and absorption depth.', top: '39%', left: '54%' },
-    { city: "O'Higgins", capital: 'Rancagua', focus: 'Industrial spillover and suburban growth.', top: '44%', left: '53%' },
-    { city: 'Maule', capital: 'Talca', focus: 'Affordable entry points with agro logistics.', top: '49%', left: '52%' },
-    { city: 'Nuble', capital: 'Chillan', focus: 'Regional densification near major routes.', top: '54%', left: '51%' },
-    { city: 'Biobio', capital: 'Concepcion', focus: 'University and industrial rental profile.', top: '59%', left: '51%' },
-    { city: 'La Araucania', capital: 'Temuco', focus: 'Lifestyle migration and land thesis.', top: '65%', left: '50%' },
-    { city: 'Los Rios', capital: 'Valdivia', focus: 'Amenity-driven housing demand.', top: '70%', left: '50%' },
-    { city: 'Los Lagos', capital: 'Puerto Montt', focus: 'Lake district premium valuation.', top: '76%', left: '50%' },
-    { city: 'Aysen', capital: 'Coyhaique', focus: 'Frontier positioning with low density upside.', top: '85%', left: '49%' },
-    { city: 'Magallanes', capital: 'Punta Arenas', focus: 'Long-horizon strategic land play.', top: '94%', left: '48%' },
+    { city: 'Arica y Parinacota', capital: 'Arica', focus: 'Border commerce and logistics gateway.', x: 106.7, y: 23.0 },
+    { city: 'Tarapaca', capital: 'Iquique', focus: 'Free-zone momentum and port-linked activity.', x: 109.6, y: 52.1 },
+    { city: 'Antofagasta', capital: 'Antofagasta', focus: 'Mining services with executive rental demand.', x: 105.2, y: 109.1 },
+    { city: 'Atacama', capital: 'Copiapo', focus: 'Energy corridors and strategic land optionality.', x: 106.4, y: 171.0 },
+    { city: 'Coquimbo', capital: 'La Serena', focus: 'Coastal second-home demand and tourism flow.', x: 91.1, y: 213.1 },
+    { city: 'Valparaiso', capital: 'Valparaiso', focus: 'Short-stay coastal cash flow and liquidity.', x: 84.9, y: 265.6 },
+    { city: 'Metropolitana', capital: 'Santiago', focus: 'Highest liquidity and absorption depth.', x: 100.7, y: 272.2 },
+    { city: "O'Higgins", capital: 'Rancagua', focus: 'Industrial spillover and suburban growth.', x: 99.6, y: 284.2 },
+    { city: 'Maule', capital: 'Talca', focus: 'Affordable entry points with agro logistics.', x: 84.3, y: 305.2 },
+    { city: 'Nuble', capital: 'Chillan', focus: 'Regional densification near major routes.', x: 76.9, y: 324.8 },
+    { city: 'Biobio', capital: 'Concepcion', focus: 'University and industrial rental profile.', x: 61.1, y: 328.5 },
+    { city: 'La Araucania', capital: 'Temuco', focus: 'Lifestyle migration and land thesis.', x: 68.8, y: 360.3 },
+    { city: 'Los Rios', capital: 'Valdivia', focus: 'Amenity-driven housing demand.', x: 57.9, y: 378.3 },
+    { city: 'Los Lagos', capital: 'Puerto Montt', focus: 'Lake district premium valuation.', x: 62.9, y: 405.8 },
+    { city: 'Aysen', capital: 'Coyhaique', focus: 'Frontier positioning with low density upside.', x: 77.4, y: 474.0 },
+    { city: 'Magallanes', capital: 'Punta Arenas', focus: 'Long-horizon strategic land play.', x: 96.7, y: 600.4 },
 ];
 
 const container = {
@@ -314,31 +314,32 @@ const LandingPage = () => {
                                     <svg className="chile-map-svg" viewBox="0 0 180 620" aria-hidden="true">
                                         <path
                                             className="chile-map-outline"
-                                            d="M100 10
-                                               L111 26 L107 45 L114 66 L109 88 L116 110 L111 133 L118 155 L112 178
-                                               L120 200 L113 224 L121 249 L113 272 L122 296 L114 321 L123 348 L114 375
-                                               L123 402 L113 430 L122 458 L111 486 L119 515 L106 545 L112 575 L97 604
-                                               L82 614 L72 602 L75 578 L66 548 L74 523 L65 492 L73 462 L64 430 L73 401
-                                               L63 372 L72 343 L64 316 L73 289 L64 262 L74 236 L66 210 L76 184 L68 158
-                                               L79 135 L71 111 L83 88 L75 64 L87 43 L80 24 Z"
+                                            d="M141.53 73.17 L148.05 96.13 L160.07 93.85 L162.09 98.02 L156.37 115.31 L138.24 123.53 L138.76 151.27 L135.29 156.63 L140.27 163.17 L128.52 173.52 L117.62 189.14 L111.67 204.27 L113.24 220.39 L102.98 237.52 L110.65 266.26 L114.98 269.3 L114.93 284.61 L105.43 300.87 L105.82 314.78 L93.21 325.65 L93.27 340.95 L98.33 357.2 L88.36 363.24 L83.91 378.1 L79.99 395.15 L82.81 415.45 L76.11 418.83 L80 438.04 L87.52 444.35 L82.03 451.34 L89.75 454.68 L91.53 460.95 L84.26 464.1 L86.05 473.88 L79.97 495.92 L71.14 510.14 L73.08 518.56 L67.8 529.12 L55.02 536.44 L56.48 554.1 L62.35 560.14 L73.43 559.06 L73.11 571.53 L80.01 581.24 L120.24 583.47 L135.68 586.08 L120.86 585.95 L112.84 590.05 L97.82 596.06 L95.14 611.61 L88.09 612 L69.3 606.59 L50.24 594.99 L29.53 585.47 L24.31 574.92 L29.03 565.16 L20.65 554.09 L18.52 525.71 L25.6 509.69 L43.18 496.83 L17.91 491.97 L33.77 477.26 L39.44 449.61 L57.94 455.47 L66.64 420.97 L55.47 416.55 L50.26 437.33 L39.77 434.99 L44.99 411.17 L50.67 380.33 L58.32 368.95 L53.52 352.7 L52.15 333.94 L59.17 333.4 L69.38 306.51 L80.89 279.88 L87.94 255.07 L84.11 230.12 L89.08 216.38 L87.08 195.83 L96.82 175.5 L99.82 143.3 L105.17 108.72 L110.37 71.49 L109.15 44.24 L105.69 20.79 L114.25 16.54 L118.71 8 L126.87 19.32 L129.09 31.34 L137.83 38.39 L132.58 54.5 L141.53 73.17 Z"
                                         />
+                                        {CHILE_MAP_POINTS.map((region) => (
+                                            <g
+                                                key={region.city}
+                                                className={`chile-map-pin ${activeRegion.city === region.city ? 'active' : ''}`}
+                                                transform={`translate(${region.x} ${region.y})`}
+                                                onMouseEnter={() => setHoveredRegion(region)}
+                                                onMouseLeave={() => setHoveredRegion(null)}
+                                                onFocus={() => setHoveredRegion(region)}
+                                                onBlur={() => setHoveredRegion(null)}
+                                                onKeyDown={(event) => {
+                                                    if (event.key === 'Enter' || event.key === ' ') {
+                                                        event.preventDefault();
+                                                        setHoveredRegion(region);
+                                                    }
+                                                }}
+                                                tabIndex={0}
+                                                role="button"
+                                                aria-label={region.city}
+                                            >
+                                                <circle className="chile-map-pin-ring" r="6.4" />
+                                                <circle className="chile-map-pin-core" r="3.2" />
+                                            </g>
+                                        ))}
                                     </svg>
-
-                                    {CHILE_MAP_POINTS.map((region) => (
-                                        <button
-                                            key={region.city}
-                                            type="button"
-                                            className={`chile-map-pin ${activeRegion.city === region.city ? 'active' : ''}`}
-                                            style={{ top: region.top, left: region.left }}
-                                            onMouseEnter={() => setHoveredRegion(region)}
-                                            onMouseLeave={() => setHoveredRegion(null)}
-                                            onFocus={() => setHoveredRegion(region)}
-                                            onBlur={() => setHoveredRegion(null)}
-                                            aria-label={region.city}
-                                        >
-                                            <span />
-                                        </button>
-                                    ))}
                                 </div>
                                 <article className="control-room-region-advice">
                                     <span className="region-active-label">Region active</span>
