@@ -5,6 +5,7 @@ import pandas as pd
 from typing import Optional, Dict, Any
 import re
 import json
+from io import StringIO
 
 
 def parse_cmf_simulador(data: Any) -> pd.DataFrame:
@@ -31,7 +32,9 @@ def parse_cmf_simulador(data: Any) -> pd.DataFrame:
         dfs = []
         for table in tables:
             try:
-                table_df = pd.read_html(str(table))[0]
+                # pandas>=2.2 can interpret plain strings as file paths;
+                # wrap HTML in StringIO to force literal parsing.
+                table_df = pd.read_html(StringIO(str(table)))[0]
                 if len(table_df) > 0:
                     dfs.append(table_df)
             except Exception:
@@ -68,7 +71,7 @@ def parse_sernac_cards(html_content: str) -> pd.DataFrame:
     dfs = []
     for table in tables:
         try:
-            df = pd.read_html(str(table))[0]
+            df = pd.read_html(StringIO(str(table)))[0]
             if len(df) > 0:
                 dfs.append(df)
         except Exception:
