@@ -60,13 +60,22 @@ class BCChService:
             response.raise_for_status()
             data = response.json()
 
-            if "Series" in data and data["Series"]:
-                obs = data["Series"][0].get("Obs", [])
+            series_block = data.get("Series")
+            if series_block:
+                # BCCh may return Series as dict (current behavior) or list.
+                if isinstance(series_block, dict):
+                    obs = series_block.get("Obs", [])
+                elif isinstance(series_block, list) and series_block:
+                    obs = series_block[0].get("Obs", [])
+                else:
+                    obs = []
+
                 if obs:
-                    # Return the chronologically last observation available
+                    # Return the chronologically last observation available.
                     latest_val = obs[-1].get("value")
-                    self.last_source = "bcch_live"
-                    return float(latest_val)
+                    if latest_val is not None:
+                        self.last_source = "bcch_live"
+                        return float(str(latest_val).replace(",", "."))
 
             logger.warning(f"No observations found for {series_id}")
             self.last_source = "fallback"
