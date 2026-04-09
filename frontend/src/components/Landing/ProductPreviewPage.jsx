@@ -68,7 +68,7 @@ const ProductPreviewPage = () => {
                     transition={{ duration: 0.45 }}
                 >
                     <span className="preview-kicker">
-                        <FaGlobeAmericas size={12} /> Preview mode (no backend required)
+                        <FaGlobeAmericas size={12} /> Product preview
                     </span>
                     <h1>Explore CostBench before creating an account.</h1>
                     <p>
