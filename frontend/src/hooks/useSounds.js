@@ -43,7 +43,7 @@ const tone = (freq, dur = 0.08, type = 'sine', vol = 0.1, freq2 = null) => {
         gain.connect(ctx.destination);
         osc.start(t);
         osc.stop(t + dur);
-    } catch (_) { /* non-critical */ }
+    } catch { /* non-critical */ }
 };
 
 /**

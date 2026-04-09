@@ -41,7 +41,7 @@ const LoginPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [showWelcome, setShowWelcome] = useState(true);
     const [showSignUp, setShowSignUp] = useState(false);
-    const { playLogin, playError, playClick } = useSounds();
+    const { playLogin, playError } = useSounds();
 
     const handleWelcomeCloseToLanding = () => {
         setShowWelcome(false);
@@ -53,7 +53,7 @@ const LoginPage = () => {
         if (!loading && user && !showSignUp) {
             navigate('/home', { replace: true });
         }
-    }, [loading]); // only run once after initial auth check
+    }, [loading, user, showSignUp, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

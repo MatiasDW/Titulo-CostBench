@@ -47,7 +47,6 @@ const App = () => {
     <div className="container-fluid p-0">
       <AnimatedBackground />
       <Ticker />
-
       <div className="container-fluid px-4 pt-4">
         <Header onOpenDashboard={() => { }} />
       </div>

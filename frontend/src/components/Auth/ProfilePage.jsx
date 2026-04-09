@@ -93,7 +93,7 @@ const ProfilePage = () => {
     const [selectedInterests, setSelectedInterests] = useState([]);
     const [saving, setSaving] = useState(false);
     const [showToast, setShowToast] = useState(false);
-    const { playSelect, playDeselect, playSave, playClick, playError } = useSounds();
+    const { playSelect, playDeselect, playSave } = useSounds();
 
     // Initialize form with current user data
     useEffect(() => {

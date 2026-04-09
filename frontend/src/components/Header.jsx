@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaUserTie } from 'react-icons/fa';
 
-const Header = ({ onOpenDashboard }) => {
+const Header = () => {
     return (
         <div className="row align-items-center mb-5 border-bottom border-secondary pb-4">
             <div className="col-lg-5 text-start" style={{ paddingLeft: '55px' }}> {/* Clear sidebar toggle button */}
