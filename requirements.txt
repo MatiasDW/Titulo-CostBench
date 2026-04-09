@@ -16,3 +16,11 @@ httpx>=0.27.0
 flask-sqlalchemy
 PyJWT
 bcrypt
+yfinance
+statsmodels
+scipy
+flake8
+black
+pytest
+redis>=5.0.0
+toon-format @ git+https://github.com/toon-format/toon-python.git

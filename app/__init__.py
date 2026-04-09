@@ -1,4 +1,5 @@
 """Flask application factory."""
+
 from flask import Flask, jsonify
 from flask_cors import CORS
 
@@ -10,33 +11,34 @@ except ImportError:
 from app.config import config
 
 
-def create_app(config_name='default'):
+def create_app(config_name="default"):
     """Create and configure the Flask application."""
     app = Flask(__name__)
 
     # Enable gzip compression if flask-compress is available
     if Compress is not None:
         Compress(app)
-    
+
     # Load configuration
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
-    
+
     # Configure Logging
     import logging
     import sys
     import os
-    
-    env = os.getenv('FLASK_ENV', 'production')
-    
-    if env == 'development':
+
+    env = os.getenv("FLASK_ENV", "production")
+
+    if env == "development":
         # Human-readable text format for development
         formatter = logging.Formatter(
-            '[%(asctime)s] %(levelname)s in %(module)s: %(message)s'
+            "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
         )
     else:
         # JSON format for production (Docker/Cloud)
         import json
+
         class JsonFormatter(logging.Formatter):
             def format(self, record):
                 log_record = {
@@ -44,29 +46,40 @@ def create_app(config_name='default'):
                     "level": record.levelname,
                     "message": record.getMessage(),
                     "module": record.module,
-                    "func": record.funcName
+                    "func": record.funcName,
                 }
                 if record.exc_info:
                     log_record["exception"] = self.formatException(record.exc_info)
                 return json.dumps(log_record)
+
         formatter = JsonFormatter()
 
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(formatter)
-    
+
     # Avoid duplicate handlers
     if not app.logger.handlers:
         app.logger.addHandler(handler)
-    
-    app.logger.setLevel(logging.DEBUG if env == 'development' else logging.INFO)
-    
+
+    app.logger.setLevel(logging.DEBUG if env == "development" else logging.INFO)
+
     # Enable CORS – allow credentials so HttpOnly cookies flow between React dev server and Flask
-    CORS(app, supports_credentials=True, origins=["http://localhost:5173", "http://localhost:5000"])
-    
+    CORS(
+        app,
+        supports_credentials=True,
+        origins=[
+            "http://localhost:5173",
+            "http://localhost:5175",
+            "http://localhost:5000",
+            "http://localhost:5001",
+        ],
+    )
+
     # Initialize extensions (SQLAlchemy)
     from app.extensiones import register_extensions
+
     register_extensions(app)
-    
+
     # Register blueprints
     from app.blueprints.cmf_cta import bp as cmf_bp
     from app.blueprints.sernac_cards import bp as sernac_bp
@@ -78,58 +91,61 @@ def create_app(config_name='default'):
     from app.blueprints.scloda_chat import scloda_bp  # Scloda AI chat
     from app.blueprints.auth import auth_bp  # Authentication
     from app.blueprints.trading import trading_bp  # Paper Trading
-    
-    app.register_blueprint(cmf_bp, url_prefix='/api/v1/cmf')
-    app.register_blueprint(sernac_bp, url_prefix='/api/v1/sernac')
-    app.register_blueprint(indicators_bp, url_prefix='/api/v1/indicators')
-    app.register_blueprint(api_v1_bp) # uses prefix defined in bp
-    app.register_blueprint(web_bp)    # uses prefix defined in bp (none, root)
-    app.register_blueprint(ml_bp)     # ML API: /api/v1/models/*
-    app.register_blueprint(market_api) # Market data: /api/v1/market/*
-    app.register_blueprint(scloda_bp)  # Scloda AI: /api/v1/scloda/*
-    app.register_blueprint(auth_bp)    # Auth: /api/v1/auth/*
-    app.register_blueprint(trading_bp) # Trading: /api/v1/trading/*
+    from app.blueprints.real_estate_api import real_estate_bp  # Real Estate Module
+    from app.blueprints.news_api import news_bp  # GNews News Module
 
-    
+    app.register_blueprint(cmf_bp, url_prefix="/api/v1/cmf")
+    app.register_blueprint(sernac_bp, url_prefix="/api/v1/sernac")
+    app.register_blueprint(indicators_bp, url_prefix="/api/v1/indicators")
+    app.register_blueprint(api_v1_bp)  # uses prefix defined in bp
+    app.register_blueprint(web_bp)  # uses prefix defined in bp (none, root)
+    app.register_blueprint(ml_bp)  # ML API: /api/v1/models/*
+    app.register_blueprint(market_api)  # Market data: /api/v1/market/*
+    app.register_blueprint(scloda_bp)  # Scloda AI: /api/v1/scloda/*
+    app.register_blueprint(auth_bp)  # Auth: /api/v1/auth/*
+    app.register_blueprint(trading_bp)  # Trading: /api/v1/trading/*
+    app.register_blueprint(real_estate_bp, url_prefix="/api/v1/real-estate")
+    app.register_blueprint(news_bp)  # News: /api/v1/news/*
+
     # Health check endpoint
-    @app.route('/health')
+    @app.route("/health")
     def health():
-        return jsonify({
-            'status': 'healthy',
-            'service': 'cost-benchmark-api',
-            'version': '0.1.0'
-        })
-    
+        return jsonify(
+            {"status": "healthy", "service": "cost-benchmark-api", "version": "0.1.0"}
+        )
+
     # Root endpoint
-    @app.route('/')
+    @app.route("/")
     def index():
-        return jsonify({
-            'service': 'Chilean Bank Cost Benchmark API',
-            'version': '0.1.0',
-            'endpoints': {
-                'health': '/health',
-                'cmf_checking_accounts': {
-                    'download': '/api/v1/cmf/cuentavista/download',
-                    'profile': '/api/v1/cmf/cuentavista/profile'
+        return jsonify(
+            {
+                "service": "Chilean Bank Cost Benchmark API",
+                "version": "0.1.0",
+                "endpoints": {
+                    "health": "/health",
+                    "cmf_checking_accounts": {
+                        "download": "/api/v1/cmf/cuentavista/download",
+                        "profile": "/api/v1/cmf/cuentavista/profile",
+                    },
+                    "sernac_cards": {
+                        "download": "/api/v1/sernac/tarjetas/download",
+                        "profile": "/api/v1/sernac/tarjetas/profile",
+                    },
+                    "indicators": {
+                        "uf": "/api/v1/indicators/uf",
+                        "profile": "/api/v1/indicators/profile",
+                    },
                 },
-                'sernac_cards': {
-                    'download': '/api/v1/sernac/tarjetas/download',
-                    'profile': '/api/v1/sernac/tarjetas/profile'
-                },
-                'indicators': {
-                    'uf': '/api/v1/indicators/uf',
-                    'profile': '/api/v1/indicators/profile'
-                }
             }
-        })
-    
+        )
+
     # Error handlers
     @app.errorhandler(404)
     def not_found(error):
-        return jsonify({'error': 'Not found'}), 404
-    
+        return jsonify({"error": "Not found"}), 404
+
     @app.errorhandler(500)
     def internal_error(error):
-        return jsonify({'error': 'Internal server error'}), 500
-    
+        return jsonify({"error": "Internal server error"}), 500
+
     return app

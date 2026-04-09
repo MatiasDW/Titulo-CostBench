@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { FaHome, FaTrophy, FaGlobeAmericas, FaSignOutAlt, FaUserCog, FaBars, FaTimes, FaUserTie, FaChartLine, FaChevronDown, FaWallet, FaExchangeAlt } from 'react-icons/fa';
+import { FaHome, FaTrophy, FaGlobeAmericas, FaSignOutAlt, FaUserCog, FaBars, FaTimes, FaUserTie, FaChartLine, FaChevronDown, FaWallet, FaExchangeAlt, FaBuilding, FaNewspaper } from 'react-icons/fa';
 import useSounds from '../../hooks/useSounds';
 import './Sidebar.css';
 
 const NAV_ITEMS = [
     { path: '/home', label: 'Home', icon: FaHome },
+    { path: '/real-estate', label: 'Real Estate', icon: FaBuilding },
     { path: '/wallet', label: 'Wallet', icon: FaWallet },
     { path: '/trade', label: 'Trade', icon: FaExchangeAlt },
+    { path: '/news', label: 'News', icon: FaNewspaper },
     { path: '/ranking', label: 'Ranking', icon: FaTrophy },
     { path: '/macro', label: 'Macro', icon: FaGlobeAmericas },
 ];
@@ -44,7 +46,11 @@ const Sidebar = ({ collapsed, onToggle }) => {
 
     const handleToggle = () => {
         playToggle();
-        onToggle();
+        if (collapsed) {
+            onToggle();
+            return;
+        }
+        navigate('/landing', { replace: true });
     };
 
     const handleProfileToggle = () => {
@@ -74,8 +80,9 @@ const Sidebar = ({ collapsed, onToggle }) => {
                         transition={{ duration: 0.25, ease: 'easeInOut' }}
                     >
                         {/* Brand */}
-                        <div className="sidebar-brand">
+                        <div className="sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <img src="/img/costbench_logo.svg" alt="CostBench" className="sidebar-logo" />
+                            <span style={{ fontSize: '1.2rem' }}>🇨🇱</span>
                         </div>
 
                         {/* Clickable User Profile */}

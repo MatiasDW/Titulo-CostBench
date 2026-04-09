@@ -1,0 +1,269 @@
+.scloda-chat-window {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 320px;
+    height: 400px;
+    background-color: #1a1f2e;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1000;
+    border: 1px solid #2a3142;
+}
+
+.scloda-chat-header {
+    background-color: #242c3d;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #323b4f;
+}
+
+.scloda-chat-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e5e7eb;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.scloda-avatar-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3b82f6;
+}
+
+.scloda-online-indicator {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background-color: #10b981;
+    border-radius: 50%;
+    border: 2px solid #242c3d;
+}
+
+.scloda-chat-close {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.scloda-chat-close:hover {
+    background-color: #334155;
+    color: #f8fafc;
+}
+
+.scloda-chat-body {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Custom Scrollbar for Chat */
+.scloda-chat-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scloda-chat-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scloda-chat-body::-webkit-scrollbar-thumb {
+    background-color: #334155;
+    border-radius: 10px;
+}
+
+.scloda-message-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    max-width: 90%;
+}
+
+.scloda-message-row.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.scloda-message-row.assistant {
+    align-self: flex-start;
+}
+
+.scloda-message-avatar {
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.scloda-message-bubble {
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.scloda-message-bubble.user {
+    background-color: #3b82f6;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.scloda-message-bubble.assistant {
+    background-color: #334155;
+    color: #e2e8f0;
+    border-bottom-left-radius: 4px;
+}
+
+/* Typing Indicator Animation */
+.scloda-message-bubble.typing {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    height: 36px;
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #94a3b8;
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out both;
+}
+
+.typing-dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typing {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0);
+    }
+
+    40% {
+        transform: scale(1);
+    }
+}
+
+/* Input Area */
+.scloda-chat-input-area {
+    padding: 12px;
+    background-color: #1e2638;
+    border-top: 1px solid #323b4f;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.scloda-input {
+    flex: 1;
+    background-color: #2a3142;
+    border: 1px solid #3b4763;
+    border-radius: 20px;
+    padding: 8px 14px;
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.scloda-input:focus {
+    border-color: #3b82f6;
+}
+
+.scloda-input::placeholder {
+    color: #64748b;
+}
+
+.scloda-send-btn {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    flex-shrink: 0;
+}
+
+.scloda-send-btn:hover:not(:disabled) {
+    background-color: #2563eb;
+    transform: scale(1.05);
+}
+
+.scloda-send-btn:disabled {
+    background-color: #334155;
+    color: #64748b;
+    cursor: not-allowed;
+}
+
+/* Overrides for markdown inside bubbles */
+.scloda-message-bubble p {
+    margin: 0;
+}
+
+.scloda-message-bubble p+p {
+    margin-top: 8px;
+}
+
+.scloda-message-bubble a {
+    color: #60a5fa;
+    text-decoration: underline;
+}
+
+.scloda-message-bubble strong {
+    font-weight: 600;
+}
+
+/* Floating Action Button (FAB) */
+.scloda-chat-fab {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    z-index: 1000;
+    transition: background-color 0.2s;
+}
+
+.scloda-chat-fab:hover {
+    background-color: #2563eb;
+}

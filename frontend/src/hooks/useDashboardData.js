@@ -5,8 +5,13 @@
  * dashboard tree.  Prevents duplicate HTTP requests when child components
  * mount/unmount (tabs, modals, etc.).
  */
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import axios from 'axios';
+
+// --- Shared Memory Cache ---
+// Global cache outside the hook to persist across unmounts/remounts.
+const DATA_CACHE = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 const MACRO_SERIES = [
     { key: 'cpi', seriesId: 'CPIAUCSL' },
@@ -26,7 +31,23 @@ export default function useDashboardData({ limit = 10, currency = 'CLP' } = {}) 
     const [loading, setLoading] = useState(true);
     const [lastUpdate, setLastUpdate] = useState(null);
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (force = false) => {
+        const cacheKey = `${limit}-${currency}`;
+
+        // Return cached data if valid and not forcing a refresh
+        if (!force && DATA_CACHE.has(cacheKey)) {
+            const cached = DATA_CACHE.get(cacheKey);
+            if (Date.now() - cached.timestamp < CACHE_TTL_MS) {
+                setItems(cached.items);
+                setMacro(cached.macro);
+                setLastUpdate(cached.lastUpdate);
+                setLoading(false);
+                return;
+            } else {
+                DATA_CACHE.delete(cacheKey); // Expired
+            }
+        }
+
         setLoading(true);
         try {
             // All requests in parallel – ranking + 7 macro series
@@ -39,10 +60,10 @@ export default function useDashboardData({ limit = 10, currency = 'CLP' } = {}) 
 
             // Ranking
             const rankingData = rankingRes.data;
-            setItems(rankingData.items || rankingData.data || []);
-            setLastUpdate(
-                rankingData.metadata?.timestamp || new Date().toISOString()
-            );
+            const rankingItems = rankingData.items || rankingData.data || [];
+            const metaTimestamp = rankingData.metadata?.timestamp || new Date().toISOString();
+            setItems(rankingItems);
+            setLastUpdate(metaTimestamp);
 
             // Macro – build object keyed by series name
             const macroObj = {};
@@ -50,6 +71,14 @@ export default function useDashboardData({ limit = 10, currency = 'CLP' } = {}) 
                 macroObj[s.key] = macroResults[idx].data.observations || [];
             });
             setMacro(macroObj);
+
+            // Save to memory cache
+            DATA_CACHE.set(cacheKey, {
+                items: rankingItems,
+                macro: macroObj,
+                lastUpdate: metaTimestamp,
+                timestamp: Date.now()
+            });
         } catch (error) {
             console.error('useDashboardData fetch error:', error);
         } finally {

@@ -1,6 +1,7 @@
 from pypdf import PdfReader
 import os
 
+
 def extract_text(filename):
     print(f"\n{'='*20}\nReading {filename}\n{'='*20}")
     try:
@@ -12,9 +13,8 @@ def extract_text(filename):
     except Exception as e:
         print(f"Error reading {filename}: {e}")
 
-files = [
-    "Entrega 1.pdf"
-]
+
+files = ["Entrega 1.pdf"]
 
 for f in files:
     if os.path.exists(f):

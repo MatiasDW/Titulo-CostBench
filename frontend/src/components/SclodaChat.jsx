@@ -50,11 +50,12 @@ const SclodaChat = () => {
                 content: m.content
             }));
 
+            const langPrefix = '[IMPORTANT: Always respond in English, regardless of the language this message is written in.] ';
             const response = await fetch('/api/v1/scloda/message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    message: userMessage,
+                    message: `${langPrefix}${userMessage}`,
                     history: history
                 })
             });

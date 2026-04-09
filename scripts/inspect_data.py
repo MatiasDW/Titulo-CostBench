@@ -1,15 +1,16 @@
 import pandas as pd
 import os
 
-def inspect_parquet(directory='data'):
+
+def inspect_parquet(directory="data"):
     print(f"\n{'='*50}\nInspeccionando archivos Parquet en '{directory}'\n{'='*50}")
-    
+
     if not os.path.exists(directory):
         print(f"El directorio {directory} no existe.")
         return
 
-    files = [f for f in os.listdir(directory) if f.endswith('.parquet')]
-    
+    files = [f for f in os.listdir(directory) if f.endswith(".parquet")]
+
     if not files:
         print("No se encontraron archivos .parquet")
         return
@@ -26,9 +27,10 @@ def inspect_parquet(directory='data'):
             print(df.head().to_string())
             print("\n📊 Info de tipos:")
             print(df.dtypes)
-            print("\n" + "="*30)
+            print("\n" + "=" * 30)
         except Exception as e:
             print(f"Error leyendo {f}: {e}")
+
 
 if __name__ == "__main__":
     inspect_parquet()

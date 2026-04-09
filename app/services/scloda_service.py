@@ -6,6 +6,7 @@ Handles:
 - Function calling (tool use) for market data queries
 - Conversation context management
 """
+
 import os
 import json
 import httpx
@@ -20,7 +21,16 @@ logger = get_logger("scloda.service")
 
 # Configuration
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+def _is_configured_secret(value: str | None) -> bool:
+    if not value:
+        return False
+    normalized = value.strip().lower()
+    placeholder_markers = ("tu-", "example", "ejemplo", "aqui", "changeme")
+    return not any(marker in normalized for marker in placeholder_markers)
+
+
+_raw_openrouter_key = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_API_KEY = _raw_openrouter_key if _is_configured_secret(_raw_openrouter_key) else ""
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-001")
 
 # ── Fail-Fast config ──────────────────────────────────────────
@@ -30,8 +40,8 @@ LLM_TIMEOUT_SECONDS = int(os.getenv("SCLODA_TIMEOUT", "12"))
 
 # Pre-baked Scloda message shown on any LLM failure.
 _FRIENDLY_ERROR = (
-    "⏳ Las redes están un poco saturadas en este momento y no pude "
-    "procesar tu consulta. ¿Puedes intentarlo de nuevo en unos segundos?"
+    "⏳ The networks are a bit congested right now and I couldn't "
+    "process your request. Can you try again in a few seconds?"
 )
 
 
@@ -39,7 +49,7 @@ def _load_system_prompt() -> str:
     """Load system prompt from AI_PROMPT_GUIDE.md if available, otherwise use default."""
     # Try to load from file
     prompt_file = Path(__file__).parent.parent.parent / "AI_PROMPT_GUIDE.md"
-    
+
     if prompt_file.exists():
         try:
             content = prompt_file.read_text(encoding="utf-8")
@@ -48,10 +58,10 @@ def _load_system_prompt() -> str:
 
 {content}
 
-Remember: Always use the available tools to get real data. Never invent numbers. Respond in the user's language."""
+Remember: Always use the available tools to get real data. Never invent numbers. ALWAYS respond in English, regardless of the language the user writes in."""
         except Exception as e:
             logger.warning("prompt_file_load_failed", error=str(e))
-    
+
     # Fallback to embedded prompt
     return _get_default_prompt()
 
@@ -69,7 +79,8 @@ RULES:
 4. Clearly warn about risks
 5. Always: "This is informational, NOT financial advice"
 
-Respond in the user's language. Use the available tools to get real data."""
+ALWAYS respond in English, regardless of the language the user writes in. Use the available tools to get real data."""
+
 
 # System prompt for Scloda
 SYSTEM_PROMPT = """You are Scloda, a multidisciplinary expert in finance, technology, and data analysis.
@@ -115,19 +126,22 @@ SYSTEM_PROMPT = """You are Scloda, a multidisciplinary expert in finance, techno
 4. **Always contextualize** - "This is high/low/normal compared to..."
 5. **Warn about risks** - If something is volatile or speculative, say it clearly
 6. **Always disclaimer** - Data is informational, NOT financial advice
+7. **Ultra-Concise Format** - Respond natively via chat (max 1-2 paragraphs). DO NOT write reports with bold sections (e.g., "**Current Trend:**" or "**Model Assessment:**"). First call tools, and THEN generate a natural conversation summarizing the data.
 
-## ABOUT ML MODELS
+## ABOUT ML MODELS & PREDICTIVE ANALYTICS
 
-When explaining models, use this framework:
-- **MAPE < 2%**: "The model has high precision, very reliable for this asset"
-- **MAPE 2-5%**: "Useful predictions, but consider a margin of ±X%"
-- **MAPE > 5%**: "Very volatile asset. Predictions are directional, not bets"
+When asked about market movements or predictions, you MUST ACT AS A QUANTITATIVE ANALYST:
+1. **Never rely on single data points**.
+2. **Always cross-reference:**
+   - The historical data (what just happened).
+   - The ARIMA/ML Model Forecasts (what the mathematical trend says).
+   - **The Markov Chain Matrix (get_markov_predictions)**: The empirical probability of state changes based on Granger causality.
+3. Example of an excellent response: "The ARIMA model predicts a slight upward trend (MAPE 2.5%), but wait, according to our Markov matrices, if Copper just dropped today, there is a 73% historical probability that the Dollar will go 'Sideways' or 'Bull' tomorrow. So, despite the long-term upward trend, expect short-term turbulence."
 
-Explain each model like this:
+Explain ML models like this:
 - **ARIMA**: "Looks at past patterns to predict the future"
 - **Theta**: "Smooths volatility to find the real trend"
-- **ETS**: "Detects seasons and repetitive cycles"
-- **Naive**: "Assumes tomorrow will be the same as today (surprisingly useful for some assets)"
+- **Naive**: "Assumes tomorrow will be the same as today"
 
 ## AVAILABLE DATA
 
@@ -135,15 +149,20 @@ Use tools to query:
 - UF and USD/CLP (Central Bank of Chile)
 - Gold, Copper, Oil, Silver (global commodities)
 - Bitcoin, Ethereum (cryptocurrencies)
-- US CPI, Treasury 10Y (global indicators)
-- ML model information and their metrics
+- **Markov Predictions**: Use `get_markov_predictions` when someone asks "What predicts X?" or "What is likely to happen next based on today's movement?"
+
+### TOOL USAGE (CRITICAL)
+- **DO NOT** output python code. **DO NOT** write ```tool_code``` or `print(default_api.get_asset_prediction(...))`. 
+- You must use the integrated JSON tool calling mechanism secretly whenever you need data.
+- The user cannot see code. The user only wants the human-readable result.
+- **NEVER** mention internal tool or function names (like get_commodity_data, get_crypto_data, get_uf_data, get_markov_predictions, etc.) in your responses. These are internal and invisible to the user.
 
 ## IMPORTANT
 
 - If you don't have updated data, say so honestly
 - NEVER make up numbers or statistics
 - If the question is outside your knowledge, recommend consulting a professional
-- Respond in the language the user uses (Spanish or English)
+- ALWAYS respond in English, regardless of the language the user writes in
 
 Respond concisely but completely. Use emojis sparingly (📊💡⚠️) to make conversation friendlier."""
 
@@ -233,12 +252,14 @@ def _build_user_context(user_profile: dict | None) -> str:
 
     if interests:
         labels = [INTEREST_LABELS.get(i, i) for i in interests]
-        lines.extend([
-            "",
-            "### Áreas de interés del usuario:",
-            ", ".join(labels),
-            "Cuando sea posible, conecta tus respuestas con estos temas de interés.",
-        ])
+        lines.extend(
+            [
+                "",
+                "### Áreas de interés del usuario:",
+                ", ".join(labels),
+                "Cuando sea posible, conecta tus respuestas con estos temas de interés.",
+            ]
+        )
 
     return "\n".join(lines)
 
@@ -246,50 +267,50 @@ def _build_user_context(user_profile: dict | None) -> str:
 def chat_completion(
     user_message: str,
     conversation_history: list[dict] | None = None,
-    user_profile: dict | None = None
+    user_profile: dict | None = None,
 ) -> dict[str, Any]:
     """
     Process a chat message and return Scloda's response.
-    
+
     Args:
         user_message: The user's message
         conversation_history: Previous messages in the conversation
         user_profile: Optional dict with risk_profile, interests, email
-        
+
     Returns:
         dict with 'response' (text) and 'tokens_used'
     """
     if not OPENROUTER_API_KEY:
         return {
-            "response": "⚠️ API no configurada. Agrega OPENROUTER_API_KEY al archivo .env",
+            "response": "⚠️ API not configured. Add OPENROUTER_API_KEY to the .env file",
             "tokens_used": 0,
-            "error": "no_api_key"
+            "error": "no_api_key",
         }
-    
+
     # Build messages — base prompt + dynamic user context
     system_prompt = _load_system_prompt()
     user_context = _build_user_context(user_profile)
     if user_context:
         system_prompt += user_context
     messages = [{"role": "system", "content": system_prompt}]
-    
+
     # Add conversation history (last 10 messages max)
     if conversation_history:
         messages.extend(conversation_history[-10:])
-    
+
     # Add current user message
     messages.append({"role": "user", "content": user_message})
-    
+
     try:
         # First API call
         response = _call_openrouter(messages, tools=SCLODA_TOOLS)
-        
+
         if "error" in response:
             return response
-        
+
         assistant_message = response["choices"][0]["message"]
         tokens_used = response.get("usage", {}).get("total_tokens", 0)
-        
+
         # Check for tool calls
         if assistant_message.get("tool_calls"):
             # Execute tools and get results
@@ -297,57 +318,61 @@ def chat_completion(
             for tool_call in assistant_message["tool_calls"]:
                 function_name = tool_call["function"]["name"]
                 arguments = json.loads(tool_call["function"]["arguments"])
-                
+
                 logger.info("tool_call", tool=function_name, args=arguments)
-                
+
                 result = execute_tool(function_name, arguments)
-                tool_results.append({
-                    "tool_call_id": tool_call["id"],
-                    "role": "tool",
-                    "content": json.dumps(result, ensure_ascii=False)
-                })
-            
+                tool_results.append(
+                    {
+                        "tool_call_id": tool_call["id"],
+                        "role": "tool",
+                        "content": json.dumps(result, ensure_ascii=False),
+                    }
+                )
+
             # Add assistant message with tool calls
             messages.append(assistant_message)
-            
+
             # Add tool results
             messages.extend(tool_results)
-            
+
             # Second API call with tool results
             final_response = _call_openrouter(messages, tools=None)
-            
+
             if "error" in final_response:
                 return final_response
+
+            final_content = final_response["choices"][0]["message"].get("content", "")
             
-            final_content = final_response["choices"][0]["message"]["content"]
+            if not final_content or not final_content.strip():
+                final_content = "I'm sorry, I was able to retrieve the data but had a problem processing the final response. Please try asking in a different way."
+
             tokens_used += final_response.get("usage", {}).get("total_tokens", 0)
-            
+
             return {
                 "response": final_content,
                 "tokens_used": tokens_used,
-                "tools_used": [tc["function"]["name"] for tc in assistant_message["tool_calls"]]
+                "tools_used": [
+                    tc["function"]["name"] for tc in assistant_message["tool_calls"]
+                ],
             }
-        
+
         # No tool calls, return direct response
+        content = assistant_message.get("content", "")
+        if not content or not content.strip():
+            content = "I'm sorry, I had a problem generating the response. Please try again."
+            
         return {
-            "response": assistant_message.get("content", ""),
-            "tokens_used": tokens_used
+            "response": content,
+            "tokens_used": tokens_used,
         }
-        
+
     except httpx.TimeoutException:
         logger.warning("chat_timeout", timeout=LLM_TIMEOUT_SECONDS)
-        return {
-            "response": _FRIENDLY_ERROR,
-            "tokens_used": 0,
-            "error": "timeout"
-        }
+        return {"response": _FRIENDLY_ERROR, "tokens_used": 0, "error": "timeout"}
     except Exception as e:
         logger.error("chat_error", error=str(e))
-        return {
-            "response": _FRIENDLY_ERROR,
-            "tokens_used": 0,
-            "error": str(e)
-        }
+        return {"response": _FRIENDLY_ERROR, "tokens_used": 0, "error": str(e)}
 
 
 def _call_openrouter(messages: list[dict], tools: list[dict] | None = None) -> dict:
@@ -362,14 +387,14 @@ def _call_openrouter(messages: list[dict], tools: list[dict] | None = None) -> d
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://costbench.cl",
-        "X-Title": "CostBench - Scloda Chat"
+        "X-Title": "CostBench - Scloda Chat",
     }
 
     payload = {
         "model": OPENROUTER_MODEL,
         "messages": messages,
         "temperature": 0.7,
-        "max_tokens": 1024
+        "max_tokens": 1024,
     }
 
     if tools:
@@ -381,11 +406,7 @@ def _call_openrouter(messages: list[dict], tools: list[dict] | None = None) -> d
 
     try:
         with httpx.Client(timeout=timeout) as client:
-            response = client.post(
-                OPENROUTER_API_URL,
-                headers=headers,
-                json=payload
-            )
+            response = client.post(OPENROUTER_API_URL, headers=headers, json=payload)
             response.raise_for_status()
             return response.json()
 
@@ -393,8 +414,11 @@ def _call_openrouter(messages: list[dict], tools: list[dict] | None = None) -> d
         logger.warning("openrouter_timeout", timeout_s=LLM_TIMEOUT_SECONDS)
         return {"error": "timeout", "response": _FRIENDLY_ERROR}
     except httpx.HTTPStatusError as e:
-        logger.error("openrouter_http_error",
-                     status=e.response.status_code, body=e.response.text[:200])
+        logger.error(
+            "openrouter_http_error",
+            status=e.response.status_code,
+            body=e.response.text[:200],
+        )
         return {"error": "api_error", "response": _FRIENDLY_ERROR}
     except Exception as e:
         logger.error("openrouter_unexpected", error=str(e))
@@ -406,7 +430,7 @@ def get_service_status() -> dict:
     return {
         "api_configured": bool(OPENROUTER_API_KEY),
         "model": OPENROUTER_MODEL,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
 
@@ -415,48 +439,48 @@ ASSET_CONTEXT = {
     "gold": {
         "name": "Gold",
         "unit": "USD/oz",
-        "context": "Safe-haven asset, inversely correlated with risk appetite and USD. Central banks are major buyers."
+        "context": "Safe-haven asset, inversely correlated with risk appetite and USD. Central banks are major buyers.",
     },
     "copper": {
         "name": "Copper",
         "unit": "USD/lb",
-        "context": "Chile's main export. Indicator of global industrial demand. China is the largest consumer."
+        "context": "Chile's main export. Indicator of global industrial demand. China is the largest consumer.",
     },
     "oil": {
         "name": "Oil WTI",
         "unit": "USD/bbl",
-        "context": "Energy benchmark. Affects transportation and production costs globally."
+        "context": "Energy benchmark. Affects transportation and production costs globally.",
     },
     "btc": {
         "name": "Bitcoin",
         "unit": "CLP",
-        "context": "Digital asset, high volatility. Increasingly correlated with tech stocks and risk sentiment."
+        "context": "Digital asset, high volatility. Increasingly correlated with tech stocks and risk sentiment.",
     },
     "eth": {
         "name": "Ethereum",
         "unit": "CLP",
-        "context": "Smart contract platform. Tracks Bitcoin with higher volatility. DeFi exposure."
+        "context": "Smart contract platform. Tracks Bitcoin with higher volatility. DeFi exposure.",
     },
     "cpi": {
         "name": "US CPI",
         "unit": "Index",
-        "context": "US inflation measure. Key driver of Fed policy and global interest rates."
+        "context": "US inflation measure. Key driver of Fed policy and global interest rates.",
     },
     "yields": {
         "name": "Treasury 10Y",
         "unit": "Yield %",
-        "context": "Risk-free rate benchmark. Higher yields pressure emerging market currencies."
+        "context": "Risk-free rate benchmark. Higher yields pressure emerging market currencies.",
     },
     "usdclp": {
         "name": "USD/CLP",
         "unit": "CLP",
-        "context": "Chilean peso exchange rate. Affected by copper prices, Fed policy, and local politics."
+        "context": "Chilean peso exchange rate. Affected by copper prices, Fed policy, and local politics.",
     },
     "uf": {
         "name": "UF",
         "unit": "CLP",
-        "context": "Chilean inflation-indexed unit. Used for mortgages, rent, and contracts."
-    }
+        "context": "Chilean inflation-indexed unit. Used for mortgages, rent, and contracts.",
+    },
 }
 
 
@@ -464,33 +488,28 @@ def generate_chart_insight(
     asset: str,
     current_value: float | None = None,
     change_percent: float = 0,
-    trend: str = "stable"
+    trend: str = "stable",
 ) -> dict:
     """
     Generate a dynamic insight for a chart card.
-    
+
     Args:
         asset: Asset key (e.g., 'gold', 'copper', 'btc')
         current_value: Current price/value
         change_percent: Percentage change
         trend: 'up', 'down', or 'stable'
-    
+
     Returns:
         dict with 'insight' and 'tokens_used'
     """
     if not OPENROUTER_API_KEY:
-        return {
-            "insight": "API not configured.",
-            "tokens_used": 0
-        }
-    
+        return {"insight": "API not configured.", "tokens_used": 0}
+
     # Get asset context
-    asset_info = ASSET_CONTEXT.get(asset.lower(), {
-        "name": asset.upper(),
-        "unit": "",
-        "context": "Financial asset"
-    })
-    
+    asset_info = ASSET_CONTEXT.get(
+        asset.lower(), {"name": asset.upper(), "unit": "", "context": "Financial asset"}
+    )
+
     # Build a focused prompt for short insight generation in ENGLISH
     prompt = f"""Generate a very brief market insight (1-2 sentences) for {asset_info['name']}.
 
@@ -512,21 +531,24 @@ Respond ONLY with the insight text."""
 
     try:
         messages = [
-            {"role": "system", "content": "You are Scloda, a senior financial analyst. Your language is 100% formal, elegant, and technical."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are Scloda, a senior financial analyst. Your language is 100% formal, elegant, and technical.",
+            },
+            {"role": "user", "content": prompt},
         ]
-        
+
         response = _call_openrouter(messages, tools=None)
-        
+
         if "error" in response:
             # Fallback to static insight
             return _get_fallback_insight(asset, change_percent, trend)
-        
+
         return {
             "insight": response["choices"][0]["message"]["content"].strip(),
-            "tokens_used": response["usage"]["total_tokens"]
+            "tokens_used": response["usage"]["total_tokens"],
         }
-        
+
     except Exception as e:
         logger.error("insight_generation_error", error=str(e))
         return _get_fallback_insight(asset, change_percent, trend)
@@ -543,39 +565,32 @@ def _get_fallback_insight(asset: str, change_percent: float, trend: str) -> dict
         "cpi": "Persistent inflation pressures the Federal Reserve to maintain elevated rates.",
         "yields": "Treasury yields directly impact the cost of credit globally.",
         "usdclp": "Peso barometer. Sensitive to copper prices and Fed rate decisions.",
-        "uf": "Inflation-indexed unit. Benchmark for mortgages and contracts in Chile."
+        "uf": "Inflation-indexed unit. Benchmark for mortgages and contracts in Chile.",
     }
-    
+
     base = fallbacks.get(asset.lower(), "Financial market indicator.")
     direction = "📈" if trend == "up" else "📉" if trend == "down" else "➡️"
-    
-    return {
-        "insight": f"{direction} {base}",
-        "tokens_used": 0
-    }
+
+    return {"insight": f"{direction} {base}", "tokens_used": 0}
 
 
-def generate_model_analysis(
-    asset: str,
-    model_name: str,
-    metrics: dict
-) -> dict:
+def generate_model_analysis(asset: str, model_name: str, metrics: dict) -> dict:
     """
     Generate a detailed analysis of why a specific ML model was selected for an asset.
-    
+
     Args:
         asset: Asset name (e.g., 'Gold')
         model_name: Selected model (e.g., 'Auto ARIMA')
         metrics: Dictionary with mae, rmse, mape
-    
+
     Returns:
         dict with 'selection_reason' and 'confidence_note'
     """
     if not OPENROUTER_API_KEY:
         return _get_fallback_model_analysis(asset, model_name)
-    
-    mape = metrics.get('mape', 0)
-    
+
+    mape = metrics.get("mape", 0)
+
     prompt = f"""Analyze the ML model performance for {asset}.
 
 Data:
@@ -604,30 +619,34 @@ Respond ONLY in JSON format:
 
     try:
         messages = [
-            {"role": "system", "content": "You are Scloda, Senior Data Scientist. Respond in valid JSON with formal language."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are Scloda, Senior Data Scientist. Respond in valid JSON with formal language.",
+            },
+            {"role": "user", "content": prompt},
         ]
-        
+
         response = _call_openrouter(messages, tools=None)
-        
+
         if "error" in response:
             return _get_fallback_model_analysis(asset, model_name)
-            
+
         content = response["choices"][0]["message"]["content"].strip()
-        
+
         # Clean markdown code blocks if present
         if content.startswith("```json"):
             content = content.replace("```json", "").replace("```", "")
-        
+
         import json
+
         result = json.loads(content)
-        
+
         return {
             "selection_reason": result.get("selection_reason", ""),
             "confidence_note": result.get("confidence_note", ""),
-            "tokens_used": response.get("usage", {}).get("total_tokens", 0)
+            "tokens_used": response.get("usage", {}).get("total_tokens", 0),
         }
-        
+
     except Exception as e:
         logger.error("model_analysis_error", error=str(e))
         return _get_fallback_model_analysis(asset, model_name)
@@ -638,5 +657,5 @@ def _get_fallback_model_analysis(asset: str, model_name: str) -> dict:
     return {
         "selection_reason": f"{model_name} best adapted to the historical patterns and volatility of {asset}.",
         "confidence_note": "The error falls within acceptable ranges for this type of financial asset.",
-        "tokens_used": 0
+        "tokens_used": 0,
     }

@@ -6,6 +6,7 @@ Responsibilities:
   • JWT token generation / verification
   • Anti-enumeration: login errors never reveal whether the email exists
 """
+
 import jwt
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -24,7 +25,10 @@ logger = get_logger("auth.service")
 # Registration
 # ------------------------------------------------------------------
 
-def register_user(email: str, password: str, risk_profile: str = None) -> tuple[dict, int]:
+
+def register_user(
+    email: str, password: str, risk_profile: str = None
+) -> tuple[dict, int]:
     """
     Create a new user.
 
@@ -75,6 +79,7 @@ def register_user(email: str, password: str, risk_profile: str = None) -> tuple[
 # Authentication
 # ------------------------------------------------------------------
 
+
 def authenticate_user(email: str, password: str) -> tuple[dict, int]:
     """
     Validate credentials.  Returns the same generic error message
@@ -111,6 +116,7 @@ def authenticate_user(email: str, password: str) -> tuple[dict, int]:
 # JWT helpers
 # ------------------------------------------------------------------
 
+
 def _get_jwt_key() -> str:
     """
     Return a signing key that satisfies PyJWT ≥2.9 minimum length (32 bytes).
@@ -118,7 +124,7 @@ def _get_jwt_key() -> str:
     """
     key = current_app.config["SECRET_KEY"]
     if len(key.encode()) < 32:
-        key = key.ljust(32, '0')  # pad to 32 bytes
+        key = key.ljust(32, "0")  # pad to 32 bytes
     return key
 
 
@@ -141,9 +147,7 @@ def decode_token(token: str) -> Optional[dict]:
         The payload dict on success, or None on any failure.
     """
     try:
-        return jwt.decode(
-            token, _get_jwt_key(), algorithms=["HS256"]
-        )
+        return jwt.decode(token, _get_jwt_key(), algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
         logger.info("token_expired")
         return None
@@ -155,6 +159,7 @@ def decode_token(token: str) -> Optional[dict]:
 # ------------------------------------------------------------------
 # Profile update
 # ------------------------------------------------------------------
+
 
 def update_risk_profile(user_id: int, risk_profile: str) -> tuple[dict, int]:
     """

@@ -1,9 +1,9 @@
 """User model for authentication, risk profile, KYC, and onboarding preferences."""
+
 import bcrypt
 from datetime import datetime, date
 from sqlalchemy.dialects.postgresql import ARRAY
 from app.extensiones import db
-
 
 VALID_RISK_PROFILES = ("conservative", "moderate", "aggressive")
 VALID_ROLES = ("admin", "user")
@@ -59,9 +59,7 @@ class User(db.Model):
 
     def check_password(self, plain: str) -> bool:
         """Return True if *plain* matches the stored hash."""
-        return bcrypt.checkpw(
-            plain.encode("utf-8"), self.password_hash.encode("utf-8")
-        )
+        return bcrypt.checkpw(plain.encode("utf-8"), self.password_hash.encode("utf-8"))
 
     @property
     def is_admin(self) -> bool:
@@ -84,7 +82,9 @@ class User(db.Model):
             "phone": self.phone,
             "bio": self.bio,
             "rut": self.rut,
-            "date_of_birth": self.date_of_birth.isoformat() if self.date_of_birth else None,
+            "date_of_birth": (
+                self.date_of_birth.isoformat() if self.date_of_birth else None
+            ),
             "nationality": self.nationality,
             "address": self.address,
             "city": self.city,
