@@ -33,6 +33,22 @@ import chilePuertoVaras from '../../assets/landing/chile-puerto-varas.jpg';
 import chileLasCondesSanhattan from '../../assets/landing/chile-las-condes-sanhattan.jpg';
 import chileAraucariaVolcano from '../../assets/landing/chile-araucaria-volcano.jpg';
 import santiagoNight from '../../assets/santiago_night.png';
+import regionAricaParinacota from '../../assets/landing/regions/arica-y-parinacota.jpg';
+import regionTarapaca from '../../assets/landing/regions/tarapaca.jpg';
+import regionAntofagasta from '../../assets/landing/regions/antofagasta.jpg';
+import regionAtacama from '../../assets/landing/regions/atacama.jpg';
+import regionCoquimbo from '../../assets/landing/regions/coquimbo.jpg';
+import regionValparaiso from '../../assets/landing/regions/valparaiso.jpg';
+import regionMetropolitana from '../../assets/landing/regions/metropolitana.jpg';
+import regionOHiggins from '../../assets/landing/regions/o-higgins.jpg';
+import regionMaule from '../../assets/landing/regions/maule.jpg';
+import regionNuble from '../../assets/landing/regions/nuble.jpg';
+import regionBiobio from '../../assets/landing/regions/biobio.jpg';
+import regionAraucania from '../../assets/landing/regions/la-araucania.jpg';
+import regionLosRios from '../../assets/landing/regions/los-rios.jpg';
+import regionLosLagos from '../../assets/landing/regions/los-lagos.jpg';
+import regionAysen from '../../assets/landing/regions/aysen.jpg';
+import regionMagallanes from '../../assets/landing/regions/magallanes.jpg';
 import './LandingPage.css';
 
 const TRUST_BADGES = [
@@ -190,6 +206,89 @@ const CHILE_MAP_POINTS = [
     { city: 'Magallanes', capital: 'Punta Arenas', focus: 'Long-horizon strategic land play.', x: 96.7, y: 600.4 },
 ];
 
+const REGION_VISUALS = {
+    'Arica y Parinacota': {
+        image: regionAricaParinacota,
+        title: 'Arica y Parinacota',
+        subtitle: 'Arica: northern gateway with border trade and coastal access.',
+    },
+    Tarapaca: {
+        image: regionTarapaca,
+        title: 'Tarapaca',
+        subtitle: 'Iquique: free-zone dynamics and Pacific logistics corridor.',
+    },
+    Antofagasta: {
+        image: regionAntofagasta,
+        title: 'Antofagasta',
+        subtitle: 'Antofagasta: mining economy with resilient executive demand.',
+    },
+    Atacama: {
+        image: regionAtacama,
+        title: 'Atacama',
+        subtitle: 'Copiapo: desert-region assets with energy-linked expansion.',
+    },
+    Coquimbo: {
+        image: regionCoquimbo,
+        title: 'Coquimbo',
+        subtitle: 'La Serena: coastal quality-of-life with seasonal rental demand.',
+    },
+    Valparaiso: {
+        image: regionValparaiso,
+        title: 'Valparaiso',
+        subtitle: 'Valparaiso: heritage + tourism market with strong short-stay flow.',
+    },
+    Metropolitana: {
+        image: regionMetropolitana,
+        title: 'Metropolitana',
+        subtitle: 'Santiago: deepest liquidity and strongest rental absorption in Chile.',
+    },
+    "O'Higgins": {
+        image: regionOHiggins,
+        title: "O'Higgins",
+        subtitle: 'Rancagua: industrial spillover and suburban development corridor.',
+    },
+    Maule: {
+        image: regionMaule,
+        title: 'Maule',
+        subtitle: 'Talca: value entry market with agro-logistics support.',
+    },
+    Nuble: {
+        image: regionNuble,
+        title: 'Nuble',
+        subtitle: 'Chillan: regional densification and route-connectivity upside.',
+    },
+    Biobio: {
+        image: regionBiobio,
+        title: 'Biobio',
+        subtitle: 'Concepcion: university-industrial mix supporting rental depth.',
+    },
+    'La Araucania': {
+        image: regionAraucania,
+        title: 'La Araucania',
+        subtitle: 'Temuco: lifestyle migration and long-term land positioning.',
+    },
+    'Los Rios': {
+        image: regionLosRios,
+        title: 'Los Rios',
+        subtitle: 'Valdivia: river-city demand with quality-of-life premium.',
+    },
+    'Los Lagos': {
+        image: regionLosLagos,
+        title: 'Los Lagos',
+        subtitle: 'Puerto Montt: lake district gateway with relocation momentum.',
+    },
+    Aysen: {
+        image: regionAysen,
+        title: 'Aysen',
+        subtitle: 'Coyhaique: low-density frontier assets and scarcity value.',
+    },
+    Magallanes: {
+        image: regionMagallanes,
+        title: 'Magallanes',
+        subtitle: 'Punta Arenas: southern strategic exposure and long-horizon land.',
+    },
+};
+
 const container = {
     hidden: { opacity: 0, y: 22 },
     show: {
@@ -233,6 +332,11 @@ const LandingPage = () => {
     const [showSignUp, setShowSignUp] = useState(false);
     const [hoveredRegion, setHoveredRegion] = useState(null);
     const activeRegion = hoveredRegion || CHILE_MAP_POINTS[6];
+    const activeRegionVisual = REGION_VISUALS[activeRegion.city] || {
+        image: chileAraucariaVolcano,
+        title: activeRegion.city,
+        subtitle: activeRegion.focus,
+    };
 
     return (
         <div className="landing-page">
@@ -389,10 +493,18 @@ const LandingPage = () => {
                                     </li>
                                 </motion.ul>
                                 <article className="control-room-photo-card">
-                                    <img src={chileAraucariaVolcano} alt="Chilean biodiversity landscape" loading="lazy" />
+                                    <motion.img
+                                        key={activeRegion.city}
+                                        src={activeRegionVisual.image}
+                                        alt={`${activeRegion.city} real estate context`}
+                                        loading="lazy"
+                                        initial={{ opacity: 0.15, scale: 1.05 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ duration: 0.36, ease: 'easeOut' }}
+                                    />
                                     <div className="control-room-photo-overlay">
-                                        <h4>Flora & fauna signal</h4>
-                                        <p>Context layer for long-horizon desirability in Chile.</p>
+                                        <h4>{activeRegionVisual.title}</h4>
+                                        <p>{activeRegionVisual.subtitle}</p>
                                     </div>
                                 </article>
                             </div>
