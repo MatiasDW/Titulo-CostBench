@@ -596,7 +596,17 @@ const LandingPage = () => {
                                 transition={{ duration: 0.45, delay: index * 0.07 }}
                                 whileHover={{ y: -6, scale: 1.01 }}
                             >
-                                <img src={spot.image} alt={spot.title} loading="lazy" />
+                                <img
+                                    src={spot.image}
+                                    alt={spot.title}
+                                    loading="lazy"
+                                    onError={(event) => {
+                                        const fallback = chileAraucariaVolcano;
+                                        if (event.currentTarget.src !== fallback) {
+                                            event.currentTarget.src = fallback;
+                                        }
+                                    }}
+                                />
                                 <div className="landing-photo-overlay">
                                     <h3>{spot.title}</h3>
                                     <p>{spot.subtitle}</p>
