@@ -498,6 +498,12 @@ const LandingPage = () => {
                                         src={activeRegionVisual.image}
                                         alt={`${activeRegion.city} real estate context`}
                                         loading="lazy"
+                                        onError={(event) => {
+                                            const fallback = chileAraucariaVolcano;
+                                            if (event.currentTarget.src !== fallback) {
+                                                event.currentTarget.src = fallback;
+                                            }
+                                        }}
                                         initial={{ opacity: 0.15, scale: 1.05 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         transition={{ duration: 0.36, ease: 'easeOut' }}

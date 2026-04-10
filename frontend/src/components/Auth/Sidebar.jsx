@@ -62,6 +62,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
         <>
             {/* Hamburger toggle button */}
             <button
+                type="button"
                 className={`sidebar-toggle ${collapsed ? 'sidebar-toggle-collapsed' : ''}`}
                 onClick={handleToggle}
                 aria-label={collapsed ? 'Open menu' : 'Close menu'}
@@ -87,6 +88,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
 
                         {/* Clickable User Profile */}
                         <button
+                            type="button"
                             className="sidebar-user"
                             onClick={handleProfileToggle}
                         >
@@ -122,6 +124,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
                                     transition={{ duration: 0.2 }}
                                 >
                                     <button
+                                        type="button"
                                         className="sidebar-profile-item"
                                         onClick={() => { playClick(); setProfileOpen(false); navigate('/profile'); }}
                                     >
@@ -130,6 +133,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
                                     </button>
                                     {user?.is_admin && (
                                         <button
+                                            type="button"
                                             className="sidebar-profile-item admin-item"
                                             onClick={() => { playClick(); setProfileOpen(false); /* TODO: admin panel */ }}
                                         >
@@ -147,6 +151,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
                                 const isActive = location.pathname === path;
                                 return (
                                     <motion.button
+                                        type="button"
                                         key={path}
                                         className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
                                         onClick={() => handleNavClick(path)}
@@ -178,6 +183,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
 
                         {/* Logout */}
                         <motion.button
+                            type="button"
                             className="sidebar-logout"
                             onClick={handleLogout}
                             whileHover={{ x: 4, backgroundColor: 'rgba(218, 54, 51, 0.15)' }}

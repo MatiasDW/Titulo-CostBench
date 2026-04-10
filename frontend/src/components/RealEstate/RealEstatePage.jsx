@@ -20,7 +20,7 @@ const RealEstatePage = () => {
     // ---- STATE ----
     const [metrics, setMetrics] = useState([]);
     const [currentUf, setCurrentUf] = useState(null);
-    const [ufSource, setUfSource] = useState('fallback');
+    const [ufSource, setUfSource] = useState(null);
     const [loadingMetrics, setLoadingMetrics] = useState(true);
     const [error, setError] = useState(null);
 
@@ -54,9 +54,21 @@ const RealEstatePage = () => {
     useEffect(() => {
         const fetchMetrics = async () => {
             try {
-                const response = await fetch('/api/v1/real-estate/metrics');
-                const data = await response.json();
-                if (data.status === 'success') {
+                const response = await fetch('/api/v1/real-estate/metrics', {
+                    credentials: 'include',
+                });
+                const contentType = response.headers.get('content-type') || '';
+                const data = contentType.includes('application/json')
+                    ? await response.json()
+                    : null;
+
+                if (!response.ok) {
+                    const backendMessage = data?.message || data?.error || `Request failed (${response.status})`;
+                    setError(backendMessage);
+                    return;
+                }
+
+                if (data?.status === 'success' && Array.isArray(data.metrics)) {
                     // Sort descending by UF/m2 just for display
                     const sorted = data.metrics.sort((a, b) => b.uf_m2 - a.uf_m2);
                     setMetrics(sorted);
@@ -64,10 +76,10 @@ const RealEstatePage = () => {
                     setUfSource(data.uf_source || 'fallback');
                     if (sorted.length > 0) setSelectedComuna(sorted[0].comuna);
                 } else {
-                    setError(data.message || 'Failed to fetch metrics');
+                    setError(data?.message || 'Failed to fetch metrics');
                 }
             } catch (err) {
-                setError('Network error fetching metrics');
+                setError(`Network error fetching metrics: ${err.message}`);
             } finally {
                 setLoadingMetrics(false);
             }
@@ -168,6 +180,7 @@ const RealEstatePage = () => {
             const response = await fetch('/api/v1/real-estate/simulate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     comuna: selectedComuna,
                     pie_uf: pieUf,
@@ -175,9 +188,18 @@ const RealEstatePage = () => {
                 })
             });
 
-            const data = await response.json();
+            const contentType = response.headers.get('content-type') || '';
+            const data = contentType.includes('application/json')
+                ? await response.json()
+                : null;
 
-            if (data.status === 'success') {
+            if (!response.ok) {
+                const backendMessage = data?.message || data?.error || `Simulation failed (${response.status})`;
+                setError(backendMessage);
+                return;
+            }
+
+            if (data?.status === 'success') {
                 setChartData(data.chart_data);
                 setSclodaAdvice(data.scloda_advice);
                 setSimSummary({
@@ -187,10 +209,10 @@ const RealEstatePage = () => {
                     monthly_rent_uf: data.monthly_rent_uf
                 });
             } else {
-                setError(data.message || 'Simulation failed');
+                setError(data?.message || 'Simulation failed');
             }
         } catch (err) {
-            setError('Network error during simulation');
+            setError(`Network error during simulation: ${err.message}`);
         } finally {
             setSimulating(false);
         }
@@ -235,7 +257,7 @@ const RealEstatePage = () => {
                     </div>
                 )}
 
-                {ufSource !== 'bcch_live' && (
+                {ufSource && ufSource !== 'bcch_live' && (
                     <div className="alert alert-warning py-2 mb-3" role="alert">
                         Using fallback macro data. Configure <code>BDE_USER</code> and <code>BDE_PASS</code> in <code>.env</code> to use live BCCh values.
                     </div>

@@ -54,13 +54,30 @@ const SclodaChat = () => {
             const response = await fetch('/api/v1/scloda/message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     message: `${langPrefix}${userMessage}`,
                     history: history
                 })
             });
 
-            const data = await response.json();
+            const contentType = response.headers.get('content-type') || '';
+            const data = contentType.includes('application/json')
+                ? await response.json()
+                : null;
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    setMessages(prev => [...prev, {
+                        role: 'assistant',
+                        content: 'Please log in to use Scloda chat.'
+                    }]);
+                    return;
+                }
+
+                const apiError = data?.error || `Request failed (${response.status})`;
+                throw new Error(apiError);
+            }
 
             setMessages(prev => [...prev, {
                 role: 'assistant',
