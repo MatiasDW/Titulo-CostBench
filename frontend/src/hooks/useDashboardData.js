@@ -5,7 +5,7 @@
  * dashboard tree.  Prevents duplicate HTTP requests when child components
  * mount/unmount (tabs, modals, etc.).
  */
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 
 // --- Shared Memory Cache ---

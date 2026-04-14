@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaUserTie } from 'react-icons/fa';
 
-const AIInsight = ({ title, text, insight, colorClass = "text-muted" }) => {
+const AIInsight = ({ text, insight, colorClass = "text-muted" }) => {
     const display = insight || text || "Analizando datos recientes...";
     return (
         <div

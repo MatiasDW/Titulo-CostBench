@@ -99,7 +99,7 @@ const MarketDashboard = ({ items, macro, analytics }) => {
                 count: items.length,
             }
         };
-    }, [items, macro]);
+    }, [items]);
 
     // Chart Data Configs
     const cheapData = {
@@ -132,20 +132,6 @@ const MarketDashboard = ({ items, macro, analytics }) => {
             backgroundColor: ['#238636', '#d29922', '#a40e26'],
             borderColor: ['#2ea043', '#dbab09', '#da3633'],
             borderWidth: 1
-        }]
-    };
-
-    // Macro Data Handling
-    const cpiData = {
-        labels: macro?.cpi?.map(d => new Date(d.date).toLocaleDateString()) || [],
-        datasets: [{
-            label: 'CPI',
-            data: macro?.cpi?.map(d => d.value) || [],
-            borderColor: '#f78166',
-            backgroundColor: 'rgba(247, 129, 102, 0.1)',
-            fill: true,
-            tension: 0.4,
-            pointRadius: 0
         }]
     };
 

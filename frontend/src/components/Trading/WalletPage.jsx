@@ -109,7 +109,7 @@ const WalletPage = () => {
             showToast('Wallet reset to $10,000,000 CLP');
             fetchData();
             setInsight(null); // Clear insight after reset
-        } catch (err) {
+        } catch {
             showToast('Error resetting wallet', 'error');
             playError();
         }

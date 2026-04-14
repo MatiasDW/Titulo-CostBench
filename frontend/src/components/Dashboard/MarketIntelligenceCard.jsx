@@ -23,14 +23,12 @@ const MarketIntelligenceCard = () => {
     const [insights, setInsights] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [lastRun, setLastRun] = useState(null);
 
     useEffect(() => {
         const fetchInsights = async () => {
             try {
                 const response = await axios.get('/api/v1/market/markov-insights');
                 setInsights(response.data.insights || []);
-                setLastRun(response.data.run_date);
                 setLoading(false);
             } catch (err) {
                 console.error("Failed to fetch Markov insights:", err);

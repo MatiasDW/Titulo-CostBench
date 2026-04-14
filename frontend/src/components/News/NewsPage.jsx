@@ -183,7 +183,7 @@ const NewsPage = () => {
                     [tabKey]: data.articles || [],
                 }));
             }
-        } catch (err) {
+        } catch {
             setErrors((prev) => ({
                 ...prev,
                 [tabKey]: 'Network error — check your connection',
