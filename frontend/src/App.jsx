@@ -132,6 +132,16 @@ const App = () => {
           <DashboardLayout>{dashboard}</DashboardLayout>
         </ProtectedRoute>
       } />
+      <Route path="/ranking" element={
+        <ProtectedRoute>
+          <DashboardLayout>{dashboard}</DashboardLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/macro" element={
+        <ProtectedRoute>
+          <DashboardLayout>{dashboard}</DashboardLayout>
+        </ProtectedRoute>
+      } />
       <Route
         path="/"
         element={
