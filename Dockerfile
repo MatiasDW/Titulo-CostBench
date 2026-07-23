@@ -11,6 +11,14 @@ WORKDIR /app
 COPY requirements.txt requirements-ml.txt ./
 RUN pip install --no-cache-dir -r requirements.txt -r requirements-ml.txt
 
+FROM node:20.19-alpine as frontend-build
+
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
@@ -31,6 +39,7 @@ WORKDIR /app
 COPY --from=base /usr/local/lib/python3.11 /usr/local/lib/python3.11
 COPY --from=base /usr/local/bin /usr/local/bin
 COPY . .
+COPY --from=frontend-build /frontend/dist /app/frontend/dist
 
 RUN mkdir -p /app/data
 

@@ -1,6 +1,8 @@
 """Flask application factory."""
 
-from flask import Flask, jsonify
+from pathlib import Path
+
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 
 try:
@@ -14,6 +16,8 @@ from app.config import config
 def create_app(config_name="default"):
     """Create and configure the Flask application."""
     app = Flask(__name__)
+    frontend_dist = Path(app.root_path).parent / "frontend" / "dist"
+    frontend_index = frontend_dist / "index.html"
 
     # Enable gzip compression if flask-compress is available
     if Compress is not None:
@@ -116,9 +120,8 @@ def create_app(config_name="default"):
             {"status": "healthy", "service": "cost-benchmark-api", "version": "0.1.0"}
         )
 
-    # Root endpoint
-    @app.route("/")
-    def index():
+    @app.route("/api")
+    def api_index():
         return jsonify(
             {
                 "service": "Chilean Bank Cost Benchmark API",
@@ -140,6 +143,24 @@ def create_app(config_name="default"):
                 },
             }
         )
+
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def spa(path: str):
+        """Serve the built React app from the Flask container when available."""
+        if path.startswith("api/"):
+            return jsonify({"error": "Not found"}), 404
+
+        if frontend_index.exists():
+            if path:
+                candidate = frontend_dist / path
+                if candidate.exists() and candidate.is_file():
+                    return send_from_directory(frontend_dist, path)
+            return send_from_directory(frontend_dist, "index.html")
+
+        if not path:
+            return api_index()
+        return jsonify({"error": "Not found"}), 404
 
     # Error handlers
     @app.errorhandler(404)
