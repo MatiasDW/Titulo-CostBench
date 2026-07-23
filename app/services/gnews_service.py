@@ -14,6 +14,8 @@ Endpoints used:
 import os
 import json
 import logging
+import html
+import re
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from xml.etree import ElementTree
@@ -27,10 +29,11 @@ logger = logging.getLogger(__name__)
 # ── Configuration ─────────────────────────────────────────────
 GNEWS_API_KEY = os.getenv("GNEWS_API_KEY", "")
 GNEWS_BASE_URL = "https://gnews.io/api/v4"
-CACHE_TTL = 7200  # 2 hours in seconds
+CACHE_TTL = 60 * 60 * 12  # 12 hours; GNews free plan refreshes slowly
 LAST_GOOD_SUFFIX = ":last_good"
 COOLDOWN_SUFFIX = ":cooldown"
-COOLDOWN_TTL = 1800  # 30 minutes
+COOLDOWN_TTL = 60 * 60 * 6  # 6 hours
+MEDIA_NS = {"media": "http://search.yahoo.com/mrss/"}
 
 
 # ── TOON Compression ─────────────────────────────────────────
@@ -97,6 +100,67 @@ def _format_date(iso_str: str) -> str:
         return iso_str[:16] if iso_str else ""
 
 
+def _clean_text(value: str | None) -> str:
+    """Decode entities, strip tags, and collapse whitespace."""
+    if not value:
+        return ""
+    text = html.unescape(value).replace("\xa0", " ")
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def _extract_image_from_rss(item: ElementTree.Element, description_html: str) -> str | None:
+    """Try to resolve an image URL from RSS media tags or embedded markup."""
+    media_content = item.find("media:content", MEDIA_NS)
+    if media_content is not None:
+        url = (media_content.attrib.get("url") or "").strip()
+        if url:
+            return url
+
+    media_thumbnail = item.find("media:thumbnail", MEDIA_NS)
+    if media_thumbnail is not None:
+        url = (media_thumbnail.attrib.get("url") or "").strip()
+        if url:
+            return url
+
+    enclosure = item.find("enclosure")
+    if enclosure is not None:
+        url = (enclosure.attrib.get("url") or "").strip()
+        if url:
+            return url
+
+    match = re.search(r'<img[^>]+src="([^"]+)"', description_html or "", re.IGNORECASE)
+    if match:
+        return html.unescape(match.group(1)).strip()
+
+    return None
+
+
+def _clean_rss_description(description_html: str, *, title: str, source_name: str) -> str:
+    """Convert RSS description HTML into a plain snippet."""
+    description = _clean_text(description_html)
+    if not description:
+        return ""
+
+    lower_description = description.lower()
+    title_lower = title.lower()
+    source_lower = source_name.lower()
+
+    if lower_description.startswith(title_lower):
+        description = description[len(title):].strip(" -:|")
+
+    source_index = description.lower().find(source_lower)
+    if source_index > 0:
+        description = description[:source_index].strip(" -:|")
+
+    # Google News RSS descriptions are often only the linked title + source.
+    if not description or description.lower() in {title_lower, source_lower}:
+        return ""
+
+    return description
+
+
 def _normalize_articles(articles: list[dict], *, max_items: int) -> list[dict]:
     """Deduplicate and trim headline lists while keeping stable order."""
     normalized: list[dict] = []
@@ -104,7 +168,9 @@ def _normalize_articles(articles: list[dict], *, max_items: int) -> list[dict]:
 
     for article in articles or []:
         url = (article.get("url") or "").strip()
-        title = (article.get("title") or "").strip()
+        title = _clean_text(article.get("title"))
+        article["title"] = title
+        article["description"] = _clean_text(article.get("description"))
         fingerprint = (url or title).lower()
         if not fingerprint or fingerprint in seen:
             continue
@@ -192,21 +258,27 @@ def _rss_fallback(feed_url: str, *, max_items: int) -> list[dict]:
         title = (item.findtext("title") or "").strip()
         url = (item.findtext("link") or "").strip()
         published_at = _rss_datetime(item.findtext("pubDate") or "")
+        description_html = item.findtext("description") or ""
         if not title or not url:
             continue
-        source_name = "RSS fallback"
+        source_name = _clean_text(item.findtext("source") or "") or "RSS fallback"
         if " - " in title:
             title_parts = title.rsplit(" - ", 1)
             if len(title_parts) == 2 and title_parts[1].strip():
                 title = title_parts[0].strip()
-                source_name = title_parts[1].strip()
+                if source_name == "RSS fallback":
+                    source_name = title_parts[1].strip()
         articles.append(
             {
-                "title": title,
-                "description": item.findtext("description") or "",
+                "title": _clean_text(title),
+                "description": _clean_rss_description(
+                    description_html,
+                    title=title,
+                    source_name=source_name,
+                ),
                 "url": url,
                 "publishedAt": published_at,
-                "image": None,
+                "image": _extract_image_from_rss(item, description_html),
                 "source": {"name": source_name},
             }
         )
@@ -272,7 +344,7 @@ def fetch_chile_news() -> dict:
 
     Search query: Chile AND (economía OR finanzas OR inmobiliario)
     """
-    cache_key = "gnews:chile"
+    cache_key = "gnews:v2:chile"
     cached = cache_get(cache_key)
     if cached:
         logger.info("gnews_chile_cache_hit")
@@ -310,7 +382,7 @@ def fetch_chile_news() -> dict:
         warning="GNews is rate limited, using RSS backup headlines.",
     )
     if rss_payload:
-        cache_set(cache_key, rss_payload, ttl=3600)
+        cache_set(cache_key, rss_payload, ttl=CACHE_TTL)
         _set_last_good(cache_key, rss_payload)
         return rss_payload
     return _stale_fallback(cache_key, result["error"])
@@ -318,7 +390,7 @@ def fetch_chile_news() -> dict:
 
 def fetch_world_news() -> dict:
     """Fetch world business top-headlines (cached 12h)."""
-    cache_key = "gnews:world"
+    cache_key = "gnews:v2:world"
     cached = cache_get(cache_key)
     if cached:
         logger.info("gnews_world_cache_hit")
@@ -354,7 +426,7 @@ def fetch_world_news() -> dict:
         warning="GNews is rate limited, using RSS backup headlines.",
     )
     if rss_payload:
-        cache_set(cache_key, rss_payload, ttl=3600)
+        cache_set(cache_key, rss_payload, ttl=CACHE_TTL)
         _set_last_good(cache_key, rss_payload)
         return rss_payload
     return _stale_fallback(cache_key, result["error"])

@@ -2,6 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaNewspaper, FaRobot, FaExternalLinkAlt, FaGlobeAmericas } from 'react-icons/fa';
 import SclodaChat from '../SclodaChat';
+import chileSkyline from '../../assets/landing/chile-santiago-skyline.jpg';
+import chileSanhattan from '../../assets/landing/chile-las-condes-sanhattan.jpg';
+import chileValparaiso from '../../assets/landing/chile-valparaiso-hills.jpg';
+import chileNight from '../../assets/santiago_night.png';
 import './NewsPage.css';
 
 const API_BASE = '/api/v1/news';
@@ -13,7 +17,30 @@ const TABS = [
     { key: 'world', label: '🌎 World', endpoint: `${API_BASE}/world` },
 ];
 
-const cacheKeyFor = (tabKey) => `costbench_news_cache_v3:${tabKey}`;
+const FALLBACK_IMAGES = {
+    chile: [chileSkyline, chileSanhattan, chileValparaiso, chileNight],
+    world: [chileSanhattan, chileNight, chileSkyline, chileValparaiso],
+};
+
+const cacheKeyFor = (tabKey) => `costbench_news_cache_v4:${tabKey}`;
+
+const cleanInlineText = (value) => {
+    if (!value) return '';
+    return value
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
+};
+
+const normalizeArticle = (article) => ({
+    ...article,
+    title: cleanInlineText(article?.title),
+    description: cleanInlineText(article?.description),
+});
 
 const readFrontendCache = (tabKey) => {
     try {
@@ -22,7 +49,10 @@ const readFrontendCache = (tabKey) => {
         const parsed = JSON.parse(raw);
         if (!parsed?.saved_at || !Array.isArray(parsed?.articles)) return null;
         if (Date.now() - parsed.saved_at > FRONTEND_CACHE_TTL_MS) return null;
-        return parsed;
+        return {
+            ...parsed,
+            articles: parsed.articles.map(normalizeArticle),
+        };
     } catch {
         return null;
     }
@@ -53,8 +83,13 @@ const SkeletonCard = () => (
 );
 
 /* ── News Card ───────────────────────────────── */
-const NewsCard = ({ article, index, onAnalyze, analysisData }) => {
+const NewsCard = ({ article, index, onAnalyze, analysisData, fallbackImage }) => {
     const [analyzing, setAnalyzing] = useState(false);
+    const [imageSrc, setImageSrc] = useState(article.image || fallbackImage || '');
+
+    useEffect(() => {
+        setImageSrc(article.image || fallbackImage || '');
+    }, [article.image, fallbackImage]);
 
     const handleAnalyze = async () => {
         setAnalyzing(true);
@@ -84,23 +119,27 @@ const NewsCard = ({ article, index, onAnalyze, analysisData }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.06, duration: 0.35 }}
         >
-            {article.image ? (
+            {imageSrc ? (
                 <img
                     className="news-card-image"
-                    src={article.image}
+                    src={imageSrc}
                     alt={article.title}
                     loading="lazy"
                     onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling && (e.target.nextSibling.style.display = 'flex');
+                        if (fallbackImage && imageSrc !== fallbackImage) {
+                            setImageSrc(fallbackImage);
+                            return;
+                        }
+                        setImageSrc('');
                     }}
                 />
             ) : null}
-            {!article.image && (
-                <div className="news-card-image-placeholder">
-                    <FaNewspaper />
-                </div>
-            )}
+            <div
+                className="news-card-image-placeholder"
+                style={{ display: imageSrc ? 'none' : 'flex' }}
+            >
+                <FaNewspaper />
+            </div>
 
             <div className="news-card-body">
                 {/* Meta */}
@@ -222,7 +261,7 @@ const NewsPage = () => {
                     setArticles((prev) => ({ ...prev, [tabKey]: [] }));
                 }
             } else {
-                const nextArticles = data.articles || [];
+                const nextArticles = (data.articles || []).map(normalizeArticle);
                 setArticles((prev) => ({
                     ...prev,
                     [tabKey]: nextArticles,
@@ -436,6 +475,7 @@ const NewsPage = () => {
                             index={i}
                             onAnalyze={handleAnalyze}
                             analysisData={analyses[`${activeTab}-${i}`]}
+                            fallbackImage={FALLBACK_IMAGES[activeTab][i % FALLBACK_IMAGES[activeTab].length]}
                         />
                     ))}
                 </div>
