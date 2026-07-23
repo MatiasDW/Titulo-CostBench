@@ -12,8 +12,10 @@ Endpoints:
 from functools import wraps
 
 from flask import Blueprint, g, jsonify, request, make_response, current_app
+from sqlalchemy.orm import joinedload, selectinload
 
-from app.models.user import User
+from app.extensiones import db
+from app.models.user import User, VALID_ROLES
 from app.services.auth_service import (
     register_user,
     authenticate_user,
@@ -101,6 +103,19 @@ def _set_token_cookie(response, user_id: int):
     return response
 
 
+def _serialize_admin_user(user: User) -> dict:
+    """Extended user payload for admin operations."""
+    wallet = getattr(user, "wallet", None)
+    return {
+        **user.to_dict(),
+        "has_wallet": wallet is not None,
+        "wallet_balance": float(wallet.balance) if wallet is not None else None,
+        "trace_count": len(getattr(user, "scloda_traces", []) or []),
+        "review_count": len(getattr(user, "scloda_review_items", []) or []),
+        "assigned_review_count": len(getattr(user, "assigned_scloda_reviews", []) or []),
+    }
+
+
 # ------------------------------------------------------------------
 # Endpoints
 # ------------------------------------------------------------------
@@ -152,6 +167,89 @@ def logout():
 def me():
     """GET /api/v1/auth/me – return current user data."""
     return jsonify({"user": g.current_user.to_dict()})
+
+
+@auth_bp.route("/admin/users", methods=["GET"])
+@require_admin
+def admin_users():
+    """GET /api/v1/auth/admin/users – list accounts and admin-facing counts."""
+    users = (
+        User.query.options(
+            joinedload(User.wallet),
+            selectinload(User.scloda_traces),
+            selectinload(User.scloda_review_items),
+            selectinload(User.assigned_scloda_reviews),
+        )
+        .order_by(User.created_at.desc())
+        .all()
+    )
+
+    payload = [_serialize_admin_user(user) for user in users]
+    summary = {
+        "total_users": len(payload),
+        "active_users": sum(1 for user in payload if user["is_active"]),
+        "admin_users": sum(1 for user in payload if user["is_admin"]),
+        "onboarded_users": sum(1 for user in payload if user["onboarding_completed"]),
+        "wallet_users": sum(1 for user in payload if user["has_wallet"]),
+    }
+    return jsonify({"users": payload, "summary": summary})
+
+
+@auth_bp.route("/admin/users/<int:user_id>", methods=["PATCH"])
+@require_admin
+def admin_update_user(user_id: int):
+    """PATCH /api/v1/auth/admin/users/<id> – toggle role/active state for operators."""
+    target = db.session.get(User, user_id)
+    if target is None:
+        return jsonify({"error": "Usuario no encontrado."}), 404
+
+    data = request.get_json(silent=True) or {}
+
+    next_role = data.get("role", target.role)
+    next_active = data.get("is_active", target.is_active)
+
+    if next_role not in VALID_ROLES:
+        return jsonify({"error": "Rol inválido."}), 400
+
+    if target.id == g.current_user.id and next_role != "admin":
+        return jsonify({"error": "No puedes quitarte permisos de admin a ti mismo."}), 400
+
+    if target.id == g.current_user.id and not bool(next_active):
+        return jsonify({"error": "No puedes desactivar tu propia cuenta."}), 400
+
+    if target.role == "admin" and next_role != "admin":
+        remaining_admins = User.query.filter(
+            User.role == "admin",
+            User.id != target.id,
+            User.is_active.is_(True),
+        ).count()
+        if remaining_admins == 0:
+            return jsonify({"error": "Debe existir al menos un admin activo."}), 400
+
+    if target.role == "admin" and target.is_active and not bool(next_active):
+        remaining_admins = User.query.filter(
+            User.role == "admin",
+            User.id != target.id,
+            User.is_active.is_(True),
+        ).count()
+        if remaining_admins == 0:
+            return jsonify({"error": "Debe existir al menos un admin activo."}), 400
+
+    target.role = next_role
+    target.is_active = bool(next_active)
+    db.session.commit()
+
+    refreshed = (
+        User.query.options(
+            joinedload(User.wallet),
+            selectinload(User.scloda_traces),
+            selectinload(User.scloda_review_items),
+            selectinload(User.assigned_scloda_reviews),
+        )
+        .filter(User.id == target.id)
+        .first()
+    )
+    return jsonify({"user": _serialize_admin_user(refreshed)})
 
 
 @auth_bp.route("/profile", methods=["PUT"])

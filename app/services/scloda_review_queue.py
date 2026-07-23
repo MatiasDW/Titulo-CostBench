@@ -27,7 +27,34 @@ CAPABILITY_SEED = [
         "status": "active",
         "maturity_score": 68,
         "description": "Core orchestration, guardrails, routing, and grounded responses.",
-        "metadata_json": {"kind": "root"},
+        "metadata_json": {
+            "kind": "root",
+            "focus": "Production orchestration",
+            "interactive_note": "Click any child branch to inspect live signals, gaps, and next training work.",
+            "progress_breakdown": [
+                {
+                    "label": "Routing + tool use",
+                    "value": 82,
+                    "detail": "Single-agent routing, task classification, and production tool calling are already live."
+                },
+                {
+                    "label": "Grounding quality",
+                    "value": 71,
+                    "detail": "pgvector-backed retrieval and DB knowledge cache exist, but coverage is still uneven by domain."
+                },
+                {
+                    "label": "Learning loop",
+                    "value": 44,
+                    "detail": "Trace capture and review queue exist, but there is no true supervised model-training pipeline yet."
+                },
+                {
+                    "label": "Observability",
+                    "value": 63,
+                    "detail": "Internal traces and summaries exist, but external observability and richer dashboards are still partial."
+                },
+            ],
+            "mermaid": "\nflowchart LR\n    U[User prompt] --> G[Guardrails]\n    G --> R[Task router]\n    R --> M[OpenRouter model]\n    M --> T[Tools + pgvector retrieval]\n    T --> C[Grounded answer]\n    C --> S[Confidence scoring]\n    S --> H{Low confidence?}\n    H -- no --> O[Output to user]\n    H -- yes --> Q[Human review queue]\n",
+        },
     },
     {
         "slug": "scloda-real-estate",
@@ -67,7 +94,32 @@ CAPABILITY_SEED = [
         "status": "in_progress",
         "maturity_score": 24,
         "description": "Research space for quantum computing, neural-network experiments, and future agent capabilities.",
-        "metadata_json": {"source": "planned_product"},
+        "metadata_json": {
+            "source": "planned_product",
+            "focus": "Research and training sandbox",
+            "progress_breakdown": [
+                {
+                    "label": "Research framing",
+                    "value": 62,
+                    "detail": "The product direction is clear: neural training, domain graphs, and quantum research all have named tracks."
+                },
+                {
+                    "label": "Interactive tooling",
+                    "value": 28,
+                    "detail": "The lab is becoming navigable, but there are not yet full admin actions that mutate or train models."
+                },
+                {
+                    "label": "Trainable assets",
+                    "value": 18,
+                    "detail": "Useful data is being captured, but we do not yet have a formal labeled dataset or training runner."
+                },
+            ],
+            "next_actions": [
+                "Label real user conversations by task type and failure mode.",
+                "Curate research modules for quantum + neural experiments.",
+                "Build admin workflows that turn review outcomes into trainable data."
+            ],
+        },
     },
     {
         "slug": "scloda-neural-memory",
@@ -77,7 +129,31 @@ CAPABILITY_SEED = [
         "status": "in_progress",
         "maturity_score": 37,
         "description": "DB-backed retrieval memory, trace dataset growth, and controlled long-term knowledge.",
-        "metadata_json": {"source": "current_iteration"},
+        "metadata_json": {
+            "source": "current_iteration",
+            "focus": "Vector memory and reusable knowledge",
+            "progress_breakdown": [
+                {
+                    "label": "Embedding storage",
+                    "value": 78,
+                    "detail": "Embeddings and native pgvector columns are already persisted in Postgres."
+                },
+                {
+                    "label": "Coverage breadth",
+                    "value": 34,
+                    "detail": "Important documents and schema are indexed, but not every product dataset is yet embedded semantically."
+                },
+                {
+                    "label": "Memory reuse",
+                    "value": 29,
+                    "detail": "The memory helps grounding today, but it is not yet feeding a closed-loop training system."
+                },
+            ],
+            "next_actions": [
+                "Expand semantic indexing beyond docs into more domain tables.",
+                "Attach retrieval quality labels to successful and failed answers."
+            ],
+        },
     },
     {
         "slug": "scloda-neural-network",
@@ -87,7 +163,65 @@ CAPABILITY_SEED = [
         "status": "planned",
         "maturity_score": 18,
         "description": "Future space for labeled conversation sets, supervised tuning signals, and domain-specific learning loops.",
-        "metadata_json": {"source": "roadmap"},
+        "metadata_json": {
+            "source": "roadmap",
+            "focus": "Future supervised training",
+            "progress_breakdown": [
+                {
+                    "label": "Dataset capture",
+                    "value": 42,
+                    "detail": "Traces, review queue outcomes, and retrieved context already create the raw substrate."
+                },
+                {
+                    "label": "Human labeling",
+                    "value": 19,
+                    "detail": "The queue exists, but labeling conventions and adjudication flows are still minimal."
+                },
+                {
+                    "label": "Training automation",
+                    "value": 6,
+                    "detail": "There is no current fine-tuning or recurrent training job running on the collected data."
+                },
+                {
+                    "label": "Eval feedback loop",
+                    "value": 14,
+                    "detail": "There is some internal review logic, but not a formal closed loop from errors back into model updates."
+                },
+            ],
+            "next_actions": [
+                "Define labels for task type, failure mode, grounding quality, and reviewer verdict.",
+                "Export approved conversations into train/validation slices.",
+                "Train a small domain classifier or re-ranker before any larger model fine-tuning."
+            ],
+            "loop_steps": [
+                {
+                    "title": "Capture",
+                    "subtitle": "Store prompts, answers, tools, chunks, latency, and confidence.",
+                    "state": "live"
+                },
+                {
+                    "title": "Review",
+                    "subtitle": "Escalate weak answers into the admin queue for human feedback.",
+                    "state": "live"
+                },
+                {
+                    "title": "Label",
+                    "subtitle": "Tag outcome, intent, domain, and failure cluster.",
+                    "state": "next"
+                },
+                {
+                    "title": "Assemble Dataset",
+                    "subtitle": "Build supervised slices for tuning, ranking, or routing.",
+                    "state": "planned"
+                },
+                {
+                    "title": "Train + Evaluate",
+                    "subtitle": "Run experiments and compare against live guardrails before release.",
+                    "state": "planned"
+                },
+            ],
+            "mermaid": "\nflowchart LR\n    A[User conversations + tool traces] --> B[Trace store]\n    B --> C[Human review queue]\n    C --> D[Intent + failure labels]\n    D --> E[Training dataset]\n    E --> F[Train classifier / reranker / future fine-tune]\n    F --> G[Offline evaluation]\n    G --> H[Safer routing + better answers]\n    H --> A\n",
+        },
     },
     {
         "slug": "scloda-agent-topology",
@@ -97,7 +231,28 @@ CAPABILITY_SEED = [
         "status": "in_progress",
         "maturity_score": 29,
         "description": "Visual map of guardrails, routing, memory, tools, and human review so future capabilities stay explainable.",
-        "metadata_json": {"source": "roadmap"},
+        "metadata_json": {
+            "source": "roadmap",
+            "focus": "Explainable system topology",
+            "progress_breakdown": [
+                {
+                    "label": "System mapping",
+                    "value": 61,
+                    "detail": "The current flow from prompt to review is already documented and visible in-product."
+                },
+                {
+                    "label": "Interactivity",
+                    "value": 26,
+                    "detail": "Nodes can now become navigable, but there are still no direct operator actions behind every branch."
+                },
+                {
+                    "label": "Training visibility",
+                    "value": 18,
+                    "detail": "The learning loop is still mostly conceptual, not yet a live training control surface."
+                },
+            ],
+            "mermaid": "\nflowchart TD\n    I[Inputs] --> C[Core agent]\n    C --> G[Grounding layer]\n    G --> T[Trust + confidence]\n    T --> R[Review queue]\n    R --> N[Neural training loop]\n    N --> C\n",
+        },
     },
     {
         "slug": "scloda-human-review",
@@ -107,7 +262,27 @@ CAPABILITY_SEED = [
         "status": "active",
         "maturity_score": 52,
         "description": "Escalation path for low-confidence or risky answers before product trust is damaged.",
-        "metadata_json": {"source": "current_iteration"},
+        "metadata_json": {
+            "source": "current_iteration",
+            "focus": "Human oversight",
+            "progress_breakdown": [
+                {
+                    "label": "Escalation trigger",
+                    "value": 71,
+                    "detail": "Low-confidence and risky traces can already be persisted into a queue."
+                },
+                {
+                    "label": "Reviewer tooling",
+                    "value": 43,
+                    "detail": "Claiming and resolving exist, but operator workflows are still shallow."
+                },
+                {
+                    "label": "Training feedback",
+                    "value": 31,
+                    "detail": "Review outcomes are useful, but they are not yet systematically recycled into labeled training assets."
+                },
+            ],
+        },
     },
     {
         "slug": "scloda-rag-docs",
@@ -117,7 +292,27 @@ CAPABILITY_SEED = [
         "status": "in_progress",
         "maturity_score": 43,
         "description": "Roadmap toward combining SII, MINVU, INE, BDE, CBR, and live marketplace signals.",
-        "metadata_json": {"source": "deep_research_report"},
+        "metadata_json": {
+            "source": "deep_research_report",
+            "focus": "Real-estate data graph",
+            "progress_breakdown": [
+                {
+                    "label": "Source definition",
+                    "value": 74,
+                    "detail": "Core Chilean real-estate sources are already identified and aligned to product use cases."
+                },
+                {
+                    "label": "Integrated pipelines",
+                    "value": 33,
+                    "detail": "Some metrics and seeds exist, but the unified graph is not yet assembled."
+                },
+                {
+                    "label": "Agent exploitation",
+                    "value": 24,
+                    "detail": "The agent can reason over some real-estate context, but not yet over a connected national property graph."
+                },
+            ],
+        },
     },
 ]
 
