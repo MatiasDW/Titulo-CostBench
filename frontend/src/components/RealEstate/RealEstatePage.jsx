@@ -41,6 +41,7 @@ const RealEstatePage = () => {
     const carouselRef = useRef(null);
     const chartContainerRef = useRef(null);
     const chartInstanceRef = useRef(null);
+    const carouselPausedRef = useRef(false);
 
     // ---- CAROUSEL HANDLERS ----
     const scrollCarousel = (direction) => {
@@ -49,6 +50,39 @@ const RealEstatePage = () => {
             carouselRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
         }
     };
+
+    useEffect(() => {
+        const carousel = carouselRef.current;
+        if (!carousel || metrics.length < 2) return undefined;
+
+        let animationFrameId;
+        let previousTs = performance.now();
+        const loopPoint = carousel.scrollWidth / 2;
+        const pxPerMs = 0.03;
+
+        const tick = (ts) => {
+            const delta = ts - previousTs;
+            previousTs = ts;
+
+            if (!carouselPausedRef.current) {
+                carousel.scrollLeft += delta * pxPerMs;
+                if (carousel.scrollLeft >= loopPoint) {
+                    carousel.scrollLeft -= loopPoint;
+                }
+            }
+
+            animationFrameId = window.requestAnimationFrame(tick);
+        };
+
+        carousel.scrollLeft = 0;
+        animationFrameId = window.requestAnimationFrame(tick);
+
+        return () => {
+            if (animationFrameId) {
+                window.cancelAnimationFrame(animationFrameId);
+            }
+        };
+    }, [metrics]);
 
     // ---- EFFECT: Fetch Initial Metrics ----
     useEffect(() => {
@@ -227,6 +261,8 @@ const RealEstatePage = () => {
         );
     }
 
+    const carouselMetrics = metrics.length > 1 ? [...metrics, ...metrics] : metrics;
+
     return (
         <>
             <style>{customScrollStyles}</style>
@@ -288,14 +324,17 @@ const RealEstatePage = () => {
                         className="d-flex gap-3 custom-carousel py-3 px-2"
                         // Increased paddingBottom to 220px so Scloda Insight fits without cutting off
                         style={{ overflowX: 'auto', overflowY: 'visible', paddingBottom: '220px' }}
+                        onMouseEnter={() => { carouselPausedRef.current = true; }}
+                        onMouseLeave={() => { carouselPausedRef.current = false; }}
                     >
-                        {metrics.map((m, idx) => (
+                        {carouselMetrics.map((m, idx) => (
                             <div key={idx} className="position-relative flex-shrink-0" style={{ width: '220px', scrollSnapAlign: 'start' }}>
                                 <div
                                     className={`card h-100 p-3 shadow-sm border ${selectedComuna === m.comuna ? 'border-primary' : 'border-secondary'}`}
                                     style={{ backgroundColor: selectedComuna === m.comuna ? '#1f2937' : '#161b22', cursor: 'pointer', transition: '0.2s' }}
                                     onClick={() => setSelectedComuna(m.comuna)}
                                     onMouseEnter={(e) => {
+                                        carouselPausedRef.current = true;
                                         const rect = e.currentTarget.getBoundingClientRect();
                                         setTooltipStyle({
                                             position: 'fixed',
@@ -304,9 +343,12 @@ const RealEstatePage = () => {
                                             width: '280px',
                                             zIndex: 1050
                                         });
-                                        setHoveredCard(idx);
+                                        setHoveredCard(idx % metrics.length);
                                     }}
-                                    onMouseLeave={() => setHoveredCard(null)}
+                                    onMouseLeave={() => {
+                                        carouselPausedRef.current = false;
+                                        setHoveredCard(null);
+                                    }}
                                 >
                                     <div className="d-flex justify-content-between align-items-center mb-1">
                                         <h6 className="text-light fw-bold mb-0 text-uppercase text-truncate me-2" style={{ fontSize: '0.80rem', letterSpacing: '0.5px' }} title={m.comuna}>{m.comuna}</h6>

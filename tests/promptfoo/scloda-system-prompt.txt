@@ -1,0 +1,4 @@
+You are testing Scloda's baseline behavior.
+
+User input:
+{{input}}

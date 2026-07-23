@@ -5,12 +5,39 @@ import SclodaChat from '../SclodaChat';
 import './NewsPage.css';
 
 const API_BASE = '/api/v1/news';
+const FRONTEND_CACHE_TTL_MS = 30 * 60 * 1000;
 
 /* ── Tab definitions ─────────────────────────── */
 const TABS = [
     { key: 'chile', label: '🇨🇱 Chile', endpoint: `${API_BASE}/chile` },
     { key: 'world', label: '🌎 World', endpoint: `${API_BASE}/world` },
 ];
+
+const cacheKeyFor = (tabKey) => `costbench_news_cache_v3:${tabKey}`;
+
+const readFrontendCache = (tabKey) => {
+    try {
+        const raw = window.localStorage.getItem(cacheKeyFor(tabKey));
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed?.saved_at || !Array.isArray(parsed?.articles)) return null;
+        if (Date.now() - parsed.saved_at > FRONTEND_CACHE_TTL_MS) return null;
+        return parsed;
+    } catch {
+        return null;
+    }
+};
+
+const writeFrontendCache = (tabKey, payload) => {
+    try {
+        window.localStorage.setItem(cacheKeyFor(tabKey), JSON.stringify({
+            ...payload,
+            saved_at: Date.now(),
+        }));
+    } catch {
+        // Ignore localStorage failures
+    }
+};
 
 /* ── Skeleton Card ───────────────────────────── */
 const SkeletonCard = () => (
@@ -157,7 +184,9 @@ const NewsPage = () => {
     const [articles, setArticles] = useState({ chile: [], world: [] });
     const [loading, setLoading] = useState({ chile: true, world: true });
     const [errors, setErrors] = useState({ chile: null, world: null });
+    const [meta, setMeta] = useState({ chile: null, world: null });
     const [analyses, setAnalyses] = useState({}); // { "chile-0": "text", ... }
+    const [loadedTabs, setLoadedTabs] = useState({ chile: false, world: false });
 
     /* ── Fetch news for a tab ──────────────── */
     const fetchNews = useCallback(async (tabKey) => {
@@ -172,32 +201,124 @@ const NewsPage = () => {
             const data = await res.json();
 
             if (!res.ok || data.error) {
-                setErrors((prev) => ({
-                    ...prev,
-                    [tabKey]: data.error || 'Failed to load news',
-                }));
-                setArticles((prev) => ({ ...prev, [tabKey]: [] }));
+                const fallback = readFrontendCache(tabKey);
+                if (fallback?.articles?.length) {
+                    setArticles((prev) => ({ ...prev, [tabKey]: fallback.articles }));
+                    setMeta((prev) => ({
+                        ...prev,
+                        [tabKey]: {
+                            fetched_at: fallback.fetched_at,
+                            stale: true,
+                            source_status: 'frontend_cache',
+                            warning: data.error || 'Using cached headlines',
+                        },
+                    }));
+                    setErrors((prev) => ({ ...prev, [tabKey]: null }));
+                } else {
+                    setErrors((prev) => ({
+                        ...prev,
+                        [tabKey]: data.error || 'Failed to load news',
+                    }));
+                    setArticles((prev) => ({ ...prev, [tabKey]: [] }));
+                }
             } else {
+                const nextArticles = data.articles || [];
                 setArticles((prev) => ({
                     ...prev,
-                    [tabKey]: data.articles || [],
+                    [tabKey]: nextArticles,
                 }));
+                setMeta((prev) => ({
+                    ...prev,
+                    [tabKey]: {
+                        fetched_at: data.fetched_at,
+                        stale: Boolean(data.stale),
+                        source_status: data.source_status || 'live',
+                        warning: data.warning || null,
+                    },
+                }));
+                writeFrontendCache(tabKey, {
+                    articles: nextArticles,
+                    fetched_at: data.fetched_at,
+                    stale: Boolean(data.stale),
+                    source_status: data.source_status || 'live',
+                });
             }
         } catch {
-            setErrors((prev) => ({
-                ...prev,
-                [tabKey]: 'Network error — check your connection',
-            }));
+            const fallback = readFrontendCache(tabKey);
+            if (fallback?.articles?.length) {
+                setArticles((prev) => ({ ...prev, [tabKey]: fallback.articles }));
+                setMeta((prev) => ({
+                    ...prev,
+                    [tabKey]: {
+                        fetched_at: fallback.fetched_at,
+                        stale: true,
+                        source_status: 'frontend_cache',
+                        warning: 'Using cached headlines while offline.',
+                    },
+                }));
+                setErrors((prev) => ({ ...prev, [tabKey]: null }));
+            } else {
+                setErrors((prev) => ({
+                    ...prev,
+                    [tabKey]: 'Network error — check your connection',
+                }));
+            }
         } finally {
+            setLoadedTabs((prev) => ({ ...prev, [tabKey]: true }));
             setLoading((prev) => ({ ...prev, [tabKey]: false }));
         }
     }, []);
 
-    /* ── Load both tabs on mount ────────────── */
+    /* ── Prime from local cache and lazy-load tabs ────────────── */
     useEffect(() => {
-        fetchNews('chile');
-        fetchNews('world');
+        const initialCache = {
+            chile: readFrontendCache('chile'),
+            world: readFrontendCache('world'),
+        };
+
+        setArticles((prev) => ({
+            ...prev,
+            chile: initialCache.chile?.articles || prev.chile,
+            world: initialCache.world?.articles || prev.world,
+        }));
+        setMeta((prev) => ({
+            ...prev,
+            chile: initialCache.chile
+                ? {
+                    fetched_at: initialCache.chile.fetched_at,
+                    stale: Boolean(initialCache.chile.stale),
+                    source_status: initialCache.chile.source_status || 'frontend_cache',
+                    warning: null,
+                }
+                : prev.chile,
+            world: initialCache.world
+                ? {
+                    fetched_at: initialCache.world.fetched_at,
+                    stale: Boolean(initialCache.world.stale),
+                    source_status: initialCache.world.source_status || 'frontend_cache',
+                    warning: null,
+                }
+                : prev.world,
+        }));
+        setLoading({
+            chile: !initialCache.chile,
+            world: !initialCache.world,
+        });
+        setLoadedTabs({
+            chile: Boolean(initialCache.chile),
+            world: Boolean(initialCache.world),
+        });
+
+        if (!initialCache.chile) {
+            fetchNews('chile');
+        }
     }, [fetchNews]);
+
+    useEffect(() => {
+        if (!loadedTabs[activeTab]) {
+            fetchNews(activeTab);
+        }
+    }, [activeTab, fetchNews, loadedTabs]);
 
     /* ── Analyze article with Scloda ────────── */
     const handleAnalyze = async (article, index) => {
@@ -230,6 +351,21 @@ const NewsPage = () => {
     const currentArticles = articles[activeTab] || [];
     const isLoading = loading[activeTab];
     const error = errors[activeTab];
+    const currentMeta = meta[activeTab];
+    const formatFetchedAt = (iso) => {
+        if (!iso) return null;
+        try {
+            return new Date(iso).toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+        } catch {
+            return iso;
+        }
+    };
 
     return (
         <div className="news-page">
@@ -242,6 +378,12 @@ const NewsPage = () => {
                 <p>
                     Financial headlines powered by GNews • Analyzed by Scloda AI
                 </p>
+                {currentMeta?.fetched_at && (
+                    <p style={{ marginTop: '0.5rem', fontSize: '0.92rem' }}>
+                        Updated {formatFetchedAt(currentMeta.fetched_at)}
+                        {currentMeta.stale ? ' • cached fallback' : ''}
+                    </p>
+                )}
             </div>
 
             {/* Tabs */}
@@ -266,6 +408,12 @@ const NewsPage = () => {
             {error && (
                 <div className="news-error">
                     <p>⚠️ {error}</p>
+                </div>
+            )}
+
+            {!error && currentMeta?.warning && (
+                <div className="news-error" style={{ borderColor: 'rgba(245, 158, 11, 0.35)', color: '#fcd34d' }}>
+                    <p>⚠️ {currentMeta.warning}</p>
                 </div>
             )}
 

@@ -14,8 +14,8 @@ def ensure_real_estate_ready(reset: bool = False) -> int:
     Returns:
         Number of rows currently in real_estate_metrics after bootstrap.
     """
-    # Creates missing tables only; safe with existing schemas.
-    db.create_all()
+    # Create only the table this bootstrap owns, not the full metadata graph.
+    RealEstateMetrics.__table__.create(bind=db.engine, checkfirst=True)
 
     if reset:
         db.session.query(RealEstateMetrics).delete()

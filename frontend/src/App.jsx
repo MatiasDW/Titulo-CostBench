@@ -9,6 +9,8 @@ import WalletPage from './components/Trading/WalletPage';
 import TradePage from './components/Trading/TradePage';
 import RealEstatePage from './components/RealEstate/RealEstatePage';
 import NewsPage from './components/News/NewsPage';
+import QuantumLabPage from './components/Quantum/QuantumLabPage';
+import AdminPanelPage from './components/Admin/AdminPanelPage';
 import DashboardLayout from './components/Auth/DashboardLayout';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import { useAuth } from './context/AuthContext';
@@ -126,6 +128,16 @@ const App = () => {
           <DashboardLayout><NewsPage /></DashboardLayout>
         </ProtectedRoute>
       } />
+      <Route path="/quantum-lab" element={
+        <ProtectedRoute>
+          <DashboardLayout><QuantumLabPage /></DashboardLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin" element={
+        <ProtectedRoute>
+          <DashboardLayout><AdminPanelPage /></DashboardLayout>
+        </ProtectedRoute>
+      } />
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/home" element={
         <ProtectedRoute>
@@ -134,12 +146,12 @@ const App = () => {
       } />
       <Route path="/ranking" element={
         <ProtectedRoute>
-          <DashboardLayout>{dashboard}</DashboardLayout>
+          <Navigate to="/home" replace />
         </ProtectedRoute>
       } />
       <Route path="/macro" element={
         <ProtectedRoute>
-          <DashboardLayout>{dashboard}</DashboardLayout>
+          <Navigate to="/home" replace />
         </ProtectedRoute>
       } />
       <Route

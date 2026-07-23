@@ -70,8 +70,10 @@ def create_app(config_name="default"):
         origins=[
             "http://localhost:5173",
             "http://localhost:5175",
+            "http://localhost:5125",
             "http://localhost:5000",
             "http://localhost:5001",
+            "http://localhost:5002",
         ],
     )
 

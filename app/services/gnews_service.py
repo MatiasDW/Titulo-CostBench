@@ -13,9 +13,10 @@ Endpoints used:
 
 import os
 import json
-import hashlib
 import logging
 from datetime import datetime
+from email.utils import parsedate_to_datetime
+from xml.etree import ElementTree
 
 import httpx
 
@@ -26,7 +27,10 @@ logger = logging.getLogger(__name__)
 # ── Configuration ─────────────────────────────────────────────
 GNEWS_API_KEY = os.getenv("GNEWS_API_KEY", "")
 GNEWS_BASE_URL = "https://gnews.io/api/v4"
-CACHE_TTL = 43200  # 12 hours in seconds
+CACHE_TTL = 7200  # 2 hours in seconds
+LAST_GOOD_SUFFIX = ":last_good"
+COOLDOWN_SUFFIX = ":cooldown"
+COOLDOWN_TTL = 1800  # 30 minutes
 
 
 # ── TOON Compression ─────────────────────────────────────────
@@ -93,6 +97,138 @@ def _format_date(iso_str: str) -> str:
         return iso_str[:16] if iso_str else ""
 
 
+def _normalize_articles(articles: list[dict], *, max_items: int) -> list[dict]:
+    """Deduplicate and trim headline lists while keeping stable order."""
+    normalized: list[dict] = []
+    seen: set[str] = set()
+
+    for article in articles or []:
+        url = (article.get("url") or "").strip()
+        title = (article.get("title") or "").strip()
+        fingerprint = (url or title).lower()
+        if not fingerprint or fingerprint in seen:
+            continue
+        seen.add(fingerprint)
+        normalized.append(article)
+        if len(normalized) >= max_items:
+            break
+
+    return normalized
+
+
+def _build_payload(
+    articles: list[dict],
+    *,
+    total: int | None = None,
+    fetched_at: str | None = None,
+    stale: bool = False,
+    source_status: str = "live",
+    warning: str | None = None,
+) -> dict:
+    return {
+        "articles": articles,
+        "toon": compress_articles_toon(articles),
+        "total": total if total is not None else len(articles),
+        "fetched_at": fetched_at or datetime.utcnow().isoformat(),
+        "stale": stale,
+        "source_status": source_status,
+        "warning": warning,
+    }
+
+
+def _set_last_good(cache_key: str, payload: dict) -> None:
+    cache_set(f"{cache_key}{LAST_GOOD_SUFFIX}", payload, ttl=60 * 60 * 24 * 14)
+
+
+def _get_last_good(cache_key: str) -> dict | None:
+    return cache_get(f"{cache_key}{LAST_GOOD_SUFFIX}") or cache_get(cache_key)
+
+
+def _set_cooldown(cache_key: str, reason: str) -> None:
+    cache_set(
+        f"{cache_key}{COOLDOWN_SUFFIX}",
+        {"reason": reason, "until": datetime.utcnow().isoformat()},
+        ttl=COOLDOWN_TTL,
+    )
+
+
+def _cooldown_active(cache_key: str) -> bool:
+    return cache_get(f"{cache_key}{COOLDOWN_SUFFIX}") is not None
+
+
+def _stale_fallback(cache_key: str, error_message: str) -> dict:
+    stale_payload = _get_last_good(cache_key)
+    if stale_payload:
+        return _build_payload(
+            stale_payload.get("articles", []),
+            total=stale_payload.get("total"),
+            fetched_at=stale_payload.get("fetched_at"),
+            stale=True,
+            source_status="stale_cache",
+            warning=error_message,
+        )
+    return {"error": error_message, "articles": []}
+
+
+def _rss_datetime(value: str) -> str:
+    try:
+        return parsedate_to_datetime(value).isoformat()
+    except Exception:
+        return datetime.utcnow().isoformat()
+
+
+def _rss_fallback(feed_url: str, *, max_items: int) -> list[dict]:
+    try:
+        with httpx.Client(timeout=10.0, follow_redirects=True) as client:
+            response = client.get(feed_url)
+            response.raise_for_status()
+        root = ElementTree.fromstring(response.text)
+    except Exception as exc:
+        logger.warning("rss_fallback_failed: %s", exc)
+        return []
+
+    articles: list[dict] = []
+    for item in root.findall(".//item"):
+        title = (item.findtext("title") or "").strip()
+        url = (item.findtext("link") or "").strip()
+        published_at = _rss_datetime(item.findtext("pubDate") or "")
+        if not title or not url:
+            continue
+        source_name = "RSS fallback"
+        if " - " in title:
+            title_parts = title.rsplit(" - ", 1)
+            if len(title_parts) == 2 and title_parts[1].strip():
+                title = title_parts[0].strip()
+                source_name = title_parts[1].strip()
+        articles.append(
+            {
+                "title": title,
+                "description": item.findtext("description") or "",
+                "url": url,
+                "publishedAt": published_at,
+                "image": None,
+                "source": {"name": source_name},
+            }
+        )
+        if len(articles) >= max_items:
+            break
+
+    return _normalize_articles(articles, max_items=max_items)
+
+
+def _rss_payload(feed_url: str, *, max_items: int, warning: str) -> dict | None:
+    articles = _rss_fallback(feed_url, max_items=max_items)
+    if not articles:
+        return None
+    return _build_payload(
+        articles,
+        total=len(articles),
+        stale=False,
+        source_status="rss_fallback",
+        warning=warning,
+    )
+
+
 # ── GNews API Calls ──────────────────────────────────────────
 def _gnews_request(endpoint: str, params: dict) -> dict:
     """Make a request to the GNews API with error handling."""
@@ -140,27 +276,44 @@ def fetch_chile_news() -> dict:
     cached = cache_get(cache_key)
     if cached:
         logger.info("gnews_chile_cache_hit")
-        return cached
+        return {**cached, "source_status": cached.get("source_status", "cache")}
+
+    if _cooldown_active(cache_key):
+        return _stale_fallback(
+            cache_key,
+            "Using cached Chile headlines while the upstream provider cools down.",
+        )
 
     result = _gnews_request("search", {
-        "q": "Chile AND (economía OR finanzas OR inmobiliario)",
+        "q": '"Chile" AND (economía OR finanzas OR inmobiliario OR hipotecario OR UF OR "Banco Central")',
         "lang": "es",
         "country": "cl",
-        "max": 10,
+        "max": 12,
+        "sortby": "publishedAt",
     })
 
     if "error" not in result:
-        articles = result.get("articles", [])
-        payload = {
-            "articles": articles,
-            "toon": compress_articles_toon(articles),
-            "total": result.get("totalArticles", len(articles)),
-            "fetched_at": datetime.utcnow().isoformat(),
-        }
+        articles = _normalize_articles(result.get("articles", []), max_items=12)
+        payload = _build_payload(
+            articles,
+            total=result.get("totalArticles", len(articles)),
+            source_status="live",
+        )
         cache_set(cache_key, payload, ttl=CACHE_TTL)
+        _set_last_good(cache_key, payload)
         return payload
 
-    return result
+    _set_cooldown(cache_key, result["error"])
+    rss_payload = _rss_payload(
+        "https://news.google.com/rss/search?q=Chile+econom%C3%ADa+OR+Chile+finanzas+OR+Chile+inmobiliario&hl=es-419&gl=CL&ceid=CL:es-419",
+        max_items=12,
+        warning="GNews is rate limited, using RSS backup headlines.",
+    )
+    if rss_payload:
+        cache_set(cache_key, rss_payload, ttl=3600)
+        _set_last_good(cache_key, rss_payload)
+        return rss_payload
+    return _stale_fallback(cache_key, result["error"])
 
 
 def fetch_world_news() -> dict:
@@ -169,26 +322,42 @@ def fetch_world_news() -> dict:
     cached = cache_get(cache_key)
     if cached:
         logger.info("gnews_world_cache_hit")
-        return cached
+        return {**cached, "source_status": cached.get("source_status", "cache")}
+
+    if _cooldown_active(cache_key):
+        return _stale_fallback(
+            cache_key,
+            "Using cached world headlines while the upstream provider cools down.",
+        )
 
     result = _gnews_request("top-headlines", {
         "category": "business",
         "lang": "en",
-        "max": 5,
+        "max": 8,
     })
 
     if "error" not in result:
-        articles = result.get("articles", [])
-        payload = {
-            "articles": articles,
-            "toon": compress_articles_toon(articles),
-            "total": result.get("totalArticles", len(articles)),
-            "fetched_at": datetime.utcnow().isoformat(),
-        }
+        articles = _normalize_articles(result.get("articles", []), max_items=8)
+        payload = _build_payload(
+            articles,
+            total=result.get("totalArticles", len(articles)),
+            source_status="live",
+        )
         cache_set(cache_key, payload, ttl=CACHE_TTL)
+        _set_last_good(cache_key, payload)
         return payload
 
-    return result
+    _set_cooldown(cache_key, result["error"])
+    rss_payload = _rss_payload(
+        "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en",
+        max_items=8,
+        warning="GNews is rate limited, using RSS backup headlines.",
+    )
+    if rss_payload:
+        cache_set(cache_key, rss_payload, ttl=3600)
+        _set_last_good(cache_key, rss_payload)
+        return rss_payload
+    return _stale_fallback(cache_key, result["error"])
 
 
 # ── Scloda RAG Analysis ──────────────────────────────────────

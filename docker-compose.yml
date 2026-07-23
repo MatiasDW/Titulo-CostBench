@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "5001:5000"
+      - "${APP_HOST_PORT:-5002}:5000"
     env_file:
       - .env
     environment:
@@ -65,7 +65,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_HOST_PORT:-6381}:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
@@ -76,13 +76,13 @@ services:
       retries: 3
 
   db:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg15
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=costbench
     ports:
-      - "5432:5432"
+      - "${DB_HOST_PORT:-5433}:5432"
     volumes:
       - ./db/data:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d

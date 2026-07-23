@@ -49,7 +49,11 @@ const SclodaChat = ({ isOpen, onClose, onOpen, contextAsset = null }) => {
             setMessages(prev => [...prev, { role: 'assistant', content: res.data.response }]);
         } catch (err) {
             console.error('Scloda chat error:', err);
-            setMessages(prev => [...prev, { role: 'assistant', content: 'Oops! I had a connection error trying to answer that.' }]);
+            const apiMessage = err.response?.data?.response
+                || err.response?.data?.message
+                || err.response?.data?.error
+                || 'Oops! I had a connection error trying to answer that.';
+            setMessages(prev => [...prev, { role: 'assistant', content: apiMessage }]);
         } finally {
             setIsTyping(false);
         }

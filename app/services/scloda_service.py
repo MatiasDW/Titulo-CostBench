@@ -9,11 +9,31 @@ Handles:
 
 import os
 import json
+import re
+import uuid
 import httpx
 from typing import Any
 from datetime import datetime
 from pathlib import Path
+from time import perf_counter
 
+from app.services.scloda_classifier import classify_message, get_classifier_status
+from app.services.scloda_circuit_breakers import (
+    allow_model,
+    get_circuit_breaker_status,
+    record_model_failure,
+    record_model_success,
+)
+from app.services.scloda_external_observability import get_external_observability_status
+from app.services.scloda_memory import (
+    SCLODA_EMBEDDING_MODEL,
+    get_knowledge_index_status,
+    retrieve_knowledge,
+    should_retrieve_knowledge,
+)
+from app.services.scloda_observability import persist_scloda_trace
+from app.services.scloda_review_queue import create_review_item, get_review_summary
+from app.services.scloda_task_router import route_task
 from app.services.scloda_tools import SCLODA_TOOLS, execute_tool
 from app.ml.logging_utils import get_logger
 
@@ -31,7 +51,22 @@ def _is_configured_secret(value: str | None) -> bool:
 
 _raw_openrouter_key = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_API_KEY = _raw_openrouter_key if _is_configured_secret(_raw_openrouter_key) else ""
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-001")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-5-mini")
+OPENROUTER_HTTP_REFERER = os.getenv("OPENROUTER_HTTP_REFERER", "https://costbench.cl")
+OPENROUTER_X_TITLE = os.getenv("OPENROUTER_X_TITLE", "CostBench - Scloda Chat")
+OPENROUTER_FALLBACK_MODELS = [
+    model.strip()
+    for model in os.getenv(
+        "OPENROUTER_FALLBACK_MODELS",
+        "anthropic/claude-sonnet-4.6,google/gemini-2.5-flash",
+    ).split(",")
+    if model.strip()
+]
+SCLODA_ENABLE_JUDGE_MODEL = (
+    os.getenv("SCLODA_ENABLE_JUDGE_MODEL", "false").lower() == "true"
+)
+SCLODA_JUDGE_MODEL = os.getenv("SCLODA_JUDGE_MODEL", "openai/gpt-5-mini")
+SCLODA_JUDGE_MAX_TOKENS = int(os.getenv("SCLODA_JUDGE_MAX_TOKENS", "220"))
 
 # ── Fail-Fast config ──────────────────────────────────────────
 # Strict timeout — if the LLM doesn't answer in this window we
@@ -43,6 +78,343 @@ _FRIENDLY_ERROR = (
     "⏳ The networks are a bit congested right now and I couldn't "
     "process your request. Can you try again in a few seconds?"
 )
+
+MAX_HISTORY_MESSAGES = 10
+ALLOWED_HISTORY_ROLES = {"user", "assistant"}
+DOMAIN_KEYWORDS = {
+    "uf", "usd", "dollar", "peso", "clp", "bitcoin", "ethereum", "crypto",
+    "copper", "gold", "silver", "oil", "market", "markets", "inflation",
+    "rates", "fed", "mortgage", "rent", "real estate", "property", "housing",
+    "chile", "investment", "investing", "portfolio", "macro", "yield",
+    "commodities", "risk", "bank", "banks", "hipotec", "arriendo",
+}
+SMALL_TALK_KEYWORDS = {"hi", "hello", "hey", "thanks", "thank you", "hola", "help"}
+PROMPT_INJECTION_PATTERNS = [
+    r"ignore (all|the|your) (previous|prior) instructions",
+    r"reveal (your|the) (system|developer) prompt",
+    r"show me (your|the) hidden instructions",
+    r"bypass (your|the) guardrails",
+    r"act as a different model",
+    r"developer mode",
+    r"jailbreak",
+]
+DATE_AWARENESS_RULES = """
+
+## DATE-AWARE RESPONSE RULES
+
+- When tool data includes `as_of_label`, explicitly mention it in the answer, for example: "as of July 22, 2026".
+- Only use words like "currently", "today", or "right now" if `is_current_for_market_day` is true.
+- If `is_current_for_market_day` is false, say "latest available reading as of <date>" instead.
+- If live data is unavailable but the tool provides `fallback_context`, say that the current quote is unavailable and then give contextual or historical explanation without inventing numbers.
+"""
+
+
+def _candidate_openrouter_models(
+    primary_model: str | None = None,
+    fallback_models: list[str] | None = None,
+) -> list[str]:
+    candidates = [
+        primary_model or OPENROUTER_MODEL,
+        *(fallback_models if fallback_models is not None else OPENROUTER_FALLBACK_MODELS),
+    ]
+    seen = set()
+    ordered: list[str] = []
+    for model in candidates:
+        if model and model not in seen:
+            ordered.append(model)
+            seen.add(model)
+    return ordered
+
+
+def _sanitize_history(conversation_history: list[dict] | None) -> list[dict]:
+    """Keep only the last allowed user/assistant messages with valid text content."""
+    sanitized: list[dict] = []
+    for item in conversation_history or []:
+        if not isinstance(item, dict):
+            continue
+        role = item.get("role")
+        content = item.get("content")
+        if role not in ALLOWED_HISTORY_ROLES or not isinstance(content, str):
+            continue
+        text = content.strip()
+        if not text:
+            continue
+        sanitized.append({"role": role, "content": text[:4000]})
+    return sanitized[-MAX_HISTORY_MESSAGES:]
+
+
+def _message_is_domain_related(user_message: str) -> bool:
+    lowered = user_message.lower()
+    return any(keyword in lowered for keyword in DOMAIN_KEYWORDS)
+
+
+def _message_is_small_talk(user_message: str) -> bool:
+    lowered = user_message.lower().strip()
+    return any(keyword == lowered or keyword in lowered for keyword in SMALL_TALK_KEYWORDS)
+
+
+def _screen_user_message(user_message: str) -> dict[str, Any]:
+    """Basic input guardrails for scope and obvious injection patterns."""
+    lowered = user_message.lower()
+
+    for pattern in PROMPT_INJECTION_PATTERNS:
+        if re.search(pattern, lowered):
+            return {
+                "blocked": True,
+                "reason": "prompt_injection",
+                "response": (
+                    "I can help with CostBench topics like markets, real estate, macro data, and investment context, "
+                    "but I can't expose internal instructions or override my operating rules."
+                ),
+            }
+
+    if _message_is_small_talk(user_message):
+        return {"blocked": False, "reason": "small_talk"}
+
+    if not _message_is_domain_related(user_message):
+        return {
+            "blocked": True,
+            "reason": "out_of_scope",
+            "response": (
+                "I’m specialized in CostBench topics: Chilean markets, macro indicators, real estate, investment context, and Scloda-related analysis. "
+                "If you want, ask me about UF, USD/CLP, mortgages, market moves, property decisions, or financial news."
+            ),
+        }
+
+    return {"blocked": False, "reason": "domain"}
+
+
+def _extract_tool_payloads(tool_results: list[dict]) -> list[dict[str, Any]]:
+    payloads: list[dict[str, Any]] = []
+    for item in tool_results:
+        try:
+            payload = json.loads(item.get("content", "{}"))
+        except Exception:
+            payload = {"error": "invalid_tool_payload"}
+        payloads.append(payload)
+    return payloads
+
+
+def _extract_message_content(message: Any) -> str:
+    """Normalize OpenRouter/OpenAI-style message content into plain text."""
+    if isinstance(message, str):
+        return message
+    if message is None:
+        return ""
+    if isinstance(message, list):
+        parts: list[str] = []
+        for item in message:
+            if isinstance(item, str):
+                parts.append(item)
+                continue
+            if not isinstance(item, dict):
+                continue
+            text = item.get("text")
+            if isinstance(text, str):
+                parts.append(text)
+                continue
+            if item.get("type") == "text" and isinstance(item.get("content"), str):
+                parts.append(item["content"])
+        return "\n".join(part for part in parts if part).strip()
+    if isinstance(message, dict):
+        text = message.get("text")
+        if isinstance(text, str):
+            return text
+        content = message.get("content")
+        if isinstance(content, str):
+            return content
+        return _extract_message_content(content)
+    return str(message)
+
+
+def _compute_confidence(tool_payloads: list[dict[str, Any]]) -> str:
+    if not tool_payloads:
+        return "medium"
+    success_count = sum(1 for payload in tool_payloads if payload.get("status") == "ok" and "error" not in payload)
+    fallback_count = sum(1 for payload in tool_payloads if payload.get("status") == "no_live_data")
+    if success_count == len(tool_payloads):
+        return "high"
+    if success_count > 0 or fallback_count > 0:
+        return "medium"
+    return "low"
+
+
+def _apply_response_guardrails(final_content: str, tool_payloads: list[dict[str, Any]]) -> str:
+    """Post-process the final response so the UX is explicit about freshness and missing live data."""
+    text = (final_content or "").strip()
+    if not text:
+        text = "I'm sorry, I was able to retrieve context but had a problem producing the final answer."
+
+    successful_dates = [
+        payload.get("as_of_label")
+        for payload in tool_payloads
+        if payload.get("status") == "ok" and payload.get("as_of_label")
+    ]
+    if successful_dates and "as of" not in text.lower():
+        text = f"As of {successful_dates[0]}, {text[0].lower() + text[1:] if len(text) > 1 else text.lower()}"
+
+    if any(payload.get("status") == "no_live_data" for payload in tool_payloads):
+        if "live data" not in text.lower() and "latest available" not in text.lower():
+            text += " Live data was unavailable for part of this answer, so I relied on historical or structural context where needed."
+
+    return text
+
+
+def _build_retrieval_context(retrieved_chunks: list[dict[str, Any]]) -> str:
+    lines = [
+        "## INTERNAL KNOWLEDGE CONTEXT",
+        "Use this retrieved context only when relevant. Prefer tool data for live numeric claims.",
+    ]
+    for idx, chunk in enumerate(retrieved_chunks, start=1):
+        title = chunk.get("title", f"Chunk {idx}")
+        content = (chunk.get("content", "") or "").strip()
+        source_key = chunk.get("source_key", "unknown")
+        lines.append(f"{idx}. [{source_key}] {title}: {content}")
+    return "\n".join(lines)
+
+
+def _usage_from_response(response: dict[str, Any]) -> dict[str, int]:
+    usage = response.get("usage", {}) if isinstance(response, dict) else {}
+    return {
+        "prompt_tokens": int(usage.get("prompt_tokens", 0) or 0),
+        "completion_tokens": int(usage.get("completion_tokens", 0) or 0),
+        "total_tokens": int(usage.get("total_tokens", 0) or 0),
+    }
+
+
+def _should_run_judge(
+    tool_payloads: list[dict[str, Any]],
+    retrieved_chunks: list[dict[str, Any]],
+    confidence: str,
+) -> bool:
+    if not SCLODA_ENABLE_JUDGE_MODEL:
+        return False
+    return bool(tool_payloads or retrieved_chunks or confidence != "high")
+
+
+def _run_judge_review(
+    *,
+    user_message: str,
+    final_response: str,
+    tool_payloads: list[dict[str, Any]],
+    retrieved_chunks: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    if not OPENROUTER_API_KEY:
+        return None
+
+    evidence = {
+        "tool_payloads": tool_payloads,
+        "retrieved_chunks": [
+            {
+                "source_key": chunk.get("source_key"),
+                "title": chunk.get("title"),
+                "content": chunk.get("content"),
+            }
+            for chunk in retrieved_chunks
+        ],
+    }
+    prompt = (
+        "Review whether the assistant answer is grounded in the evidence.\n\n"
+        f"User question:\n{user_message}\n\n"
+        f"Assistant answer:\n{final_response}\n\n"
+        f"Evidence:\n{json.dumps(evidence, ensure_ascii=False)}\n\n"
+        "Return strict JSON with keys: grounded_to_evidence (boolean), "
+        "mentions_date_correctly (boolean), numeric_risk ('low'|'medium'|'high'), "
+        "final_verdict ('safe'|'review'|'warn'), notes (string)."
+    )
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are a strict groundedness reviewer. "
+                "Do not rewrite the answer. Only score whether it is supported by the provided evidence."
+            ),
+        },
+        {"role": "user", "content": prompt},
+    ]
+    response = _call_openrouter(
+        messages,
+        tools=None,
+        temperature=0,
+        max_tokens=SCLODA_JUDGE_MAX_TOKENS,
+        primary_model=SCLODA_JUDGE_MODEL,
+        fallback_models=[],
+    )
+    if "error" in response:
+        return None
+
+    content = _extract_message_content(response["choices"][0]["message"].get("content"))
+    if content.startswith("```json"):
+        content = content.replace("```json", "").replace("```", "").strip()
+    try:
+        result = json.loads(content)
+        result["_resolved_model"] = response.get("_resolved_model", SCLODA_JUDGE_MODEL)
+        return result
+    except Exception:
+        logger.warning("judge_parse_failed", content=content[:200])
+        return None
+
+
+def _persist_trace(
+    *,
+    trace_id: str,
+    user_message: str,
+    user_profile: dict[str, Any] | None,
+    history_count: int,
+    screening_reason: str | None,
+    guardrail_action: str | None,
+    response_status: str,
+    response_text: str,
+    error_code: str | None,
+    confidence: str | None,
+    model_resolved: str | None,
+    task_type: str | None,
+    tools_used: list[str],
+    tool_payloads: list[dict[str, Any]],
+    retrieved_chunks: list[dict[str, Any]],
+    judge_summary: dict[str, Any] | None,
+    usage_totals: dict[str, int],
+    started_at: float,
+) -> None:
+    persist_scloda_trace(
+        {
+            "trace_id": trace_id,
+            "user_id": (user_profile or {}).get("id"),
+            "request_kind": "chat",
+            "user_message": user_message,
+            "response_text": response_text,
+            "history_count": history_count,
+            "screening_reason": screening_reason,
+            "guardrail_action": guardrail_action,
+            "response_status": response_status,
+            "confidence": confidence,
+            "error_code": error_code,
+            "task_type": task_type,
+            "model_requested": OPENROUTER_MODEL,
+            "model_resolved": model_resolved,
+            "embedding_model": SCLODA_EMBEDDING_MODEL if retrieved_chunks else None,
+            "judge_model": (
+                judge_summary.get("_resolved_model")
+                if isinstance(judge_summary, dict)
+                else None
+            ),
+            "tools_used": tools_used,
+            "tool_payloads": tool_payloads,
+            "retrieved_chunks": [
+                {
+                    "source_key": chunk.get("source_key"),
+                    "title": chunk.get("title"),
+                    "score": chunk.get("score"),
+                }
+                for chunk in retrieved_chunks
+            ],
+            "judge_summary": judge_summary,
+            "prompt_tokens": usage_totals["prompt_tokens"],
+            "completion_tokens": usage_totals["completion_tokens"],
+            "total_tokens": usage_totals["total_tokens"],
+            "latency_ms": int((perf_counter() - started_at) * 1000),
+        }
+    )
 
 
 def _load_system_prompt() -> str:
@@ -280,48 +652,166 @@ def chat_completion(
     Returns:
         dict with 'response' (text) and 'tokens_used'
     """
+    trace_id = str(uuid.uuid4())
+    started_at = perf_counter()
+    usage_totals = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+    tools_used: list[str] = []
+    tool_payloads: list[dict[str, Any]] = []
+    retrieved_chunks: list[dict[str, Any]] = []
+    judge_summary: dict[str, Any] | None = None
+    model_resolved: str | None = None
+    history_count = 0
+    task_type = "general_explanation"
+    classification = classify_message(user_message)
+    route = route_task(classification, user_message)
+    task_type = route["task_type"]
+
     if not OPENROUTER_API_KEY:
-        return {
+        result = {
             "response": "⚠️ API not configured. Add OPENROUTER_API_KEY to the .env file",
             "tokens_used": 0,
             "error": "no_api_key",
+            "trace_id": trace_id,
         }
+        _persist_trace(
+            trace_id=trace_id,
+            user_message=user_message,
+            user_profile=user_profile,
+            history_count=history_count,
+            screening_reason="no_api_key",
+            guardrail_action=None,
+            response_status="error",
+            response_text=result["response"],
+            error_code="no_api_key",
+            confidence=None,
+            model_resolved=None,
+            task_type=task_type,
+            tools_used=[],
+            tool_payloads=[],
+            retrieved_chunks=[],
+            judge_summary=None,
+            usage_totals=usage_totals,
+            started_at=started_at,
+        )
+        return result
 
-    # Build messages — base prompt + dynamic user context
+    screening = _screen_user_message(user_message)
+    if screening["blocked"]:
+        logger.info(
+            "chat_guardrail_blocked", trace_id=trace_id, reason=screening["reason"]
+        )
+        result = {
+            "response": screening["response"],
+            "tokens_used": 0,
+            "guardrail_action": screening["reason"],
+            "trace_id": trace_id,
+            "confidence": "high",
+        }
+        _persist_trace(
+            trace_id=trace_id,
+            user_message=user_message,
+            user_profile=user_profile,
+            history_count=history_count,
+            screening_reason=screening["reason"],
+            guardrail_action=screening["reason"],
+            response_status="guardrail_blocked",
+            response_text=result["response"],
+            error_code=None,
+            confidence=result["confidence"],
+            model_resolved=None,
+            task_type=task_type,
+            tools_used=[],
+            tool_payloads=[],
+            retrieved_chunks=[],
+            judge_summary=None,
+            usage_totals=usage_totals,
+            started_at=started_at,
+        )
+        return result
+
     system_prompt = _load_system_prompt()
+    system_prompt += DATE_AWARENESS_RULES
+    system_prompt += (
+        f"\n\n## TASK ROUTING\n- Current task type: {task_type}\n"
+        f"- Use only tools relevant to this task. Allowed tools: {', '.join(route['allowed_tools']) or 'none'}.\n"
+        "- If the user asks for unsupported live numbers, say so clearly instead of improvising."
+    )
     user_context = _build_user_context(user_profile)
     if user_context:
         system_prompt += user_context
     messages = [{"role": "system", "content": system_prompt}]
 
-    # Add conversation history (last 10 messages max)
-    if conversation_history:
-        messages.extend(conversation_history[-10:])
+    sanitized_history = _sanitize_history(conversation_history)
+    history_count = len(sanitized_history)
+    if sanitized_history:
+        messages.extend(sanitized_history)
 
-    # Add current user message
+    if should_retrieve_knowledge(user_message):
+        try:
+            retrieved_chunks = retrieve_knowledge(user_message)
+        except Exception as exc:
+            logger.warning(
+                "knowledge_retrieval_failed", trace_id=trace_id, error=str(exc)
+            )
+            retrieved_chunks = []
+        if retrieved_chunks:
+            messages.append(
+                {"role": "system", "content": _build_retrieval_context(retrieved_chunks)}
+            )
+
     messages.append({"role": "user", "content": user_message})
 
     try:
-        # First API call
-        response = _call_openrouter(messages, tools=SCLODA_TOOLS)
+        routed_tools = [
+            tool
+            for tool in SCLODA_TOOLS
+            if tool.get("function", {}).get("name") in set(route["allowed_tools"])
+        ]
+        response = _call_openrouter(
+            messages,
+            tools=routed_tools,
+            primary_model=route["primary_model"],
+            fallback_models=route["fallback_models"],
+        )
+        first_usage = _usage_from_response(response)
+        for key in usage_totals:
+            usage_totals[key] += first_usage[key]
+        model_resolved = response.get("_resolved_model", model_resolved)
 
         if "error" in response:
+            response["trace_id"] = trace_id
+            _persist_trace(
+                trace_id=trace_id,
+                user_message=user_message,
+                user_profile=user_profile,
+                history_count=history_count,
+                screening_reason=screening["reason"],
+                guardrail_action=None,
+                response_status="error",
+                response_text=response.get("response", _FRIENDLY_ERROR),
+                error_code=response.get("error"),
+                confidence=None,
+                model_resolved=model_resolved,
+                task_type=task_type,
+                tools_used=tools_used,
+                tool_payloads=tool_payloads,
+                retrieved_chunks=retrieved_chunks,
+                judge_summary=None,
+                usage_totals=usage_totals,
+                started_at=started_at,
+            )
             return response
 
         assistant_message = response["choices"][0]["message"]
-        tokens_used = response.get("usage", {}).get("total_tokens", 0)
 
-        # Check for tool calls
         if assistant_message.get("tool_calls"):
-            # Execute tools and get results
             tool_results = []
             for tool_call in assistant_message["tool_calls"]:
                 function_name = tool_call["function"]["name"]
                 arguments = json.loads(tool_call["function"]["arguments"])
-
                 logger.info("tool_call", tool=function_name, args=arguments)
-
                 result = execute_tool(function_name, arguments)
+                tools_used.append(function_name)
                 tool_results.append(
                     {
                         "tool_call_id": tool_call["id"],
@@ -330,52 +820,245 @@ def chat_completion(
                     }
                 )
 
-            # Add assistant message with tool calls
             messages.append(assistant_message)
-
-            # Add tool results
             messages.extend(tool_results)
 
-            # Second API call with tool results
-            final_response = _call_openrouter(messages, tools=None)
+            final_response = _call_openrouter(
+                messages,
+                tools=None,
+                primary_model=route["primary_model"],
+                fallback_models=route["fallback_models"],
+            )
+            second_usage = _usage_from_response(final_response)
+            for key in usage_totals:
+                usage_totals[key] += second_usage[key]
+            model_resolved = final_response.get("_resolved_model", model_resolved)
 
             if "error" in final_response:
+                final_response["trace_id"] = trace_id
+                _persist_trace(
+                    trace_id=trace_id,
+                    user_message=user_message,
+                    user_profile=user_profile,
+                    history_count=history_count,
+                    screening_reason=screening["reason"],
+                    guardrail_action=None,
+                    response_status="error",
+                    response_text=final_response.get("response", _FRIENDLY_ERROR),
+                    error_code=final_response.get("error"),
+                    confidence=None,
+                    model_resolved=model_resolved,
+                    task_type=task_type,
+                    tools_used=tools_used,
+                    tool_payloads=tool_payloads,
+                    retrieved_chunks=retrieved_chunks,
+                    judge_summary=None,
+                    usage_totals=usage_totals,
+                    started_at=started_at,
+                )
                 return final_response
 
-            final_content = final_response["choices"][0]["message"].get("content", "")
-            
+            final_content = _extract_message_content(
+                final_response["choices"][0]["message"].get("content")
+            )
             if not final_content or not final_content.strip():
-                final_content = "I'm sorry, I was able to retrieve the data but had a problem processing the final response. Please try asking in a different way."
+                final_content = (
+                    "I'm sorry, I was able to retrieve the data but had a problem "
+                    "processing the final response. Please try asking in a different way."
+                )
 
-            tokens_used += final_response.get("usage", {}).get("total_tokens", 0)
+            tool_payloads = _extract_tool_payloads(tool_results)
+            final_content = _apply_response_guardrails(final_content, tool_payloads)
+            confidence = _compute_confidence(tool_payloads)
+            if _should_run_judge(tool_payloads, retrieved_chunks, confidence):
+                judge_summary = _run_judge_review(
+                    user_message=user_message,
+                    final_response=final_content,
+                    tool_payloads=tool_payloads,
+                    retrieved_chunks=retrieved_chunks,
+                )
+                if judge_summary:
+                    verdict = judge_summary.get("final_verdict")
+                    if verdict == "warn":
+                        confidence = "low"
+                        final_content += (
+                            " I could not fully verify every claim against the "
+                            "available evidence, so treat this as contextual guidance."
+                        )
+                    elif verdict == "review" and confidence == "high":
+                        confidence = "medium"
 
-            return {
+            if confidence == "low" or (judge_summary and judge_summary.get("final_verdict") in {"warn", "review"}):
+                create_review_item(
+                    trace_id=trace_id,
+                    user_id=(user_profile or {}).get("id"),
+                    task_type=task_type,
+                    reason=(judge_summary or {}).get("final_verdict", "low_confidence"),
+                    priority="high" if confidence == "low" else "medium",
+                    model_resolved=model_resolved,
+                    user_message=user_message,
+                    agent_response=final_content,
+                )
+
+            result = {
                 "response": final_content,
-                "tokens_used": tokens_used,
-                "tools_used": [
-                    tc["function"]["name"] for tc in assistant_message["tool_calls"]
-                ],
+                "tokens_used": usage_totals["total_tokens"],
+                "tools_used": tools_used,
+                "confidence": confidence,
+                "task_type": task_type,
+                "trace_id": trace_id,
             }
+            _persist_trace(
+                trace_id=trace_id,
+                user_message=user_message,
+                user_profile=user_profile,
+                history_count=history_count,
+                screening_reason=screening["reason"],
+                guardrail_action=None,
+                response_status="ok",
+                response_text=result["response"],
+                error_code=None,
+                confidence=result["confidence"],
+                model_resolved=model_resolved,
+                task_type=task_type,
+                tools_used=tools_used,
+                tool_payloads=tool_payloads,
+                retrieved_chunks=retrieved_chunks,
+                judge_summary=judge_summary,
+                usage_totals=usage_totals,
+                started_at=started_at,
+            )
+            return result
 
-        # No tool calls, return direct response
-        content = assistant_message.get("content", "")
+        content = _extract_message_content(assistant_message.get("content"))
         if not content or not content.strip():
             content = "I'm sorry, I had a problem generating the response. Please try again."
-            
-        return {
+        content = content.strip()
+        confidence = "medium"
+
+        if _should_run_judge([], retrieved_chunks, confidence):
+            judge_summary = _run_judge_review(
+                user_message=user_message,
+                final_response=content,
+                tool_payloads=[],
+                retrieved_chunks=retrieved_chunks,
+            )
+            if judge_summary:
+                verdict = judge_summary.get("final_verdict")
+                if verdict == "warn":
+                    confidence = "low"
+                    content += " I could not fully verify this against the available evidence."
+
+        if confidence == "low" or (judge_summary and judge_summary.get("final_verdict") in {"warn", "review"}):
+            create_review_item(
+                trace_id=trace_id,
+                user_id=(user_profile or {}).get("id"),
+                task_type=task_type,
+                reason=(judge_summary or {}).get("final_verdict", "low_confidence"),
+                priority="high" if confidence == "low" else "medium",
+                model_resolved=model_resolved,
+                user_message=user_message,
+                agent_response=content,
+            )
+
+        result = {
             "response": content,
-            "tokens_used": tokens_used,
+            "tokens_used": usage_totals["total_tokens"],
+            "confidence": confidence,
+            "task_type": task_type,
+            "trace_id": trace_id,
         }
+        _persist_trace(
+            trace_id=trace_id,
+            user_message=user_message,
+            user_profile=user_profile,
+            history_count=history_count,
+            screening_reason=screening["reason"],
+            guardrail_action=None,
+            response_status="ok",
+            response_text=result["response"],
+            error_code=None,
+            confidence=result["confidence"],
+            model_resolved=model_resolved,
+            task_type=task_type,
+            tools_used=tools_used,
+            tool_payloads=tool_payloads,
+            retrieved_chunks=retrieved_chunks,
+            judge_summary=judge_summary,
+            usage_totals=usage_totals,
+            started_at=started_at,
+        )
+        return result
 
     except httpx.TimeoutException:
-        logger.warning("chat_timeout", timeout=LLM_TIMEOUT_SECONDS)
-        return {"response": _FRIENDLY_ERROR, "tokens_used": 0, "error": "timeout"}
+        logger.warning("chat_timeout", timeout=LLM_TIMEOUT_SECONDS, trace_id=trace_id)
+        result = {
+            "response": _FRIENDLY_ERROR,
+            "tokens_used": 0,
+            "error": "timeout",
+            "trace_id": trace_id,
+        }
+        _persist_trace(
+            trace_id=trace_id,
+            user_message=user_message,
+            user_profile=user_profile,
+            history_count=history_count,
+            screening_reason=screening["reason"],
+            guardrail_action=None,
+            response_status="error",
+            response_text=result["response"],
+            error_code="timeout",
+            confidence=None,
+            model_resolved=model_resolved,
+            task_type=task_type,
+            tools_used=tools_used,
+            tool_payloads=tool_payloads,
+            retrieved_chunks=retrieved_chunks,
+            judge_summary=judge_summary,
+            usage_totals=usage_totals,
+            started_at=started_at,
+        )
+        return result
     except Exception as e:
-        logger.error("chat_error", error=str(e))
-        return {"response": _FRIENDLY_ERROR, "tokens_used": 0, "error": str(e)}
+        logger.error("chat_error", error=str(e), trace_id=trace_id)
+        result = {
+            "response": _FRIENDLY_ERROR,
+            "tokens_used": 0,
+            "error": str(e),
+            "trace_id": trace_id,
+        }
+        _persist_trace(
+            trace_id=trace_id,
+            user_message=user_message,
+            user_profile=user_profile,
+            history_count=history_count,
+            screening_reason=screening["reason"],
+            guardrail_action=None,
+            response_status="error",
+            response_text=result["response"],
+            error_code=str(e),
+            confidence=None,
+            model_resolved=model_resolved,
+            task_type=task_type,
+            tools_used=tools_used,
+            tool_payloads=tool_payloads,
+            retrieved_chunks=retrieved_chunks,
+            judge_summary=judge_summary,
+            usage_totals=usage_totals,
+            started_at=started_at,
+        )
+        return result
 
 
-def _call_openrouter(messages: list[dict], tools: list[dict] | None = None) -> dict:
+def _call_openrouter(
+    messages: list[dict],
+    tools: list[dict] | None = None,
+    *,
+    temperature: float | int | None = None,
+    max_tokens: int = 1024,
+    primary_model: str | None = None,
+    fallback_models: list[str] | None = None,
+) -> dict:
     """Make an API call to OpenRouter with a strict fail-fast timeout.
 
     If the LLM doesn't respond within ``LLM_TIMEOUT_SECONDS`` the
@@ -386,43 +1069,64 @@ def _call_openrouter(messages: list[dict], tools: list[dict] | None = None) -> d
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://costbench.cl",
-        "X-Title": "CostBench - Scloda Chat",
+        "HTTP-Referer": OPENROUTER_HTTP_REFERER,
+        "X-Title": OPENROUTER_X_TITLE,
     }
 
-    payload = {
-        "model": OPENROUTER_MODEL,
-        "messages": messages,
-        "temperature": 0.7,
-        "max_tokens": 1024,
-    }
-
-    if tools:
-        payload["tools"] = tools
-        payload["tool_choice"] = "auto"
-
-    # Strict timeout — fail fast, let the user retry.
     timeout = httpx.Timeout(LLM_TIMEOUT_SECONDS, connect=5.0)
+    last_error: dict[str, Any] | None = None
 
     try:
         with httpx.Client(timeout=timeout) as client:
-            response = client.post(OPENROUTER_API_URL, headers=headers, json=payload)
-            response.raise_for_status()
-            return response.json()
+            for model_name in _candidate_openrouter_models(primary_model, fallback_models):
+                allowed, reason = allow_model(model_name)
+                if not allowed:
+                    logger.warning("model_circuit_open", model=model_name, reason=reason)
+                    last_error = {"error": reason, "response": _FRIENDLY_ERROR}
+                    continue
 
-    except httpx.TimeoutException:
-        logger.warning("openrouter_timeout", timeout_s=LLM_TIMEOUT_SECONDS)
-        return {"error": "timeout", "response": _FRIENDLY_ERROR}
-    except httpx.HTTPStatusError as e:
-        logger.error(
-            "openrouter_http_error",
-            status=e.response.status_code,
-            body=e.response.text[:200],
-        )
-        return {"error": "api_error", "response": _FRIENDLY_ERROR}
+                payload = {
+                    "model": model_name,
+                    "messages": messages,
+                    "temperature": (
+                        temperature if temperature is not None else (0.35 if tools else 0.45)
+                    ),
+                    "max_tokens": max_tokens,
+                }
+
+                if tools:
+                    payload["tools"] = tools
+                    payload["tool_choice"] = "auto"
+
+                try:
+                    response = client.post(OPENROUTER_API_URL, headers=headers, json=payload)
+                    response.raise_for_status()
+                    data = response.json()
+                    data["_resolved_model"] = model_name
+                    record_model_success(model_name)
+                    return data
+                except httpx.TimeoutException:
+                    last_error = {"error": "timeout", "response": _FRIENDLY_ERROR}
+                    record_model_failure(model_name)
+                    logger.warning("openrouter_timeout", timeout_s=LLM_TIMEOUT_SECONDS, model=model_name)
+                except httpx.HTTPStatusError as e:
+                    last_error = {"error": "api_error", "response": _FRIENDLY_ERROR}
+                    record_model_failure(model_name)
+                    logger.error(
+                        "openrouter_http_error",
+                        status=e.response.status_code,
+                        body=e.response.text[:200],
+                        model=model_name,
+                    )
+                except Exception as e:
+                    last_error = {"error": str(e), "response": _FRIENDLY_ERROR}
+                    record_model_failure(model_name)
+                    logger.error("openrouter_unexpected", error=str(e), model=model_name)
     except Exception as e:
-        logger.error("openrouter_unexpected", error=str(e))
+        logger.error("openrouter_client_unexpected", error=str(e))
         return {"error": str(e), "response": _FRIENDLY_ERROR}
+
+    return last_error or {"error": "model_fallbacks_exhausted", "response": _FRIENDLY_ERROR}
 
 
 def get_service_status() -> dict:
@@ -430,6 +1134,15 @@ def get_service_status() -> dict:
     return {
         "api_configured": bool(OPENROUTER_API_KEY),
         "model": OPENROUTER_MODEL,
+        "fallback_models": OPENROUTER_FALLBACK_MODELS,
+        "embedding_model": SCLODA_EMBEDDING_MODEL,
+        "judge_enabled": SCLODA_ENABLE_JUDGE_MODEL,
+        "judge_model": SCLODA_JUDGE_MODEL,
+        "classifier": get_classifier_status(),
+        "review_queue": get_review_summary(),
+        "knowledge_index": get_knowledge_index_status(),
+        "external_observability": get_external_observability_status(),
+        "circuit_breakers": get_circuit_breaker_status(),
         "timestamp": datetime.now().isoformat(),
     }
 
@@ -545,7 +1258,9 @@ Respond ONLY with the insight text."""
             return _get_fallback_insight(asset, change_percent, trend)
 
         return {
-            "insight": response["choices"][0]["message"]["content"].strip(),
+            "insight": _extract_message_content(
+                response["choices"][0]["message"].get("content")
+            ).strip(),
             "tokens_used": response["usage"]["total_tokens"],
         }
 
@@ -631,7 +1346,9 @@ Respond ONLY in JSON format:
         if "error" in response:
             return _get_fallback_model_analysis(asset, model_name)
 
-        content = response["choices"][0]["message"]["content"].strip()
+        content = _extract_message_content(
+            response["choices"][0]["message"].get("content")
+        ).strip()
 
         # Clean markdown code blocks if present
         if content.startswith("```json"):

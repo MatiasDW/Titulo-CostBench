@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { FaHome, FaTrophy, FaGlobeAmericas, FaSignOutAlt, FaUserCog, FaBars, FaTimes, FaUserTie, FaChartLine, FaChevronDown, FaWallet, FaExchangeAlt, FaBuilding, FaNewspaper } from 'react-icons/fa';
+import { FaHome, FaSignOutAlt, FaUserCog, FaBars, FaTimes, FaUserTie, FaChartLine, FaChevronDown, FaWallet, FaExchangeAlt, FaBuilding, FaNewspaper, FaAtom, FaShieldAlt } from 'react-icons/fa';
 import useSounds from '../../hooks/useSounds';
 import './Sidebar.css';
 
@@ -12,8 +12,7 @@ const NAV_ITEMS = [
     { path: '/wallet', label: 'Wallet', icon: FaWallet },
     { path: '/trade', label: 'Trade', icon: FaExchangeAlt },
     { path: '/news', label: 'News', icon: FaNewspaper },
-    { path: '/ranking', label: 'Ranking', icon: FaTrophy },
-    { path: '/macro', label: 'Macro', icon: FaGlobeAmericas },
+    { path: '/quantum-lab', label: 'Quantum Lab', icon: FaAtom },
 ];
 
 const RISK_BADGES = {
@@ -131,9 +130,9 @@ const Sidebar = ({ collapsed, onToggle }) => {
                                         <button
                                             type="button"
                                             className="sidebar-profile-item admin-item"
-                                            onClick={() => { playClick(); setProfileOpen(false); /* TODO: admin panel */ }}
+                                            onClick={() => { playClick(); setProfileOpen(false); navigate('/admin'); }}
                                         >
-                                            <FaUserTie size={14} />
+                                            <FaShieldAlt size={14} />
                                             <span>Admin Panel</span>
                                         </button>
                                     )}

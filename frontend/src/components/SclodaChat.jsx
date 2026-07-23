@@ -75,8 +75,13 @@ const SclodaChat = () => {
                     return;
                 }
 
-                const apiError = data?.error || `Request failed (${response.status})`;
-                throw new Error(apiError);
+                const apiMessage = data?.response || data?.message || data?.error || `Request failed (${response.status})`;
+                setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: apiMessage
+                }]);
+                playReceive();
+                return;
             }
 
             setMessages(prev => [...prev, {
